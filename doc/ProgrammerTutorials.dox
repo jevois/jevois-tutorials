@@ -1,0 +1,12 @@
+/*! \page ProgrammerTutorials JeVois programmer tutorials
+
+Programmer tutorials cover programming on C++-17 under a Linux development environment to enhance the functionality
+of the JeVois smart camera, for example by vreating new machine vision modules that will run on the smart camera, or
+by modifying the core JeVois framework.
+
+
+
+*/
+    
+
+

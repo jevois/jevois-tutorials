@@ -1,0 +1,9 @@
+/*! \page UserTutorials JeVois user tutorials
+
+User tutorials explore machine vision functionalities provided by JeVois for end users. No or little programming
+experience is required. When programming is used, usually it is to program other devices that will interact with the
+JeVois smart camera (e.g., an Arduino, or scripts runing on a host computer).
+
+
+*/
+
