@@ -1,5 +1,5 @@
 # jevois-tutorials
-User and Programmer Tutorials for JeVois Smart Embedded Machine Vision Toolkit
+User and programmer tutorials for JeVois
 
 jevois is a C++17 software framework for real-time machine vision running on smart cameras
 

@@ -1,0 +1,65 @@
+/*! \page UserArduinoIDE Using the Arduino IDE (Integrated Development Environment) to talk to JeVois
+
+Chances are that at one point or another you will program an Arduino to communicate with JeVois.
+
+In this tutorial, we install and use the Arduino IDE (Integrated Development Environment) to communicate with JeVois. We
+use the serial monitor included in the Arduino IDE. Communicating with your JeVois smart camera in this way allows you
+to set camera and machine vision parameters which are not otherwise available when you just grab video from JeVois. In
+fact, you can issue a number of interesting commands to JeVois t tune its behavior in many ways.
+
+Getting the Arduino IDE
+-----------------------
+
+First, install the Arduino software.
+- On Mac and Windows, download and install the package as explained at http://arduino.cc
+- On Ubuntu Linux, simply run <code>sudo apt-get install arduino</code>
+
+Making sure you can access the serial port of JeVois
+----------------------------------------------------
+
+We will start with using the serial-over-USB connection to JeVois. This is a virtual serial port that the JeVois smart
+camera exposes to your host computer when it is connected to that computer.
+- See \ref UserCli for general information about the JeVois command-line interface
+- See \ref USBserialLinux
+- See \ref USBserialWindows
+- See \ref USBserialMac
+
+Use the Arduino IDE to talk to JeVois
+-------------------------------------
+
+Start your Arduino IDE. For example, on Linux, just type \c arduino
+
+Select the serial port of JeVois in \b Tools -> <b>Serial Port</b>. If it does not appear, maybe the permissions are
+wrong, e.g., on Linux, type <code>sudo chmod 777 /dev/ttyACM0</code> and see details at \ref USBserialLinux.
+
+\image html UserArduinoIDEport.png
+
+Open the serial monitor by going to \b Tools -> <b>Serial Monitor</b>. This opens a window where you will be able to
+type commands (top line) to send to JeVois, and you will see the answers below.
+
+Before you start typing, make sure you set the line ending style to \b Newline, and the speed to \b 115200, at the
+bottom of the serial monitor window.
+
+\image html UserArduinoIDEspeed.png
+
+You can now type a command in the top line of the serial monitor, and as you press \b RETURN or click the \b Send
+button, the command will be sent to JeVois and results will be printed in the window. For example, try typing \c info;
+you should see this:
+
+\image html UserArduinoIDEinfo.png
+
+Then type \c listmappings, which should show something like this:
+
+\image html UserArduinoIDElistmappings.png
+
+And so on. Try to experiment with various commands as detailed in \ref UserCli
+
+Using serial communications while streaming video
+-------------------------------------------------
+
+Video streaming and serial communication are possible at the same time. This is useful to allow you to change parameters
+of running modules. See \ref UserParameters for more info.
+
+
+
+*/

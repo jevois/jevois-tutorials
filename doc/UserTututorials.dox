@@ -4,6 +4,18 @@ User tutorials explore machine vision functionalities provided by JeVois for end
 experience is required. When programming is used, usually it is to program other devices that will interact with the
 JeVois smart camera (e.g., an Arduino, or scripts runing on a host computer).
 
+Beginner-level tutorials
+------------------------
+
+- \subpage UserGettingStarted
+- \subpage UserArduinoIDE
+- \subpage UserParameters
+- \subpage UserColorTracking
+
+Advanced tutorials
+-------------------
+
+todo
 
 */
 

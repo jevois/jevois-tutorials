@@ -21,3 +21,7 @@ all: doc
 
 doc:
 	doxygen doc/doxygen.cfg
+
+docweb: doc
+	-/bin/rm -rf /lab/jevois/tutorials
+	-/bin/cp -arv doc/html /lab/jevois/tutorials

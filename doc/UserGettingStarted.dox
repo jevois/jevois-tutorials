@@ -1,0 +1,43 @@
+/*! \page UserGettingStarted Getting started with using the JeVois smart camera
+
+To use your JeVois camera, follow the instructions at [JeVois Start](http://jevois.org/start/start.html).
+
+Things to do in this tutorial:
+
+- Get your JeVois smart camera connected and working. Follow instructions here:
+  + [JeVois Start](http://jevois.org/start/start.html).
+  + \ref UserQuick
+  + \ref UserModes
+
+- Try the different machine vision modules listed in the [demos section of JeVois
+  Start](http://jevois.org/start/start.html#demos-section): For each module, select its video resolution in your video
+  capture software, then click on its name in the [demos section of JeVois
+  Start](http://jevois.org/start/start.html#demos-section) to see some explanations of what it can do and to try it out
+  with some sample images from the web or some objects that you have. For example:
+
+  + Select <b>YUYV 640x360 @ 30.0 fps</b> in your video capture software and check out [JeVois
+    Intro](http://jevois.org/moddoc/JeVoisIntro/modinfo.html). Follow the on-screen directions and see the videos below.
+
+  + Select <b>YUYV 320x286 @ 30.0 fps</b> in your video capture software and show some QR-codes to your JeVois smart
+    camera. For examples, see [Demo QR-Code](http://jevois.org/moddoc/DemoQRcode/modinfo.html) and click on the small QR
+    codes in there to display them bigger, then point your JeVois smart camera towards them.
+
+  + Select <b>YUYV 320x260 @ 30.0 fps</b> in your video capture software and show some ArUco markers to your JeVois
+    smart camera. For examples, see [Demo ArUco](http://jevois.org/moddoc/DemoArUco/modinfo.html) and click on the small
+    ArUco codes in there to display them bigger, then point your JeVois smart camera towards them.
+
+  + And so on. Just go down the list in the [demos section of JeVois
+  Start](http://jevois.org/start/start.html#demos-section) and try things out.
+
+- See the videos below where we play with some of these machine vision modules out of the box.
+  
+  
+\youtube{pfLlk30uF6Y}
+
+\youtube{HdmmU7385jY}
+
+\youtube{dK1-JbyrV3o}
+
+\youtube{sAGT_sj3188}
+
+*/

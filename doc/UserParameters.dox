@@ -1,0 +1,148 @@
+/*! \page UserParameters Changing machine vision parameters
+
+By connecting to the serial command-line interface of JeVois, you can issue commands (either interactively, or through a
+program) to modify how the machine vision algorithm currently running inside JeVois works.
+
+Here we will take the simple example of looking for different kinds of barcodes in the field of view of JeVois.
+
+\image html UserParametersQR.png
+
+Pre-requisites
+--------------
+
+You need to know how to stream video from JeVois, how to change video mode, and how to communicate with the serial
+command-line interface of JeVois.
+
+- \ref UserGettingStarted
+- \ref UserCli
+- \ref USBserialLinux
+- \ref USBserialWindows
+- \ref USBserialMac
+
+Getting started
+---------------
+
+- Connect JeVois to a host computer.
+
+- Start video capture software and select <b>YUYV 320x286 @ 30.0 fps</b> which should launch the [Demo
+  QR-Code](http://jevois.org/moddoc/DemoQRcode/modinfo.html) module.
+
+- Start a serial terminal and connect to the serial-over-USB port of JeVois.
+
+Listing the available parameters
+--------------------------------
+
+The [Demo QR-Code](http://jevois.org/moddoc/DemoQRcode/modinfo.html) module exposes sereral parameters that are
+described in its [documentation page](http://jevois.org/moddoc/DemoQRcode/modinfo.html), see the table of parameters
+below the screenshots on that page.
+
+Once the module is loaded and running (by selecting the appropriate video resolution in the host video capture
+software), you can also see the parameters by typing, in the serial terminal connected to JeVois:
+
+\verbatim
+help
+\endverbatim
+
+which lists all available parameters and commands; here, in particular, we find 3 parameters that are specific to the QR
+code decoding module:
+
+\verbatim
+QRcode/Barcode Options:
+  --ydensity (int) default=[1]
+    Scanner horizontal scan density (pixel stride), or 0 to disable
+       Exported By: DemoQRcode:qrcode
+
+  --xdensity (int) default=[1]
+    Scanner vertical scan density (pixel stride), or 0 to disable
+       Exported By: DemoQRcode:qrcode
+
+  --symbol (string) default=[ALL]
+    Type(s) of QR code / barcode symbols searched for, multiple entries are possible and should be separated by / characters. Selecting many symbol types or ALL will slow down processing. Supported symbols are: QRCODE, EAN2, EAN5, EAN8, EAN13, UPCE, UPCA, ISBN10, ISBN13, COMPOSITE, I25, DATABAR, DATABAREXP, CODABAR, CODE39, PDF417, CODE93, and CODE128
+       Exported By: DemoQRcode:qrcode value=[QRCODE]
+\endverbatim
+
+Changing a parameter
+--------------------
+
+Looking at the last line of the entry for \b symbol above, we see that the \p symbol parameter was set to value \b
+QRCODE; that is, the module is looking for 2-dimensional Quick-Response codes of the type shown in the module's
+[documentation page](http://jevois.org/moddoc/DemoQRcode/modinfo.html).
+
+Let's change that to \b ALL to decode all kinds of 1D barcodes as well, for example the ISBN barcode on a book:
+
+\verbatim
+setpar symbol ALL
+\endverbatim
+
+which should simply return
+
+\verbatim
+OK
+\endverbatim
+
+We can verify that the change took place in three ways:
+
+- type \c help again and check the \p symbol parameter as it is listed there. At the bottom of the descirption of the
+  parameter, note:
+  \verbatim
+  Exported By: DemoQRcode:qrcode value=[ALL]
+  \endverbatim
+  The value shown is the one we selected. This extra information is only shown when the selected value differs from the
+  default value.
+
+- Get the current value of the parameter, by typing:
+  \verbatim
+  getpar symbol
+  \endverbatim
+  which should return
+  \verbatim
+  engine:DemoQRcode:qrcode:symbol ALL
+  OK
+  \endverbatim
+  The reason why the returned parameter name is longer in the reply is because JeVois supports complex machine vision
+  modules which may include several instances of a same component algorithm. In such case, the longer name allows
+  unambiguous access to each parameter instance. For example, a new module might include two instances of the QRcode
+  algorithm component, one set for 2D QR codes and another trying, in parallel, to find 1D ISBN13 barcodes. For more
+  information about parameter names and descriptors, see the programmer documentation for \ref component.
+
+- Check in the video feed that the algorithm is now indeed detecting 1D barcodes as well: show it the barcode of a book
+  you have (or just search the web for ISBN13 and display some pictures of barcodes on your screen, then point JEVOIS to
+  them; make sure they are large enough), JeVois should now detect and report those.
+
+\image html UserParametersAll.png
+
+Setting default parameters
+--------------------------
+
+Once you have played with paremeters interactively, you may want to set some default values each time a given module is
+loaded. This is possible in JeVois through two configuration files, which are located in the directory of the module of
+interest (if the files are absent, then no action is taken by the module):
+
+- \b params.cfg - list of parameters settings that should be applied each time a module is loaded. Only parameters of
+  the module or its component algorithms can be set here. The parameters are set each time the module is loaded (e.g.,
+  the corresponding video resolution is selected by video capture software on the host computer).
+
+- \b script.cfg - this is a more general script that is run after the module is loaded and initialized. The script is in
+  the same form as you would type commands interactively in the command-line interface.
+
+For example, the default \b params.cfg for the DemoQRcode module is located in
+<b>JEVOIS:/modules/JeVois/DemoQRcode/params.cfg</b> on the MicroSD card and contains:
+
+\verbatim
+# Default parameters that are set upon loading the module
+
+# Only look for QR codes by default, faster than looking for any kind of barcode and qr-code:
+qrcode:symbol = QRCODE
+\endverbatim
+
+The effect is that, by default, we only scan for 2D QR-codes.
+
+The equivalent \b script.cfg would be in <b>JEVOIS:/modules/JeVois/DemoQRcode/script.cfg</b> and would contain:
+
+\verbatim
+setpar qrcode:symbol QRCODE
+\endverbatim
+
+For more information about \b params.cfg and \b script.cfg, see \ref ProgrammerSDK.
+
+*/

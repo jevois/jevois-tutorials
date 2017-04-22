@@ -1,0 +1,89 @@
+/*! \page UserColorTracking Tunning the color-based object tracker using a python graphical interface
+
+
+The color-based object tracker of JeVois is a simple but fast and effective way of tracking objects defined by a
+specific color. The behavior of the module can be fine-tuned by setting ranges for the hue (color tint), saturation
+(color fade), and value (color brightness) of the objects to track. While this can be achived by hand using the approach
+studies in \ref UserParameters, quickly one becomes tired of typing all the \c setpar commands.
+
+Here we write a simple graphical user interface in python to tune the parameters.
+
+Hence, in this tutorial you will learn:
+
+- How to tune the ObjectTracker module to track any color you like.
+- How to communicate with JeVois in a python script.
+- How to develop a simple python GUI with sliders that update JeVois parameters when they are modified.
+
+Getting started
+---------------
+
+- This tutorial assumes a Linux host computer.
+
+- Connect JeVois to a host computer.
+
+- Start video capture software and select <b>YUYV 320x254 @ 60.0 fps</b> which should launch the [Object
+  Tracker](http://jevois.org/moddoc/ObjectTracker/modinfo.html).
+
+- Start a serial terminal and connect to the serial-over-USB port of JeVois.
+
+Available parameters
+--------------------
+
+Typing \c help in your serial terminal or inspecting the documentation of [Object
+Tracker](http://jevois.org/moddoc/ObjectTracker/modinfo.html) reveals several parameters. Here we will focus on the \b
+hrange, \b srange, and \b vrange parameters, which define the range of hue, saturation, and value that we want to track.
+
+If you are not familiar with the HSV color space, check out this [Wikipedia
+page](https://en.wikipedia.org/wiki/HSL_and_HSV).
+
+Each of these three parameters is a range, that is, we can change them by specifying both the minimum and maximum
+values, separated by ..., for example, try:
+
+\verbatim
+setpar hrange 10...200
+\endverbatim
+
+A more user-friendly way
+------------------------
+
+We write a simple python script that will create some sliders that one can drag with the mouse. When the sliders are
+updates, we will send the appropriate \c setpar command to JeVois. Consider this starter python script, which is located
+in <b>~/jevois-tutorials/doc/snip/objectrackertuning.py</b>:
+
+\includelineno objectrackertuning.py
+
+We basically create 6 slider widgets (for the 3 ranges), and we attach a callback to each slider which will update the
+corresponding global variable and then send the corresponding updated range of values to JeVois.
+
+- Before you use the script, quit your serial terminal if you had started it, or you may get an error that the serial
+  port is busy.
+
+- Make sure you are currently grabbing video in <b>YUYV 320x254 @ 60.0 fps</b>, so that the ObjectTracker module is
+  loaded and running on JeVois.
+
+- Then run the script:
+  \verbatim
+  ~/jevois-tutorials//doc/snip/objectrackertuning.py 
+  \endverbatim
+  \note If you get some <b>permission denied</b> error, make sure you have permission to access the JeVois
+        serial-over-USB device (see \ref USBserialLinux)
+
+- You should see something like this:
+  \image html UserColorTrackingGUI.png
+
+- Go ahead and play with the sliders. Recommended approach is as follows:
+  + Widen all 3 ranges to 0...255 (that is, set Hue min to 0, Hue max to 255, etc)
+  + Point JeVois to a scene containing the object you are interested in, as well as a bunch of other objects that youare
+    not interested in. Indeed, our goal will be to detect the objects of interest while rejecting (not detectig) other
+    objects. The object should be big enough but not too big in the video captured by JeVois (another parameter in
+    ObjectTracker called \p objectarea is by default set to look for objects of size between roughly 20x20 and 100x100
+    pixels). The ObjectTracker module draws green contours around all regions that are within the specified HSV
+    range. Regions that also fit the area range are declared good detection and get an additional green circle drawn
+    onto them.
+  + Narrow down the Hue range (increase Hue min until just before you start losing the green contours around your
+    object, then decrease Hue max likewise).
+  + Then proceed with narrowing the Saturation and Value ranges.
+  + Look at your objects of interest and at other things from various viewpoints, etc and fine tune the ranges.
+
+*/
+
