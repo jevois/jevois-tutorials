@@ -1,17 +1,18 @@
-/*! \page UserColorTracking Tunning the color-based object tracker using a python graphical interface
+/*! \page UserColorTracking Tuning the color-based object tracker using a python graphical interface
 
 
 The color-based object tracker of JeVois is a simple but fast and effective way of tracking objects defined by a
 specific color. The behavior of the module can be fine-tuned by setting ranges for the hue (color tint), saturation
-(color fade), and value (color brightness) of the objects to track. While this can be achived by hand using the approach
-studies in \ref UserParameters, quickly one becomes tired of typing all the \c setpar commands.
+(color fade), and value (color brightness) of the objects to track. While this can be achived by hand, by using the
+approach studied in \ref UserParameters, quickly one becomes tired of typing many \c setpar commands while searching for
+appropriate settings of the 6 color-related parameters (hue min and max, saturation min and max, and value min and max).
 
 Here we write a simple graphical user interface in python to tune the parameters.
 
 Hence, in this tutorial you will learn:
 
 - How to tune the ObjectTracker module to track any color you like.
-- How to communicate with JeVois in a python script.
+- How to communicate with JeVois from a python script.
 - How to develop a simple python GUI with sliders that update JeVois parameters when they are modified.
 
 Getting started
@@ -46,24 +47,30 @@ setpar hrange 10...200
 A more user-friendly way
 ------------------------
 
-We write a simple python script that will create some sliders that one can drag with the mouse. When the sliders are
-updates, we will send the appropriate \c setpar command to JeVois. Consider this starter python script, which is located
-in <b>~/jevois-tutorials/doc/snip/objectrackertuning.py</b>:
+We write a simple python script that creates some sliders that one can drag with the mouse. When the sliders are
+updated, we send the appropriate \c setpar command to JeVois. Consider this starter python script, which is located in
+<b>~/jevois-tutorials/doc/snip/objectrackertuning.py</b>:
 
 \includelineno objectrackertuning.py
 
 We basically create 6 slider widgets (for the 3 ranges), and we attach a callback to each slider which will update the
 corresponding global variable and then send the corresponding updated range of values to JeVois.
 
+- If you have not already done so, get a copy of the JeVois tutorials by opening a terminal and typing <code>git clone
+  https://github.com/jevois/jevois-tutorials.git</code>
+
 - Before you use the script, quit your serial terminal if you had started it, or you may get an error that the serial
   port is busy.
+
+- Make sure the python TKinter and pySerial modules are installed, for example run <code>sudo apt-get install python
+  python-tk python-serial</code>
 
 - Make sure you are currently grabbing video in <b>YUYV 320x254 @ 60.0 fps</b>, so that the ObjectTracker module is
   loaded and running on JeVois.
 
 - Then run the script:
   \verbatim
-  ~/jevois-tutorials//doc/snip/objectrackertuning.py 
+  ~/jevois-tutorials/doc/snip/objectrackertuning.py 
   \endverbatim
   \note If you get some <b>permission denied</b> error, make sure you have permission to access the JeVois
         serial-over-USB device (see \ref USBserialLinux)
@@ -84,6 +91,29 @@ corresponding global variable and then send the corresponding updated range of v
     object, then decrease Hue max likewise).
   + Then proceed with narrowing the Saturation and Value ranges.
   + Look at your objects of interest and at other things from various viewpoints, etc and fine tune the ranges.
+
+
+Video of this tutorial in action
+--------------------------------
+
+\youtube{sVrbcfGwAgk}
+
+Where to go from here
+---------------------
+
+You can further improve upon this tutorial in many ways. Here are some suggestions:
+
+- Add widgets for the other parameters of the module, such as \p erodesize, \p dilatesize, etc
+
+- Combine the min and max values into a fancier widget for a range, maybe a slider with 2 cursors, if such thing exists.
+
+- Integrate the video capture into the python GUI, so that we do not have to start guvcview separately. Have a look <a
+  href="http://jevois.org/qa/index.php?qa=114">here</a> to get started. You will need to figure out how to handle video
+  streaming in parallel with the GUI, as in this tutorial we end up just passing the control to the GUI's main
+  loop. This <a
+  href="http://www.pyimagesearch.com/2016/05/30/displaying-a-video-feed-with-opencv-and-tkinter/">pyimagesearch
+  tutorial</a> may be a good starting point.
+
 
 */
 

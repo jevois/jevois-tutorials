@@ -1,0 +1,220 @@
+/*! \page User120fps Video recording at 120 frames/s and slow-motion effect
+
+
+Let's use the JeVois camera to capture some low-resolution video at 120 frames/s. This will give us
+a slow-motion effect when viewing the video at normal 30 frames/s rate.
+
+The SaveVideo module
+--------------------
+
+Start by inspecting the docs for the [SaveVideo module](http://jevois.org/moddoc/SaveVideo/modinfo.html). This module is
+the one we will use to record video to MicroSD.
+
+Activity 1 - capture with display
+---------------------------------
+
+We start by using SaveVideo in a mode with USB output, so we can check for proper operation using a video capture
+software on a host computer, and get a hang of it.
+
+- Connect your JeVois smart camera to a host computer using a mini-USB cable.
+
+- Start video capture software (see \ref User, if needed), and set to <b>YUYV 320x240 @ 60fps</b>, which should select
+the SaveVideo module if you are using the default <b>videomappings.cfg</b> on your MicroSD card.
+
+- Establish a serial-over-USB connection to the command-line interface of JeVois (see \ref UserCli, if needed).
+
+- Issue commands \c help, \c info, etc to make sure everything is ok with the command-line
+communication. On Linux, remember that if you get some error messages here, probably you need to kill
+<b>ModemManager</b> that may be bombarding JeVois with modem configuration commands that are interfering with your
+commands. See \ref USBserialLinux if needed.
+
+Observe how the captured video has an overlay that says, towards top: <b>SaveVideo: not recording</b>. Before we start,
+let us enable output messages to our serial-over-USB connection. Issue the following command to the JeVois command-line
+interface:
+
+\verbatim
+setpar serout USB
+\endverbatim
+
+Now, we will see serial output messages (messages issued by the running machine vision module and intended for user
+and/or Arduino consumption). See \ref UserCli for details about \b serout and \b serlog.
+
+The SaveVideo module has two extra commands, which are only available when that module is loaded. The commands thus become available in the command-line interface as you load the module (e.g., by selecting the resolution as we did above), and they disappear when that module is unloaded and another module is loaded. To check what the SaveVideo module provides, you should:
+
+- Check out the documentation page for the [SaveVideo Module](http://jevois.org/moddoc/SaveVideo/modinfo.html)
+
+- issue a command \c help in your serial terminal and observe the output, in particular, note these sections:
+
+\verbatim
+MODULE-SPECIFIC COMMANDS:
+
+start - start saving video
+stop - stop saving video and increment video file number
+
+\endverbatim
+
+and
+
+\verbatim
+PARAMETERS:
+
+Video Saving Options:
+  --fps (double) default=[30]
+    Video frames/sec as stored in the file and to be used both for recording and playback. Beware that the video writer will drop frames if you are capturing faster than the frame rate specified here. For example, if capturing at 120fps, be sure to set this parameter to 120, otherwise by default the saved video will be at 30fps even though capture was running at 120fps.
+       Exported By: SaveVideo
+
+  --fourcc (string) default=[MJPG] Regex:[^\w{4}$]
+    FourCC of the codec to use. The OpenCV VideoWriter doc is unclear as to which codecs are supported. Presumably, the ffmpeg library is used inside OpenCV. Hence any video encoder supported by ffmpeg should work. Tested codecs include: MJPG, MP4V, AVC1. Make sure you also pick the right filename extension (e.g., .avi for MJPG, .mp4 for MP4V, etc)
+       Exported By: SaveVideo
+
+  --filename (string) default=[video%06d.avi]
+    Name of the video file to write. If path is not absolute, /jevois/data/savevideo/ will be prepended to it. Name should contain a printf-like directive for one int argument, which will start at 0 and be incremented on each streamoff command.
+       Exported By: SaveVideo
+
+\endverbatim
+
+That is, SaveVideo has two custom commands (\c start and \c stop) and three parameters (\p fps, \p fourcc and \p
+filename).
+
+To start recording, issue the command
+
+\verbatim
+start
+\endverbatim
+
+and you should see how the top overlay now says \b RECORDING and the recorded file name is shown at the bottom of the
+video.
+
+\image html save-video.png
+
+Also note the messages in the command-line window:
+\verbatim
+SAVESTART
+OK
+SAVETO /jevois/data/savevideo/video000001.avi
+SAVEDNUM 100
+SAVEDNUM 200
+SAVEDNUM 300
+SAVEDNUM 400
+SAVEDNUM 500
+SAVEDNUM 600
+\endverbatim
+
+To stop recording, issue the command:
+
+\verbatim
+stop
+\endverbatim
+
+and the status at the top of the recorded video will switch back to <b>not recording</b>. You can start and stop as many
+times as you want. Each time, the name of the video file will be incremented. When you stop, the serial terminal will
+show messages like this:
+
+\verbatim
+SAVESTOP
+OK
+\endverbatim
+
+As noted in the documentation of the SaveVideo module, you should be aware of two things when attempting video recording
+at high frame rates:
+
+- If using a video mapping with USB output, the frame rate may be limited by the maximum rate at which the host computer
+  can grab and display. On many host computers, for example, the display refresh rate might be 60Hz. Using a video
+  capture software on these computers is likely going to limit the maximum display rate to 60 frames/s and that will in
+  turn limit the capture and saving rate. This is not an issue when using a video mapping with no USB output.
+
+- The \p fps parameter should be set to the rate at which you want to save video. If you capture at 60 frames/s
+  according to your video mapping but \p fps is set to 30, saving will be at 30 fps. This limitation of rate is done
+  internally by the OpenCV VideoWriter. So just make sure that you set the \p fps parameter to the rate at which you
+  want to save.
+
+Below we will explore high-frame-rate recording with no video output.
+
+
+Activity 2: Capture with no display
+-----------------------------------
+
+Let's try to record some video at 120 frames/s to get a cool slow-motion effect. We will use a very low resolution so do
+not expect great video quality as you would get on one of those $400 head-mounted action video cameras. Remember that
+JeVois is a machine vision device and the video it captures is intended for machine vision purposes rather than
+for aesthetic appeal.
+
+- First, quit your video capture software on the host computer if it is still running.
+
+- As noted in the SaveVideo module documentation, this module may suffer from DMA coherency artifacts if the \c camturbo
+  parameter of the jevois::Engine is turned on, which it is by default. The \c camturbo parameter relaxes some of the
+  cache coherency constraints on the video buffers captured by the camera sensor, which allows the JeVois processor to
+  access video pixel data from memory faster. But with modules that do not do much processing, sometimes this yields
+  video artifacts, we presume because some of the video data from previous frames still is in the CPU cache and hence is
+  not again fetched from main memory by the CPU.
+
+  To avoid seeing short stripes of what appears to be wrong pixel colors in the video, let us disable \c camturbo:
+  + Take the MicroSD card out of JeVois and connect to a computer
+  + edit <b>JEVOIS:/config/params.cfg</b> on the MicroSD card and in there turn \c camturbo to false.
+
+- Let's select a video mapping with 120 frames/s and no USB output. The Jevois camera sensor supports 120 fps at
+  resolutions 176x144 and 88x72. Because we will have no video output, here we can use the \c semapping2 command and
+  specify the desired camera resolution directly without the need to edit the \b videomappings.cfg file on the MicroSD
+  card. Try this:
+
+  \verbatim
+  setmapping2 YUYV 176 144 120.0 JeVois SaveVideo
+  setpar fps 120
+  streamon
+  \endverbatim
+
+  This will configure the camera sensor of JeVois for 176x144 capture at 120fps while using the SaveVideo module. We
+  also let the video writer know that we do want to not only capture, but also save the video at 120fps. Finally,
+  because we are using a video mapping with no USB output, we need to tell the camera to start streaming, as there sill
+  be no host computer to do that.
+
+- Now issue a \c start command and you will start recording at 120fps.
+
+- When done, issue a \stop command to make sure the recorded video file is properly closed and finalized.
+
+- Take the MicroSD card out of your JeVois camera and look in <b>JEVOIS:/data/savevideo/</b> on the card for recorded
+  video files.
+
+
+Here is a sample video, first recorded at 30 frames/s and then at 120 frames/s:
+
+30 frames/s video:
+
+\youtube{pBw71K4ViS4}
+
+120 frames/s video:
+
+\youtube{r-vjA9-Fobs}
+
+\note One caveat you should be aware of: On some modern operating systems (e.g., latest Mac OSX) a video that has been
+recorded at 120fps may still play at its true-to-life speed as opposed to giving you the slow-motion effect. The player
+(e.g., Quicktime player) will just drop frames to achieve the video frame rate that is indicated inside the file. Thus,
+both the 120fps and the 30fps movies at first looked identical when playing on a Mac. We had to first decode them to
+individual frames, and then recode those frames into movies with declared 30fps rate to see the slow-motion effect in
+the 120fps movie.
+
+
+Activity 3: Starting the video saving when JeVois is plugged in
+---------------------------------------------------------------
+
+To start saving immediately as soon as JeVois is plugged in, we just copy the commands above into
+<b>JEVOIS:/config/initscript.cfg</b>. This script is run as soon as JeVois starts. Hence, edit \b initscript.cfg to
+contain:
+
+\verbatim
+setmapping2 YUYV 176 144 120.0 JeVois SaveVideo
+setpar fps 120
+streamon
+start
+\endverbatim
+
+and now, each time you power your JeVois smart camera, it will record and save video to the MicroSD card.
+
+You do not need a host computer anymore, and you can power JeVois from a USB phone charger or a USB battery bank.
+
+One caveat is that you will likely not issue the \c stop command, but instead you will just unplug JeVois when done. The
+video file will not be cleanly closed. With MP4 video, this is ok, the file can still be played up to the point where it
+was interrupted.
+
+*/
+

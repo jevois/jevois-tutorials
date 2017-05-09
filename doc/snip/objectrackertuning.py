@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# Needed packages: sudo apt-get install python python-tk
+# Needed packages: sudo apt-get install python python-tk python-serial
 
 # This tutorial is a simple program that allows one to adjust the hue, saturation, and value ranges of the ObjectTracker
 # module using sliders

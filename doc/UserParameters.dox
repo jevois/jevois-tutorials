@@ -10,6 +10,9 @@ Here we will take the simple example of looking for different kinds of barcodes 
 Pre-requisites
 --------------
 
+\note We fixed a couple of bugs in JeVois while writing this tutorial, so be sure to download the JeVois MicroSD Image
+v1.0c or later from http://jevois/start/start.html, which was published on April 24, 2017.
+
 You need to know how to stream video from JeVois, how to change video mode, and how to communicate with the serial
 command-line interface of JeVois.
 
@@ -87,8 +90,8 @@ We can verify that the change took place in three ways:
   \verbatim
   Exported By: DemoQRcode:qrcode value=[ALL]
   \endverbatim
-  The value shown is the one we selected. This extra information is only shown when the selected value differs from the
-  default value.
+  The value shown is the one we selected. This extra information about th eparameter's value is only shown when the
+  currently selected value differs from the default value.
 
 - Get the current value of the parameter, by typing:
   \verbatim
@@ -102,12 +105,12 @@ We can verify that the change took place in three ways:
   The reason why the returned parameter name is longer in the reply is because JeVois supports complex machine vision
   modules which may include several instances of a same component algorithm. In such case, the longer name allows
   unambiguous access to each parameter instance. For example, a new module might include two instances of the QRcode
-  algorithm component, one set for 2D QR codes and another trying, in parallel, to find 1D ISBN13 barcodes. For more
+  algorithm component, one set for 2D QR codes and another trying, in parallel, to find 1D ISBN10 barcodes. For more
   information about parameter names and descriptors, see the programmer documentation for \ref component.
 
 - Check in the video feed that the algorithm is now indeed detecting 1D barcodes as well: show it the barcode of a book
-  you have (or just search the web for ISBN13 and display some pictures of barcodes on your screen, then point JEVOIS to
-  them; make sure they are large enough), JeVois should now detect and report those.
+  you have (or just search the web for 'ISBN barcode' and display some pictures of barcodes on your screen, then point
+  JEVOIS to them; make sure they are large enough), JeVois should now detect and report those.
 
 \image html UserParametersAll.png
 

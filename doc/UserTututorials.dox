@@ -11,6 +11,8 @@ Beginner-level tutorials
 - \subpage UserArduinoIDE
 - \subpage UserParameters
 - \subpage UserColorTracking
+- \subpage User120fps
+- \subpage UserPanTilt
 
 Advanced tutorials
 -------------------
