@@ -1,0 +1,1347 @@
+/*! \page ProgrammerSurprise Surprise-based surveillance camera
+
+JeVois can directly process video input from its camera sensor, and record results to microSD. Here we will develop a
+new module, which records a short video clip each time a surprising event is detected in the video stream, so that the
+event is captured to microSD. This is an enhanced version of standard motion-based video surveillance systems, which
+only record video when things are moving. One drawback of such systems is that repetitive motions, such as foliage
+moving in the wind, easily trip the motion detection algorithm and could potentially trigger recording of a lot of
+data.
+
+This tutorial will show you how to
+----------------------------------
+
+- Create a new JeVois component within jevoisbase
+- Create a new JeVois module within jevoisbase
+- Compile, install and test on your host computer first
+- Then cross-compile, install and test on your JeVois smart camera
+- Use the jevois::Profiler to profile execution of your code
+- Use pre-recorded video to fine-tune your algorithm
+
+Theory of operation
+-------------------
+
+We will use Itti & Baldi's theory of surprise to detect surprising events in video.
+
+They defined surprise in a formal, quantitative manner (for the first time!), as follows: An observation is surprising
+if it significantly affects the internal (subjective) beliefs of an observer. For example, if I believe that there is a
+10% chance of rain today (my prior belief), and then I look outside and I see only a few small scattered clouds, then I
+may still believe in that same 10% chance of rain (posterior belief after the observation). My observation was not
+surprising, and Itti & Baldi say that this is because it did not affect my beliefs. Formally, when my posterior beliefs
+after an observation are very similar to what my prior beliefs were before the observation, the observation carries no
+surprise. In contrast, if I see a sky covered with menacing dark clouds all over, I may revise my belief to a 80% chance
+of rain today. Because my posterior beliefs are now much different than my prior beliefs (80% vs 10% chance of rain),
+the observation of clouds is said to carry a high surprise. Itti & Baldi further specify how to compute surprise by
+using Bayes' theorem to compute posterior beliefs in a principled way, and by using the Kullback-Leibler (KL) divergence
+to measure the difference between posterior and prior distributions of beliefs. This gives rise to a new quantitative
+measure of surprise, with a new unit, the \a wow (one wow of surprise is experienced when your belief in something
+doubles).
+
+For more information, check out [L. Itti, P. F. Baldi, Bayesian Surprise Attracts Human Attention, Vision Research,
+  Vol. 49, No. 10, pp. 1295-1306, May 2009](http://ilab.usc.edu/publications/doc/Itti_Baldi09vr.pdf)
+
+Here, we will:
+
+- Grab video frames;
+
+- Compute feature maps and a saliency map. These will provide some degree of invariance and robustness to noise, which
+  will yield more stable overall results than if we were to compute surprise directly over RGB pixel values (see next
+  point);
+
+- Compute surprise in each pixel of each feature map. This is similar to what Itti & Baldi did but simplified to run in
+  real time on the JeVois smart camera. Each pixel in each feature map will over time gather beliefs about what it
+  usually 'sees' at that location in the video. When things change significantly and in a surprising way, that pixel
+  will emit a local surprise signal. Because surprise is more complex than just computing an instantaneous difference,
+  or measuring whether the current observation simply is an outlier to a learned distribution, it will be able to handle
+  periodic motions (foliage in the wind, ripples on a body of water), periodic flickers (a constantly blinking light in
+  the field of view), and noise;
+
+- Aggregate into a single overall surprise value (we will simply take the max over all locations);
+
+- When overall surprise crosses a threshold, we will trigger recording of video frames. To provide context, we will use
+  a rolling buffer of frames so that we always record +/- 10 seconds of video around each surprising event;
+
+- Thus, the expected output of this module is a series of short video clips recorded to microSD, one for each surprising
+  event that occurred.
+
+This approach is related to [R. C. Voorhies, L. Elazary, L. Itti, Neuromorphic Bayesian Surprise for Far-Range Event
+Detection, In: Proc. 9th IEEE International Conference on Advanced Video and Signal-Based Surveillance, Beijing, China,
+Sep 2012](http://ilab.usc.edu/publications/doc/Voorhies_etal12avss.pdf)
+
+Plan of attack
+--------------
+
+- We will use the \ref Saliency component provided by jevoisbase.
+
+- We will use an approach similar to that of the \ref SaveVideo module of jevoisbase to buffer and save video frames to
+  MicroSD.
+
+- Because of the dependency on Saliency, we will create our new module inside jevoisbase.
+
+- We will first create a new component to compute surprise, which will use Saliency as a sub-component. While not
+  strictly necessary, creating a component for our surprise detector will allow others to easily build new modules that
+  can do other things triggered by surprise.
+
+- Then we will create a new module for our surprise-based video recorder.
+
+\note Because the result of this tutorial is expected to be useful to many, the source code has been committed into
+jevoisbase, and hence all the code for this tutorial is already in jevoisbase. However, this tutorial was written while
+that code was developed and before it was committed, to make sure that all the steps are detailed and explained.
+
+
+Surprise component
+------------------
+
+<ul>
+
+<li>We first create a new component and name it Surprise. Because it is closely related to \ref Saliency, we will just
+place it in <b>jevoisbase/src/Components/Saliency/</b> together with the Saliency component. We need \b Surprise.H and
+\b Surprise.C here so that users of our component will just include \b Surprise.H in their own components or modules. By
+placing the source under <b>jevoisbase/src/Components/</b> we ensure that the jevoisbase build rules (CMake) will
+automatically detect it and compile it into \b Surprise.o, which will also automatically be linked into the \b
+libjevoisbase.so library that contains all the components of jevoisbase. This is the result of the following line in the
+\b CMakeLists.txt of jevoisbase:
+
+\verbatim
+jevois_setup_library(src/Components jevoisbase 1.0)
+\endverbatim
+
+which instructs CMake to build a new library called \b libjevoisbase.so from all the source files under
+<b>src/Components/</b> (recursively).
+</li>
+
+<li>We start \b Surprise.H with two statements:
+\code
+#pragma once
+
+#include <jevoisbase/src/Components/Saliency/Saliency.H>
+\endcode
+
+The first one tells the compiler to not include this file again if it was already included, thereby simplifying how
+people will use our component (they will not get errors about duplicate definitions if somehow \b Surprise.H ends up
+being included twice, maybe because it is used by two higher-level components that are both used in an even higher-level
+component). The second one will allow us to use the \ref Saliency component in our component. Because \ref Saliency
+already is a Component, including \b Saliency.H will automatically pull in the whole Component, Parameter, etc machinery
+of JeVois and hence no further include statement is needed here for now.
+
+<li>We then declare a new class \b Surprise that derives from \ref jevois::Component. We do not place it into any
+namespace since all of jevoisbase is just in the global namespace (it is end-user code). In the documentation for the
+new component, we make sure to include a statement:
+
+\verbatim
+\ingroup components
+\endverbatim
+so that our component gets listed under all the components of jevoisbase in the online documentation of jevoisbase.
+
+We thus start like this:
+\code
+//! Compute Itti & Baldi surprise over video frames
+/*! This component detects surprising events in video frames using Itti & Baldi's Bayesian theory of surprise.
+
+    [more doc ...]
+
+    \ingroup components */
+class Surprise : public jevois::Component
+{
+  public:
+    //! Constructor
+    Surprise(std::string const & instance);
+
+    //! Virtual destructor for safe inheritance
+    ~Surprise();
+};
+\endcode
+</li>
+
+<li>Note how our new component \b Surprise does not derive from \b Saliency, but rather derives directly from \ref
+jevois::Component. Indeed, in the JeVois framework, we use composition to create hierarchies of components as opposed to
+using inheritance. This is to avoid possibly ambiguous inheritance chains with respect to parameters (remember that
+JeVois components inherit from all of their parameters, as explained in \ref parameter). Thus, \b Surprise will instead
+contain a \b Saliency sub-component.
+
+Although lookup functions are provided by \ref jevois::Component to find sub-components by name, it is usually a good
+idea to maintain a redundant but more direct handle to the sub-components which we will oftern use. Hence, we add the
+following to our class:
+
+\code
+  protected:
+    std::shared_ptr<Saliency> itsSaliency;
+\endcode
+
+and we initialize it in our constructor, while the destructor does nothing for now. Thus \b Surprise.C looks like this
+now:
+
+\code
+Surprise::Surprise(std::string const & instance) :
+    jevois::Component(instance)
+{
+  itsSaliency = addSubComponent<Saliency>("saliency");
+}
+
+Surprise::~Surprise()
+{ }
+
+\endcode
+
+Note how all the parameters of \b Saliency (for scales, weights of the different features, etc) are now exposed and
+accessible to users of \b Surprise, with no work required from us thanks to the JeVois Component and Parameter
+framework. This is a big leap forward compared to using functions with many parameters as done, e.g., in OpenCV, which
+would require us here to manually expose and forward all these parameters. See the doc of \ref jevois::Component and
+[Parameter in JeVois](/doc/classjevois_1_1Parameter_3_01Param_00_01Tail_8_8_8_4.html) for more explanations.  </li>
+
+<li>Let us run a
+\verbatim
+./rebuild-host.sh
+\endverbatim
+
+now from inside <b>~/jevoisbase</b> to make sure that CMake detects our new files
+<b>src/Components/Saliency/Surprise.H</b> and <b>src/Components/Saliency/Surprise.C</b> and compiles them. 
+
+We only need to do this full rebuild once to update the CMake cache. Later, as we continue to develop our component, we
+can just change directory to \b hbuild and simply type \c make to re-compile only what we have changed and not the whole
+\b jevoisbase.
+
+We will first fully develop and build our new component for \b host, which is easier and faster than cross-compiling for
+the JeVois ARM processor. Once everything works well on the host computer, we will move on to cross-compiling for
+platform hardware.
+</li>
+
+
+<li>Now for the actual work: Here we want a single function that will take a video frame in and will return a surprise
+value, which will be the value of the most surprising location in the video frame. It will first compute saliency and
+feature maps using our \ref Saliency sub-component, and will the compute surprise on those maps. We model or processing
+function to match one of the functions in \ref Saliency since we will directly pass our received video frame to \ref
+Saliency. Thus, we declare a new member function in \b Surprise.H:
+
+\code
+    //! Compute surprise from a YUYV video frame and return the surprise value in wows
+    double process(jevois::RawImage const & input);
+\endcode
+
+and we implement it in \b Surprise.C:
+
+\code
+double Surprise::process(jevois::RawImage const & input)
+{
+  // Compute feature maps and saliency maps, no gist. Results are stored in the Saliency class:
+  itsSaliency->process(input, false);
+
+  // Compute surprise over the maps:
+  double surprise = 0.0F;
+
+
+  // TODO: add surprise computed over each feature map
+  
+  return surprise;
+}
+\endcode
+
+Note how Saliency::process() could throw if something goes wrong. Here, we do not worry about it since we have not
+allocated any resource that could be leaked if we were to exit through an exception. See \ref ModuleTips for more info.
+
+Typing \c make in <b>~/jevoisbase/hbuild/</b> still compiles fine at this point.
+</li>
+
+<li>Following Itti & Baldi, 2009, here we will assume Poisson data (spikes from neurons representing the feature values)
+and we will hence naturally use a Gamma conjugate prior. Under these conditions, surprise can be computed in closed form
+(see Itti & Baldi, 2009). The Gamma distribution has two parameters, alpha and beta - these will basically capture, at
+each pixel in each feature map, our beliefs about how this feature pixel usually looks like. We will here update this
+belief over time, each time a new video frame is received. If a given video frame yields a big update, we will conclude
+that something surprising just happened.
+
+To compute surprise over the salmap, intens, color, ori, flicker, and motion maps that are inside the \ref Saliency
+component, we will need to store two corresponding arrays: one for the prior alpha, and one for the prior beta for each
+pixel of each map. We will then update those arrays, pixel-by-pixel, treating the maps from \ref Saliency as new data
+observations, and assuming that the single value received from the Saliency component represents the mean of a
+Poisson-distributed spike train. Our prior alpha and beta arrays will then become posterior alpha and beta arrays
+through Bayesian update using the data, and we will compute surprise from the KL divergence between prior and
+posterior. Note (see paper for details) that our choice of a Gamma prior guarantees that, after an update using Poisson
+data, the posterior is also Gamma (i.e., Gamma is the conjugate prior for Poisson). We will then transfer the posterior
+arrays for the current frame into the prior arrays stored in our class for the next frame.
+
+Here we will just compute surprise independently for each pixel in each feature map. Thus, the 2D structure of the
+saliency feature maps will not be exploited. We need \b float or \b double values for alpha and beta to accurately
+compute surprise, let us use float here. Thus, we could possibly just use <b>std::array<float></b> to store alpha and
+beta maps as 1D arrays, except for one detail: we do not know the feature map sizes until the first video frame has
+been processed through saliency.
+
+So we need dynamically-sized arrays and can we just use <b>std::vector<float></b>. This is preferred to just using a raw
+C array because the memory will be automatically freed by the vector destructor when our component is destroyed, thus we
+do not have to worry about freeing it, about exceptions, memory leaks, etc by using <b>std::vector<float></b> as opposed
+the using raw <b>float *</b> and \c new and \c delete.
+
+One final thing to note is that the map of origin will also not be important for surprise computation here, we will just
+compute surprise independently for every pixel of every map. So we can just concatenate all the pixels of all maps into
+a single vector of data, and likewise for alpha and beta. We hence add the following data members to our class under
+the \b protected section:
+
+\code
+    std::vector<float> itsAlpha, itsBeta;
+\endcode
+
+Yes, we could have used a vector of pairs, or created an auxiliary (alpha, beta) struct as well, but access is
+probably faster with our 2 vectors. We start fleshing out our <b>process()</b> function as follows:
+
+
+\code
+float Surprise::process(jevois::RawImage const & input)
+{
+  float const updatefac = 0.95F; // surprise update factor on each video frame
+
+  // Compute feature maps and saliency maps, no gist. Results are stored in the Saliency class:
+  itsSaliency->process(input, false);
+
+  // Compute surprise over the maps:
+  float surprise = 0.0F;
+
+  // Aggregate our data values from all maps. These maps are small, no need to parallelize:
+  std::vector<float> data;
+  intg32 * pix = itsSaliency->salmap.pixels; size_t siz = env_img_size(&itsSaliency->salmap);
+  for (size_t i = 0; i < siz; ++i) data.push_back(pix[i]);
+
+  pix = itsSaliency->intens.pixels; siz = env_img_size(&itsSaliency->intens);
+  for (size_t i = 0; i < siz; ++i) data.push_back(pix[i]);
+
+  pix = itsSaliency->color.pixels; siz = env_img_size(&itsSaliency->color);
+  for (size_t i = 0; i < siz; ++i) data.push_back(pix[i]);
+
+  pix = itsSaliency->ori.pixels; siz = env_img_size(&itsSaliency->ori);
+  for (size_t i = 0; i < siz; ++i) data.push_back(pix[i]);
+ 
+  pix = itsSaliency->flicker.pixels; siz = env_img_size(&itsSaliency->flicker);
+  for (size_t i = 0; i < siz; ++i) data.push_back(pix[i]);
+
+  pix = itsSaliency->motion.pixels; siz = env_img_size(&itsSaliency->motion);
+  for (size_t i = 0; i < siz; ++i) data.push_back(pix[i]);
+
+  // Initialize the prior if this is our first frame, or frame size or map size just changed somehow. We initialize
+  // alpha and beta as in the SurpriseModelSP of the iLab Neuromorphic C++ Vision Toolkit, from which this
+  // implementation is derived. Also see Itti & Baldi, Vis Res, 2009, for details:
+  if (itsAlpha.size() != data.size())
+  {
+    itsAlpha.clear(); itsBeta.clear();
+    for (size_t i = 0; i < data.size(); ++i)
+    {
+      itsAlpha.push_back(data[i] / (1.0F - updatefac));
+      itsBeta.push_back(1.0F / (1.0F - updatefac));
+    }
+  }
+
+  // more to come...
+    
+  return surprise;
+}
+\endcode
+</li>
+
+<li>At this point we realize two things: 1) the update factor \b updatefac could be a Parameter of our component; 2) how
+about also computing surprise on the gist vector, while we are at it, if the users want it? Let us add these two
+features. First a parameter for \b updatefac:
+
+In \b Saliency.H, we create a namespace \b surprise that we will use for our parameters. This is to avoid clashes among
+different components that could be used jointly in a given higher-level component (some other compnent may also have a
+parameter named \b updatefac). Convention here is to use the lowercase version of the class name as namespace name for
+its parameters. We create a parameter category so all our parameters will be grouped together when users type \c help,
+and note the \b \\relates directive to instruct doxygen to relate the parameter to our class in the online documentation:
+
+\code
+namespace surprise
+{
+  static jevois::ParameterCategory const ParamCateg("Surprise Options");
+
+  //! Parameter \relates Surprise
+  JEVOIS_DECLARE_PARAMETER(updatefac, float, "Surprise update factor on every video frame", 0.95F,
+                           jevois::Range<float>(0.001F, 0.999F), ParamCateg);
+
+  //! Parameter \relates Surprise
+  JEVOIS_DECLARE_PARAMETER(dogist, bool, "Include gist values in surprise computation", true, ParamCateg);
+}
+\endcode
+
+Remember that the format of \c JEVOIS_DECLARE_PARAMETER() is:
++ parameter name
++ parameter type
++ description
++ default value
++ optional: specification of valid values; here we spaeified a valid range for \b updatefac and nothing for \b dogist.
++ category for grouping in the help message.
+
+We then add these two parameters to our Component:
+
+\code
+class Surprise : public jevois::Component,
+                 public jevois::Parameter<surprise::updatefac, surprise::dogist>
+{
+  //...
+\endcode
+
+and we use them in our process function:
+
+\code
+float Surprise::process(jevois::RawImage const & input)
+{
+  // delete: float const updatefac = 0.95F; // surprise update factor on each video frame
+
+  // ...
+  itsSaliency->process(input, dogist::get());
+
+  // ...
+      itsAlpha.push_back(data[i] / (1.0F - updatefac::get()));
+      itsBeta.push_back(1.0F / (1.0F - updatefac::get()));
+
+  // ...
+\endcode
+
+That's it. These parameters will now appear in the \c help message, users will able to set and get their values, and
+every component or module that includes our Surprise component as a sub-component will also expose them!
+
+We update our function to concatenate the gist vector to the data:
+
+\code
+  // ...
+  pix = itsSaliency->motion.pixels; siz = env_img_size(&itsSaliency->motion);
+  for (size_t i = 0; i < siz; ++i) data.push_back(pix[i]);
+
+  if (dogist::get())
+  {
+    unsigned char * g = itsSaliency->gist;
+    for (size_t i = 0; i < itsSaliency->gist_size; ++i) data.push_back(g[i]);
+  }
+\endcode
+
+A quick \c make and all still compiles fine. No need to mess around with cross-compilers, microSD cards, etc at this
+point thanks to the simultaneous host/platform development environment of JeVois.
+</li>
+
+<li>All right, so we just need to compute surprise, we do here as in the SurpriseModelSP of the iLab Neuromorphic C++
+Vision Toolkit, from which our implementation here is derived. Also see Itti & Baldi, Vis Res, 2009, for details:
+
+\code
+  size_t const datasiz = data.size(); // final data size
+
+  // Compute posterior and KL, independenly for every entry in our vectors. Here we assume Poisson data and a Gamma
+  // conjugate prior, as in Itti & Baldi, Vision Research, 2009:
+  for (size_t i = 0; i < datasiz; ++i)
+  {
+    // First, decay alpha and beta. Make sure alpha does not decay all the way to 0:
+    float alpha = itsAlpha[i] * ufac, beta = itsBeta[i] * ufac;
+    if (alpha < 1.0e-5F) alpha = 1.0e-5F;
+
+    // Compute the posterior:
+    float const newAlpha = alpha + val;
+    float const newBeta  = beta  + 1.0F;
+
+    // Surprise is KL(new || old). Keep track of the max value found over the data array:
+    double const s = std::abs(KLgamma<double>(newAlpha, newBeta, alpha, beta, true));
+    if (s > surprise) surprise = s;
+    
+    // The posterior becomes our new prior for the next video frame:
+    itsAlpha[i] = newAlpha; itsBeta[i] = newBeta;
+  }
+
+  // Return max number of wows found over the whole data array:
+  return surprise;
+\endcode
+
+We just need to implement the helper function \c KLgamma() and we are done. This is the closed-form solution for
+surprise on a Gamma prior. It ends up using hundreds of lines of code of no interest here. We just rip that code from
+the Itti & Baldi implementation.
+</li>
+
+<li>One last imporvement before we are done with our component: instead of just a boolean \p dogist, how about allowing
+users to choose which channels or combinations they like. We replace \p dogist by:
+
+\code
+  //! Parameter \relates Surprise
+  JEVOIS_DECLARE_PARAMETER(channels, std::string, "Channels to use for suprise computation: any combination of "
+                           "S (saliency), G (gist), C (color), I (intensity), O (orientation), F (flicker), and "
+                           "M (motion). Duplicate letters will be ignored.",
+                           "SCIOFMG", boost::regex("^[SCIOFMG]+$"), ParamCateg);
+\endcode
+
+The regex specification of valid values specifies that we want a string composed exclusively of the allowed letters, and
+with at least one letter. We modify the class parameter list to use this parameter instead of \p dogist, and we modify
+the \c process() function:
+
+\code
+float Surprise::process(jevois::RawImage const & input)
+{
+  std::string const chans = channels::get();
+
+  // Compute feature maps and saliency maps, possibly gist. Results are stored in the Saliency class:
+  itsSaliency->process(input, (chans.find('G') != chans.npos));
+
+  // Aggregate our data values from all maps. These maps are small, no need to parallelize:
+  std::vector<float> data; std::string done;
+
+  for (char c : chans)
+  {
+    if (done.find(c) != done.npos) continue; // skip duplicates
+    done += c; // mark this channel as done
+    intg32 * pix; size_t siz;
+
+    switch (c)
+    {
+    case 'S': pix = itsSaliency->salmap.pixels; siz = env_img_size(&itsSaliency->salmap); break;
+    case 'I': pix = itsSaliency->intens.pixels; siz = env_img_size(&itsSaliency->intens); break;
+    case 'C': pix = itsSaliency->color.pixels; siz = env_img_size(&itsSaliency->color); break;
+    case 'O': pix = itsSaliency->ori.pixels; siz = env_img_size(&itsSaliency->ori); break;
+    case 'F': pix = itsSaliency->flicker.pixels; siz = env_img_size(&itsSaliency->flicker); break;
+    case 'M': pix = itsSaliency->motion.pixels; siz = env_img_size(&itsSaliency->motion); break;
+    case 'G':
+    {
+      unsigned char const * g = itsSaliency->gist;
+      for (size_t i = 0; i < itsSaliency->gist_size; ++i) data.push_back(g[i]);
+      continue;
+    }
+    default: continue; // should never happen given our regex spec for the parameter
+    }
+
+    // Concatenate the data if it was not gist:
+    for (size_t i = 0; i < siz; ++i) data.push_back(pix[i]);
+  }
+
+  //...
+\endcode
+</li>
+
+</ul>
+
+We are done with the Surprise component. Final code is in \ref Surprise.H and \ref Surprise.C and should be pretty close
+to what we have developed above, except for small optimizations introduced after this tutorial was written. The details
+of \c KLgamma() are also in there.
+
+SurpriseRecorder module
+-----------------------
+
+We are now ready to develop a new module, which we will call \b SurpriseRecorder. It will compute surprise and record to
+microSD small video snippets around each detected surprising event.
+
+To get started, we:
+
+<ul>
+
+<li>Create a directory <b>jevoisbase/src/Modules/SurpriseRecorder</b> and start a file
+<b>jevoisbase/src/Modules/SurpriseRecorder/SurpriseRecorder.C</b>
+
+Since modules are terminal entities (nobody will use-them as subs), we usually develop them in Java-style, i.e., in a
+single .C file that contains declarations and implementation.
+</li>
+
+<li>Our module will use the Surprise component, so we pull it in. We also include \b Module.H from jevois:
+\code
+#include <jevois/Core/Module.H>
+#include <jevoisbase/src/Components/Saliency/Surprise.H>
+\endcode
+</li>
+
+<li>We start our class as a JeVois Module. We fill in custom doxygen tags that will be used to generate the module's
+documentation page (see \ref ProgrammerSDK).
+
+\code
+//! Surprise-based recording of events
+/*! This module detects surprising events in the live video feed from the camera, and records short video clips of each
+    detected event.
+
+    @author Laurent Itti
+
+    @videomapping NONE 0 0 0 YUYV 640 480 15.0 JeVois SurpriseRecorder
+    @email itti\@usc.edu
+    @address University of Southern California, HNB-07A, 3641 Watt Way, Los Angeles, CA 90089-2520, USA
+    @copyright Copyright (C) 2016 by Laurent Itti, iLab and the University of Southern California
+    @mainurl http://jevois.org
+    @supporturl http://jevois.org/doc
+    @otherurl http://iLab.usc.edu
+    @license GPL v3
+    @distribution Unrestricted
+    @restrictions None
+    \ingroup modules */
+class SurpriseRecorder : public jevois::Module
+{
+  public:
+
+  // ...
+\endcode
+
+Note how for now we are aiming to only support modes with no video out over USB. That is, this module is mainly geared
+towards standalone operation: one lets it run for a day, then one checks out the video snippets that were recorded on
+the microSD. No live output is needed. Thus, we will override the \c process() function of jevois::Module that only
+takes an input frame in (and no output frame). The jevois::Engine will call this function for each new video frame from
+the camera sensor.  </li>
+
+<li>At some point, also remember to add an icon file, maybe some screenshots, etc to your module, as explained in
+\ref ProgrammerSDK</li>
+
+<li>We get going with constructor and destructor and a skeleton for the \c process() function. Our module will use a
+Surprise sub-component. We do not forget to register the module with the JeVois framework so it can be loaded at runtime
+into the JeVois engine (see last line and the \ref JEVOIS_REGISTER_MODULE() macro):
+
+\code
+class SurpriseRecorder : public jevois::Module
+{
+  public:
+    // ####################################################################################################
+    //! Constructor
+    // ####################################################################################################
+    SurpriseRecorder(std::string const & instance) : jevois::Module(instance)
+    { itsSurprise = addSubComponent<Surprise>("surprise"); }
+
+    // ####################################################################################################
+    //! Virtual destructor for safe inheritance
+    // ####################################################################################################
+    virtual ~SurpriseRecorder()
+    { }
+
+    // ####################################################################################################
+    //! Processing function, version with no video output
+    // ####################################################################################################
+    void process(jevois::InputFrame && inframe) override
+    {
+      // TODO
+    }
+    
+  protected:
+    std::shared_ptr<Surprise> itsSurprise;
+};
+
+// Allow the module to be loaded as a shared object (.so) file:
+JEVOIS_REGISTER_MODULE(SurpriseRecorder);
+\endcode
+</li>
+
+<li>Let's try to compile. Like with our Component before, the first time we add the new file, we need to re-run CMake,
+by simply running a full:
+
+\verbatim
+./rebuild-host.sh
+\endverbatim
+
+The rebuild script will detect the new module under <b>jevoisbase/src/Modules/</b> and will add it to the list of
+modules to build. Later, as we keep editing our module file, we can just type \c make from within the \b hbuild
+directory.
+</li>
+
+<li>Let's add a few parameters. Because modules are terminal entities, we do not need to place them in a namespace. We
+take inspiration from the \ref SaveVideo module:
+
+\code
+static jevois::ParameterCategory const ParamCateg("Surprise Recording Options");
+
+#define PATHPREFIX "/jevois/data/surpriserecorder/"
+
+//! Parameter \relates SurpriseRecorder
+JEVOIS_DECLARE_PARAMETER(filename, std::string, "Name of the video file to write. If path is not absolute, "
+                         PATHPREFIX " will be prepended to it. Name should contain a printf-like directive for "
+                         "one int argument, which will start at 0 and be incremented on each streamoff command.",
+                         "video%06d.avi", ParamCateg);
+
+//! Parameter \relates SurpriseRecorder
+JEVOIS_DECLARE_PARAMETER(fourcc, std::string, "FourCC of the codec to use. The OpenCV VideoWriter doc is unclear "
+                         "as to which codecs are supported. Presumably, the ffmpeg library is used inside OpenCV. "
+                         "Hence any video encoder supported by ffmpeg should work. Tested codecs include: MJPG, "
+                         "MP4V, AVC1. Make sure you also pick the right filename extension (e.g., .avi for MJPG, "
+                         ".mp4 for MP4V, etc)",
+                         "MJPG", boost::regex("^\\w{4}$"), ParamCateg);
+
+//! Parameter \relates SurpriseRecorder
+JEVOIS_DECLARE_PARAMETER(fps, double, "Video frames/sec as stored in the file and to be used both for recording and "
+                         "playback. Beware that the video writer will drop frames if you are capturing faster than "
+                         "the frame rate specified here. For example, if capturing at 120fps, be sure to set this "
+                         "parameter to 120, otherwise by default the saved video will be at 30fps even though capture "
+                         "was running at 120fps.",
+                         15.0, ParamCateg);
+
+//! Parameter \relates SurpriseRecorder
+JEVOIS_DECLARE_PARAMETER(thresh, float, "Surprise threshold. Lower values will record more events.",
+                         5.0F, ParamCateg);
+
+//! Parameter \relates SurpriseRecorder
+JEVOIS_DECLARE_PARAMETER(ctxframes, unsigned int, "Number of context video frames recorded before and after "
+                         "each surprising event.",
+                         150, ParamCateg);
+\endcode
+
+and we add them to our module class:
+
+\code
+class SurpriseRecorder : public jevois::Module,
+                         public jevois::Parameter<filename, fourcc, fps, thresh, ctxframes>
+{
+ // ...
+\endcode
+</li>
+
+<li>Now let's see how we will record the frames. We will use an approach similar to what was done in SaveVideo. But,
+because of our desire to also save context frames before and after each surprising event, the overall logic here will be
+sufficiently different. Thus, while one could at first think of splitting off the video saving aspect of the SaveVideo
+module into a Component that could then be shared, here we will not attempt this because of the differences introduced
+by the context. Recording context is important for humans reviewing the surprising events, as some events may be
+surprising only for a few frames and would thus be very difficult to watch without a few extra seconds of context before
+and after the event.
+
+We will use the following basic plan of attack:
+
+- We will start a thread to actually encode and save videos. This is because video encoding and writing files to microSD
+  can have unpredictable timing. Thus, by using a separate thread for this task, we can ensure that our main thread will
+  keep running at full camera rate and will not drop frames even if the disk caches are getting flushed or some frame
+  takes a long time to compress.
+
+- Thus, we will need to launch a thread. We will do that during the init() of our module. For convenience, our thread
+  will run a member function of our class so that all our member variables, parameters, etc are also accessible to the
+  thread.
+
+- So, in \c process() we will compute surprise and decide whether the current frame should be saved.
+
+- We need a thread-safe way to communicate frames from \c process() running in the main thread to our video compression
+  and saving thread. We will use jevois::BounderBuffer<T> which was developed for this kind of purpose. BoundedBuffer is
+  a thread-safe producer-consumer queue. Our \c process() function will push frames into it, and our video writing
+  thread will pop frames from it.
+
+- We need a way to tell our thread to stop, when our module gets destroyed. We will use an std::atomic<bool> for
+  that. Also, because our BoundedBuffer will be used in blocking mode, our thread will typically be blocked on trying to
+  pop() the next frame by the time we want to quit. So we adopt the convention that an empty frame pushed into the
+  buffer will be a signal that the current video is finished. The writer thread will then close the file and also check
+  whether it is time to quit.
+
+- Finally, we need to handle the context frames and details like several surprising events occurring within the context
+  time period, which should then be merged (e.g., if users waht 10 seconds of context and two surprising events occur
+  spaced by only 7 seconds, we should end up with a single video that starts 10 seconds before the start of the first
+  event and ends 10 seconds after the end of the second event). We will thus keep the last \p ctxframes in another,
+  non-thread-safe, queue to be used by the main thread only, so that they are ready to provide the context before a
+  surprising event whenever that event is encountered. When a surprising event starts, we will transfer all these frames
+  to our BoundedBuffer, unless we are already saving a previous event. An \c std::deque<cv::Mat> should work great for
+  that, we will call it \b itsCtxBuf. Note that, because cv::Mat is only a thin wrapper around pixel data, pushing a
+  cv::Mat into a queue or transferring a bunch of cv::Mat from one queue to another will not copy the pixel data, just
+  the shared pointers to it that are in cv::Mat. So it is cheap to move these images around.
+
+
+Let's start with starting and stopping our thread. We override jevois::Component::postInit() to start it, because we
+want to access the parameter that contains the number of context frames as we start. This parameter will not be set yet
+at construction time, but will be ready by the time postInit() is run. Thus, likewise, we override
+jevois::Component::postUninit() to stop it.
+
+\code
+    // ####################################################################################################
+    //! Get started
+    // ####################################################################################################
+    void postInit() override
+    {
+      itsRunning.store(true);
+      
+      // Get our run() thread going, it is in charge of compresing and saving frames:
+      itsRunFut = std::async(std::launch::async, &SaveVideo::run, this);
+    }
+
+    // ####################################################################################################
+    //! Get stopped
+    // ####################################################################################################
+    void postUninit() override
+    {
+      // Signal end of run:
+      itsRunning.store(false);
+      
+      // Push an empty frame into our buffer to signal the end of video to our thread:
+      itsBuf.push(cv::Mat());
+
+      // Wait for the thread to complete:
+      LINFO("Waiting for writer thread to complete, " << itsBuf.filled_size() << " frames to go...");
+      try { itsRunFut.get(); } catch (...) { jevois::warnAndIgnoreException(); }
+      LINFO("Writer thread completed. Syncing disk...");
+      if (std::system("/bin/sync")) LERROR("Error syncing disk -- IGNORED");
+      LINFO("Video " << itsFilename << " saved.");
+    }
+
+
+  // ...
+
+
+  protected:
+    void run() // Runs in a thread
+    {
+        // TODO
+    }
+    
+    std::future<void> itsRunFut; //!< Future for our run() thread
+    std::deque<cv::Mat> itsCtxBuf; //!< Buffer for context frames before event start
+    jevois::BoundedBuffer<cv::Mat, jevois::BlockingBehavior::Block,
+                          jevois::BlockingBehavior::Block> itsBuf; //!< Buffer for frames to save
+    int itsToSave; //!< Number of context frames after end of event that remain to be saved
+    int itsFileNum; //!< Video file number
+    std::atomic<bool> itsRunning; //!< Flag to let run thread when to quit
+    std::string itsFilename; //!< Currenf video file name
+\endcode
+
+We also initialize some of our synchronization variables in the constructor:
+
+\code
+    SurpriseRecorder(std::string const & instance) : jevois::Module(instance), itsBuf(1000), itsToSave(0),
+                                                     itsFileNum(0), itsRunning(false)
+    {
+       // ...
+    }
+\endcode
+
+and we need to know about BoundedBuffer and a bunch of other things we will use in \c run() and \c process():
+
+\code
+#include <jevois/Types/BoundedBuffer.H>
+#include <jevois/Image/RawImageOps.H>
+#include <opencv2/videoio.hpp> // for cv::VideoCapture
+#include <opencv2/imgproc.hpp> // for cv::rectangle()
+#include <linux/videodev2.h> // for v4l2 pixel types
+#include <fstream>
+\endcode
+
+Typing a quick \c make in \b hbuild compiles with no errors or warnings.
+</li>
+
+
+<li>Let's now flesh out our \c process() function: We just convert frames to cv::Mat and push them into our buffer, and
+we also compute surprise. We will do both in parallel by using an async thread for the surprise computation:
+
+\code
+    void process(jevois::InputFrame && inframe) override
+    {
+       // Wait for next available camera image:
+      jevois::RawImage inimg = inframe.get(); unsigned int const w = inimg.width, h = inimg.height;
+      inimg.require("input", w, h, V4L2_PIX_FMT_YUYV); // accept any image size but require YUYV pixels
+
+      // Compute surprise in a thread:
+      std::future<double> itsSurpFut =
+        std::async(std::launch::async, [&]() { return itsSurprise->process(inimg); } );
+
+      // Convert the image to OpenCV BGR and push into our context buffer:
+      cv::Mat cvimg = jevois::rawimage::convertToCvBGR(inimg);
+      itsCtxBuf.push_back(cvimg);
+      if (itsCtxBuf.size() > ctxframes::get()) itsCtxBuf.pop_front();
+      
+      // Wait until our surprise thread is done:
+      double surprise = itsSurpFut.get(); // this could throw and that is ok
+
+      // Let camera know we are done processing the raw input image:
+      inframe.done();
+
+      // If the current frame is surprising, check whether we are already saving. If so, just push the current frame for
+      // saving and reset itsToSave to full context length (after the event). Otherwise, keep saving until the context
+      // after the event is exhausted:
+      if (surprise >= thresh::get())
+      {
+        // Draw a rectangle on surprising frames. Note that we draw it in cvimg but, since the pixel memory is shared
+        // with the copy of it we just pushed into itsCtxBuf, the rectangle will get drawn in there too:
+        cv::rectangle(cvimg, cv::Point(3, 3), cv::Point(w-4, h-4), cv::Scalar(0,0,255), 7);
+        
+        if (itsToSave)
+        {
+          // We are still saving the context after the previous event, just append our new event:
+          itsBuf.push(cvimg);
+
+          // Reset the number of frames we will save after the end of the event:
+          itsToSave = ctxframes::get();
+        }
+        else
+        {
+          // Start of a new event. Dump the whole itsCtxBuf to the writer (it already contains the current frame):
+          for (cv::Mat const & im : itsCtxBuf) itsBuf.push(im);
+
+          // Initialize the number of frames we will save after the end of the event:
+          itsToSave = ctxframes::get();
+        }
+      }
+      else if (itsToSave)
+      {
+        // No more surprising event, but we are still saving the context after the last one:
+        itsBuf.push(cvimg);
+
+        // One more context frame after the last event was pushed for saving:
+        --itsToSave;
+
+        // Last context frame after the event was just pushed? If so, push an empty frame as well to close the current
+        // video file. We will open a new file on the next surprising event:
+        if (itsToSave == 0) itsBuf.push(cv::Mat());
+      }
+    }
+\endcode
+
+
+Anf finally our \c run() thread. As it turns out, we end up using it unmodified from that of SaveVideo. So, actually, we
+could benefit in splitting off this video saving machinery into a Component that would be used both by SaveVideo and
+SurpriseRecorder. We will leave that for future work:
+
+
+\code
+    void run() // Runs in a thread
+    {
+      while (itsRunning.load())
+      {
+        // Create a VideoWriter here, since it has no close() function, this will ensure it gets destroyed and closes
+        // the movie once we stop the recording:
+        cv::VideoWriter writer;
+        int frame = 0;
+      
+        while (true)
+        {
+          // Get next frame from the buffer:
+          cv::Mat im = itsBuf.pop();
+
+          // An empty image will be pushed when we are ready to close the video file:
+          if (im.empty()) break;
+        
+          // Start the encoder if it is not yet running:
+          if (writer.isOpened() == false)
+          {
+            // Parse the fourcc, regex in our param definition enforces 4 alphanumeric chars:
+            std::string const fcc = fourcc::get();
+            int const cvfcc = cv::VideoWriter::fourcc(fcc[0], fcc[1], fcc[2], fcc[3]);
+          
+            // Add path prefix if given filename is relative:
+            std::string fn = filename::get();
+            if (fn.empty()) LFATAL("Cannot save to an empty filename");
+            if (fn[0] != '/') fn = PATHPREFIX + fn;
+
+            // Create directory just in case it does not exist:
+            std::string const cmd = "/bin/mkdir -p " + fn.substr(0, fn.rfind('/'));
+            if (std::system(cmd.c_str())) LERROR("Error running [" << cmd << "] -- IGNORED");
+
+            // Fill in the file number; be nice and do not overwrite existing files:
+            while (true)
+            {
+              char tmp[2048];
+              std::snprintf(tmp, 2047, fn.c_str(), itsFileNum);
+              std::ifstream ifs(tmp);
+              if (ifs.is_open() == false) { itsFilename = tmp; break; }
+              ++itsFileNum;
+            }
+            
+            // Open the writer:
+            if (writer.open(itsFilename, cvfcc, fps::get(), im.size(), true) == false)
+              LFATAL("Failed to open video encoder for file [" << itsFilename << ']');
+
+            sendSerial("SAVETO " + itsFilename);
+          }
+
+          // Write the frame:
+          writer << im;
+
+          // Report what is going on once in a while:
+          if ((++frame % 100) == 0) sendSerial("SAVEDNUM " + std::to_string(frame));
+        }
+
+        sendSerial("SAVEDONE " + itsFilename);
+
+        // Our writer runs out of scope and closes the file here.
+        ++itsFileNum;
+      }
+    }
+\endcode
+
+</li>
+
+<li>One last thing: because we so far have no idea of what surprise values to expect, let us show them on each frame. We
+add a simple \c LINFO() message as follows:
+
+\code
+      // Wait until our surprise thread is done:
+      double surprise = itsSurpFut.get(); // this could throw and that is ok
+      LINFO("surprise = " << surprise << " itsToSave = " << itsToSave);
+\endcode
+
+
+A quick \c make and all compiles. Type a <code>sudo make install</code> to install your compiled module into the
+<b>/jevois/</b> directory on your host computer. Time to test!
+
+</li>
+
+</ul>
+
+Test run on the host computer
+-----------------------------
+
+Let us first try our new module on the host computer. We will use YUYV 640x480 \@ 15 fps.
+
+To provide video input, let us use our JeVois camera, configured in "dumb camera mode": We add a video mapping on our
+microSD that allows it to just output YUYV 640x480 \@ 15 fps using the PassThrough module (no processing on
+JeVois). Then we will run \c jevois-daemon on our host, grab that format of video, and process it on the host:
+
+<ul>
+<li>Add this line to <b>JEVOIS:/config/videomappings.cfg</b> on the microSD of your JeVois camera:
+\verbatim
+YUYV 640 480 15.0 YUYV 640 480 15.0 JeVois PassThrough
+\endverbatim
+
+Your JeVois camera can now operate as a dumb camera in that mode. Alternatively, you could also here use a regular
+webcam to provide inputs, as long as it supports this format.  </li>
+
+<li>Connect your JeVois camera to your host computer and allow it to boot up.</li>
+
+<li>On the host, make sure that you have write permission to <b>/jevois/data/</b>, then type
+\verbatim
+jevois-daemon
+\endverbatim
+to run the JeVois processing on your host prcessor. It will likely start DemoSaliency as default processing module. 
+</li>
+
+<li>To switch to our new module, type this into the terminal in which you launched \c jevois-daemon:
+
+\verbatim
+streamoff
+setmapping2 YUYV 640 480 15.0 JeVois SurpriseRecorder
+setpar serout All
+streamon
+\endverbatim
+
+
+Your terminal should show these lines:
+
+\verbatim
+streamoff
+OK
+setmapping2 YUYV 640 480 15.0 JeVois SurpriseRecorder
+INF Engine::setFormatInternal: OUT: NONE 0x0 @ 0fps CAM: YUYV 640x480 @ 15fps MOD: JeVois:SurpriseRecorder
+INF Camera::setFormat: Camera set video format to 640x480 YUYV
+INF Engine::setFormatInternal: Instantiating dynamic loader for /jevois/modules/JeVois/SurpriseRecorder/SurpriseRecorder.so
+OK
+INF Engine::setFormatInternal: Module [SurpriseRecorder] loaded, initialized, and ready.
+streamon
+INF Camera::streamOn: 6 buffers of 614400 bytes allocated
+OK
+INF SurpriseRecorder::process: surprise = 0.00094728 itsToSave = 0
+INF SurpriseRecorder::process: surprise = 1.44831e+07 itsToSave = 0
+SAVETO /jevois/data/surpriserecorder/video000000.avi
+INF SurpriseRecorder::process: surprise = 7.42191e+06 itsToSave = 150
+INF SurpriseRecorder::process: surprise = 6.70748e+06 itsToSave = 149
+INF SurpriseRecorder::process: surprise = 3.98372e+06 itsToSave = 148
+INF SurpriseRecorder::process: surprise = 1.16248e+07 itsToSave = 147
+INF SurpriseRecorder::process: surprise = 4.28625e+06 itsToSave = 150
+INF SurpriseRecorder::process: surprise = 3.55222e+06 itsToSave = 149
+INF SurpriseRecorder::process: surprise = 2.4415e+06 itsToSave = 148
+INF SurpriseRecorder::process: surprise = 1.08243e+07 itsToSave = 147
+INF SurpriseRecorder::process: surprise = 3.69354e+06 itsToSave = 150
+INF SurpriseRecorder::process: surprise = 3.03062e+06 itsToSave = 149
+INF SurpriseRecorder::process: surprise = 1.00832e+07 itsToSave = 148
+INF SurpriseRecorder::process: surprise = 5.33606e+06 itsToSave = 150
+[...]
+\endverbatim
+
+Those values are very large. First. wave your hand in front of the camera and check out the values. We get values above
+1e7 wows (10 megawows). So let us set the threshold there:
+
+\verbatim
+setpar thresh 1e7
+\endverbatim
+
+Now, after 10 seconds, you should see messages about the video file being closed. Wave your hand and a new file will
+open. That \c LINFO() is getting annoying now, so remove it from the module, re-compile, and run it again, type this
+after you launch \c jevois-daemon:
+
+\verbatim
+streamoff
+setmapping2 YUYV 640 480 15.0 JeVois SurpriseRecorder
+setpar serout All
+setpar thresh 1e7
+setpar channels S
+streamon
+\endverbatim
+
+Now, keep your camera still and looking at nothing that moves. Note how one event may get recorded at the start, this is
+because the first few frames are surprising (we believe, due to some initial gain control on the camera as capture
+starts), and then rapidly get boring and recording stops.
+
+Each time you wave your hand in front of the camera, you should see it save to a new file. 10 seconds after you stop
+waving, saving stops.
+
+Use \c mplayer or similar to play the videos that are getting written to
+<b>/jevois/data/surpriserecorder/video*</b>. Each one should start with 10 seconds of nothing then your waving hand then
+10 seconds of nothing.
+
+</li>
+
+</ul>
+
+Profiling to determine how fast this can run
+--------------------------------------------
+
+The JeVois framework provides convenient jevois::Timer and jevois::Profiler classes to help you measure how much time it
+takes to do things on each frame. This will help us decide what standard videomapping we should suggest for our surprise
+recorder. Both classes operate in the same way:
+
+- on every frame, you should issue a \c start() on the timer or profiler object to indicate start of frame (start of \c
+  process() function)
+- with the profiler, issue \c checkpoint() commands at various checkpoints in your \c process() function
+- at the end of process, issue a \c stop() command
+
+The timer and profiler classes will accumulate average statistics over 100 frames and will display those once in a
+while. We do not display on every frame as this could slow us down too much, especially if sending those reports over
+serial port.
+
+Let us first include the profiler declarations so we can use it:
+
+\code
+#include <jevois/Debug/Profiler.H>
+\endcode
+
+
+Let us instrument our \c process() function with a jevois::Profiler as follows. The new lines below all have the word \b
+prof in them, look for it, and we also added some
+<code>////////////////////////////////////////////////////////</code> markers to help:
+
+
+\code
+    void process(jevois::InputFrame && inframe) override
+    {
+      static jevois::Profiler prof("surpriserecorder");  ////////////////////////////////////////////////////////
+
+       // Wait for next available camera image:
+      jevois::RawImage inimg = inframe.get(); unsigned int const w = inimg.width, h = inimg.height;
+      inimg.require("input", w, h, V4L2_PIX_FMT_YUYV); // accept any image size but require YUYV pixels
+
+      prof.start(); ////////////////////////////////////////////////////////
+      
+      // Compute surprise in a thread:
+      std::future<double> itsSurpFut =
+        std::async(std::launch::async, [&]() { return itsSurprise->process(inimg); } );
+
+      prof.checkpoint("surprise launched"); ////////////////////////////////////////////////////////
+ 
+      // Convert the image to OpenCV BGR and push into our context buffer:
+      cv::Mat cvimg = jevois::rawimage::convertToCvBGR(inimg);
+      itsCtxBuf.push_back(cvimg);
+      if (itsCtxBuf.size() > ctxframes::get()) itsCtxBuf.pop_front();
+      
+      prof.checkpoint("image pushed"); ////////////////////////////////////////////////////////
+
+      // Wait until our surprise thread is done:
+      double surprise = itsSurpFut.get(); // this could throw and that is ok
+      //LINFO("surprise = " << surprise << " itsToSave = " << itsToSave);
+      
+      prof.checkpoint("surprise done"); ////////////////////////////////////////////////////////
+
+      // Let camera know we are done processing the raw input image:
+      inframe.done();
+
+      // If the current frame is surprising, check whether we are already saving. If so, just push the current frame for
+      // saving and reset itsToSave to full context length (after the event). Otherwise, keep saving until the context
+      // after the event is exhausted:
+      if (surprise >= thresh::get())
+      {
+        // Draw a rectangle on surprising frames. Note that we draw it in cvimg but, since the pixel memory is shared
+        // with the copy of it we just pushed into itsCtxBuf, the rectangle will get drawn in there too:
+        cv::rectangle(cvimg, cv::Point(3, 3), cv::Point(w-4, h-4), cv::Scalar(0,0,255), 7);
+        
+        if (itsToSave)
+        {
+          // we are still saving the context after the previous event, just add our new one:
+          itsBuf.push(cvimg);
+
+          // Reset the number of frames we will save after the end of the event:
+          itsToSave = ctxframes::get();
+        }
+        else
+        {
+          // Start of a new event. Dump the whole itsCtxBuf to the writer:
+          for (cv::Mat const & im : itsCtxBuf) itsBuf.push(im);
+
+          // Initialize the number of frames we will save after the end of the event:
+          itsToSave = ctxframes::get();
+        }
+      }
+      else if (itsToSave)
+      {
+        // No more surprising event, but we are still saving the context after the last one:
+        itsBuf.push(cvimg);
+
+        // One more context frame after the last event was saved:
+        --itsToSave;
+
+        // Last context frame after the event was just pushed? If so, push an empty frame as well to close the current
+        // video file. We will open a new file on the next surprising event:
+        if (itsToSave == 0) itsBuf.push(cv::Mat());
+      }
+
+      prof.stop(); ////////////////////////////////////////////////////////
+    }
+\endcode
+
+Now, every 100 frames, you will see something like this:
+
+\verbatim
+INF Profiler::stop: surpriserecorder overall average (100) duration 15.4445ms [11.2414ms .. 22.1041ms] (64.7478 fps)
+INF Profiler::stop: surpriserecorder - surprise launched average (100) delta duration 43.7507us [27.532us .. 77.293us] (22856.8 fps)
+INF Profiler::stop: surpriserecorder - image pushed average (100) delta duration 950.279us [501.272us .. 1.96373ms] (1052.32 fps)
+INF Profiler::stop: surpriserecorder - surprise done average (100) delta duration 14.4426ms [10.6092ms .. 20.9499ms] (69.2396 fps)
+\endverbatim
+
+The overall average is the time from \c start() to \c stop(). The others are for checkpoints and they report the time
+between start to first checkpoint, then from first to second checkpoint, etc. Durations displayed will depend on how
+fast your host computer is.
+
+On the host this is not very useful, so let us run this puppy on the JeVois camera now that everything seems to be
+working well.
+
+Compiling and installing to JeVois smart camera
+-----------------------------------------------
+
+We basically follow the standard compilation instructions (see \ref FlashingToSD).
+
+<ul>
+
+<li> Here we will first do a full cross-recompilation of everything for the JeVois platform hardware, but that may not
+always be necessary:
+
+\verbatim
+cd ~/jevois && ./rebuild-platform.sh
+cd ~/jevoisbase && ./rebuild-platform.sh -DJEVOIS_MODULES_TO_BUILDROOT=ON
+cd ~/jevois-sdk && ./jevois-build.sh -y /dev/sdX
+\endverbatim
+
+Make sure that you replace \b sdX above by the device of your microSD!
+</li>
+
+
+<li>Once the microSD card is written, insert it into your JeVois camera, connect the camera to a host computer, and let
+it boot. Do not start a video capture software.</li>
+
+<li>Connect to JeVois through a serial terminal (see \ref UserCli) using the serial-over-USB connection to JeVois. Then
+issue the following commands:
+
+\verbatim
+help
+info
+setpar serlog USB
+setpar serout USB
+setmapping2 YUYV 640 480 15.0 JeVois SurpriseRecorder
+setpar thresh 1e7
+setpar channels S
+streamon
+\endverbatim
+
+You should see these messages every few seconds:
+\verbatim
+INF Profiler::stop: surpriserecorder overall average (100) duration 68.4739ms [63.6285ms .. 83.3681ms] (14.6041 fps)
+INF Profiler::stop: surpriserecorder - surprise launched average (100) delta duration 114.16us [102.125us .. 200.25us] (8759.64 fps)
+INF Profiler::stop: surpriserecorder - image pushed average (100) delta duration 3.93424ms [2.97025ms .. 6.0565ms] (254.179 fps)
+INF Profiler::stop: surpriserecorder - surprise done average (100) delta duration 64.4076ms [59.4994ms .. 79.3229ms] (15.5261 fps)
+\endverbatim
+
+Now wave in front of the camera and you should get some
+\verbatim
+SAVETO /jevois/data/surpriserecorder/video000000.avi
+SAVEDNUM 100
+SAVEDNUM 200
+[...]
+SAVEDONE /jevois/data/surpriserecorder/video000000.avi
+\endverbatim
+
+After you are done recording a bunch of events, unplug JeVois, get the microSD out, connect it to your host, and check out the videos that were saved to it!
+
+From the profiler, looks like our guess that we would be able to do 15fps at 640x480 was pretty good (see the overall average reports).
+
+</li>
+
+</ul>
+
+Fine-tuning your algorithms using canned data
+---------------------------------------------
+
+Sometimes, it is useful to be able to run an algorithm on a pre-recorded video sequence to fine-tune it. Here, for
+example, we might want to tune the threshold, update factor, channels, of the algorithm in a systematic manner using
+always the same data. The JeVois framework allows for this, simply by specifying a video file as \p cameradev when
+starting \c jevois-daemon (see \ref JeVoisDaemon).
+
+Here, we will use an hour-long 320x240 video that was posted live on the web several years ago as part of the now
+defunct blueservo project. These cameras were recording live outdoors video near the border between Texas and Mexico,
+and citizens were asked to watch those and to call the sheriff if they saw anything suspect.
+
+We will run out tests on the host. The same could work on JeVois.
+
+<ul>
+<li>First, download the test video from http://jevois.org/data/blueservo23_66.asf
+
+Check out this video and see how it is non trivial to process, due to:
++ noisy camera input.
++ clouds moving in the sky cast different kinds of large moving shadows over time (pay the movie in fast forward to see
+  this).
++ foliage moving in the wind, occasional ripples on the river.
+
+
+\youtube{aSKncW7Jxrs}
+
+Yes, this video is <em>very boring for a whole hour!</em> But it does contain a few short interesting events as we will
+see below.
+
+</li>
+
+<li>Then, create a new entry in your host's <b>/jevois/config/videomapping.cfg</b> so we can start with our surprise
+recorder module right away:
+
+\verbatim
+NONE 0 0 0.0 YUYV 320 240 70.0 JeVois SurpriseRecorder
+\endverbatim
+
+Here we assume that your host is fast enough to run our surprise module at 70fps at 320x240.
+</li>
+
+<li>Run \c jevois-daemon on your host (with a camera connected) and type \c listmappings and note the mapping number
+assigned to the one you just created. For us, the number was 0.</li>
+
+<li>Now edit <b>/jevois/config/initscript.cfg</b>:
+\verbatim
+setmapping 0
+setpar serout All
+setpar thresh 2.0e7
+setpar ctxframes 75
+setpar channels S
+\endverbatim
+
+Note how we are using a high threshold so we get very few events. We also decreased the context to +/- 5 seconds (75
+frames). For now, we also only compute surprise over the saliency map, and not over the gist or the other feature
+maps. This is subject to more experimentation.
+
+</li>
+
+<li>Finally, run
+
+\verbatim
+jevois-daemon --cameradev=blueservo23_66.asf
+\endverbatim
+
+and let it go though it. Watch the events that were extracted from this hourlong video.
+
+\note Currently, when using video files as input, we loop over the input forever (to simulate a never-ending live
+feed). So, check for repeated saved clips and then just interrupt \c jevois-daemon for now. This could be changed in the
+JeVois core some day.
+
+Here are the results:
+
+\youtube{zIslIsHBfYw}
+
+
+</li>
+
+
+</ul>
+
+
+Additional activities
+---------------------
+
+You could add the following to this module:
+
+- draw the location that was most surprising (with our remapping of everything into a 1D data array, this might be
+  tricky).
+
+- add a \c process() function with video output, maybe showing the most surprising location and a bargraph plotting its
+  surprise and the current surprise threshold.
+
+- save the time of the event. Note that JeVois does not have a real-time clock. It always initializes to Demember 31,
+  1979 or something like that when it boots. In future versions of the JeVois core, we may add a command to allow one to
+  set the time from the host computer, so that the timestamps of the recorded video files are veridical.
+
+- In Itti & Baldi, 2009, we actually computed surprise in two ways: over space, and over time. In this tutorial, we only
+  did over time. You could add spatial surprise as well.
+
+- Likewise, in Itti & Baldi, 2009, we computed surprise at 5 different time scales while here we only use one. This
+  could be added too.
+
+- Some optimizations about what should be computed as float vs double could make the actual surprise computation faster.
+
+
+*/
