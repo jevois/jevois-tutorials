@@ -1,0 +1,552 @@
+/*! \page ProgrammerHello Hello JeVois
+
+In this tutorial we create and compile a new JeVois machine vision module from scratch, and we run it on both the host
+computer (for testing) and on the JeVois platform hardware.
+
+We will develop a module that just streams video from the camera sensor to the host computer, adding a message "Hello
+JeVois" on top of each video frame.
+
+Preliminaries
+-------------
+
+- Be sure to go through the \ref Programmer to understand the basic concepts.
+
+- Be sure to go through the [JeVois framework INSTALL
+  instructions](https://github.com/jevois/jevois/blob/master/INSTALL) at least once. As part of this, you will download
+  and compile all the source code and tools needed here.
+
+Getting started
+---------------
+
+<ul>
+
+<li>We follow the instructions in \ref ProgrammerSDK to get started with our new module. Here, for a standalone module,
+we will use the helper script <code>jevois-create-module.sh</code>, which takes two arguments: vendor name (this is used
+so that modules with the same name can exist if they have been created by different people), and module name. Here we
+hence type:
+
+\verbatim
+cd
+~/jevois/scripts/jevois-create-module.sh Tutorial HelloJeVois
+\endverbatim
+
+which will create a directory \b hellojevois and populate it with some skeleton files:
+
+\verbatim
+hellojevois/
+├── CMakeLists.txt
+├── COPYING
+├── INSTALL
+├── README
+├── rebuild-host.sh
+├── rebuild-platform.sh
+└── src
+    └── Modules
+        └── HelloJeVois
+            ├── HelloJeVois.C
+            ├── icon.png
+            ├── postinstall
+            ├── screenshot1.png
+            └── videomappings.cfg
+\endverbatim
+
+The source file for our module is <b>hellojevois/src/Modules/HelloJeVois.C</b>
+
+See \ref ProgrammerSDK for more information about the files created here.
+</li>
+
+<li>Let us make sure our host compilation environment works. Indeed, the skeleton code created by
+<code>jevois-create-module.sh</code> should compile out of the box. To compile on host, we run the following commands
+from a terminal:
+
+\verbatim
+cd hellojevois
+./rebuild-host.sh
+\endverbatim
+
+which creates a directory called \b hbuild that will contain all the intermediary build files for compilation for the
+host, and yields
+
+\verbatim
+-- JeVois version 1.0
+-- JEVOIS_SRC_ROOT: /lab/itti/jevois/software/jevois
+-- JEVOIS_PLATFORM: OFF
+-- JEVOIS_VENDOR: Tutorial
+-- Install prefix for executables: /usr/local
+-- Host path to jevois modules root: /jevois
+-- The C compiler identification is GNU 5.2.1
+-- The CXX compiler identification is GNU 5.2.1
+-- Check for working C compiler: /usr/bin/cc
+-- Check for working C compiler: /usr/bin/cc -- works
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Check for working CXX compiler: /usr/bin/c++
+-- Check for working CXX compiler: /usr/bin/c++ -- works
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Adding compilation directives for module HelloJeVois base src/Modules
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /lab/itti/hellojevois/hbuild
+Scanning dependencies of target modinfo_HelloJeVois
+[ 50%] Generating ../src/Modules/HelloJeVois/modinfo.yaml, ../src/Modules/HelloJeVois/modinfo.html
+[ 50%] Built target modinfo_HelloJeVois
+Scanning dependencies of target HelloJeVois
+[100%] Building CXX object CMakeFiles/HelloJeVois.dir/src/Modules/HelloJeVois/HelloJeVois.C.o
+Linking CXX shared library HelloJeVois.so
+[100%] Built target HelloJeVois
+[sudo] password for itti: 
+[ 50%] Built target modinfo_HelloJeVois
+[100%] Built target HelloJeVois
+Install the project...
+-- Install configuration: ""
+-- Installing: /jevois/modules/Tutorial/HelloJeVois
+-- Installing: /jevois/modules/Tutorial/HelloJeVois/postinstall
+-- Installing: /jevois/modules/Tutorial/HelloJeVois/videomappings.cfg
+-- Installing: /jevois/modules/Tutorial/HelloJeVois/modinfo.yaml
+-- Installing: /jevois/modules/Tutorial/HelloJeVois/screenshot1.png
+-- Installing: /jevois/modules/Tutorial/HelloJeVois/modinfo.html
+-- Installing: /jevois/modules/Tutorial/HelloJeVois/icon.png
+-- Installing: /jevois/modules/Tutorial/HelloJeVois/HelloJeVois.so
+-- Removed runtime path from "/jevois/modules/Tutorial/HelloJeVois/HelloJeVois.so"
+\endverbatim
+
+The module was compiled for the host architecture (here, an Intel processor) and was installed into target directory
+<b>/jevois/modules/Tutorial/HelloJeVois/</b> where it is now ready for use.
+
+</li>
+
+<li>Let us also try to cross-compile the module for the JeVois smart camera hardware (ARM processor):
+\verbatim
+./rebuild-platform.sh
+\endverbatim
+
+which creates a drectory called \b pbuild that will contain all the intermediary build files for compilation for the
+platform, and yields
+
+\verbatim
+-- JeVois version 1.0
+-- JEVOIS_SRC_ROOT: /lab/itti/jevois/software/jevois
+-- JEVOIS_PLATFORM: ON
+-- JEVOIS_VENDOR: Tutorial
+-- JEVOIS_MODULES_TO_BUILDROOT: OFF
+-- Install prefix for executables: /lab/itti/jevois/software/jevois/../jevois-sdk/out/sun8iw5p1/linux/common/buildroot/target/usr
+-- Host path to jevois modules root: /lab/itti/jevois/software/jevois/../jevois-sdk/out/sun8iw5p1/linux/common/buildroot/target/jevois
+-- The C compiler identification is GNU 6.1.0
+-- The CXX compiler identification is GNU 6.1.0
+-- Check for working C compiler: /lab/itti/jevois/software/jevois/../jevois-sdk/out/sun8iw5p1/linux/common/buildroot/host/usr/bin/arm-buildroot-linux-gnueabihf-gcc
+-- Check for working C compiler: /lab/itti/jevois/software/jevois/../jevois-sdk/out/sun8iw5p1/linux/common/buildroot/host/usr/bin/arm-buildroot-linux-gnueabihf-gcc -- works
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Check for working CXX compiler: /lab/itti/jevois/software/jevois/../jevois-sdk/out/sun8iw5p1/linux/common/buildroot/host/usr/bin/arm-buildroot-linux-gnueabihf-g++
+-- Check for working CXX compiler: /lab/itti/jevois/software/jevois/../jevois-sdk/out/sun8iw5p1/linux/common/buildroot/host/usr/bin/arm-buildroot-linux-gnueabihf-g++ -- works
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Adding compilation directives for module HelloJeVois base src/Modules
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /lab/itti/hellojevois/pbuild
+Scanning dependencies of target modinfo_HelloJeVois
+[ 50%] Built target modinfo_HelloJeVois
+Scanning dependencies of target HelloJeVois
+[100%] Building CXX object CMakeFiles/HelloJeVois.dir/src/Modules/HelloJeVois/HelloJeVois.C.o
+Linking CXX shared library HelloJeVois.so
+[100%] Built target HelloJeVois
+[ 50%] Built target modinfo_HelloJeVois
+[100%] Built target HelloJeVois
+Install the project...
+-- Install configuration: ""
+-- Installing: /lab/itti/hellojevois/jvpkg/modules/Tutorial/HelloJeVois
+-- Installing: /lab/itti/hellojevois/jvpkg/modules/Tutorial/HelloJeVois/postinstall
+-- Installing: /lab/itti/hellojevois/jvpkg/modules/Tutorial/HelloJeVois/videomappings.cfg
+-- Installing: /lab/itti/hellojevois/jvpkg/modules/Tutorial/HelloJeVois/modinfo.yaml
+-- Installing: /lab/itti/hellojevois/jvpkg/modules/Tutorial/HelloJeVois/screenshot1.png
+-- Installing: /lab/itti/hellojevois/jvpkg/modules/Tutorial/HelloJeVois/modinfo.html
+-- Installing: /lab/itti/hellojevois/jvpkg/modules/Tutorial/HelloJeVois/icon.png
+-- Installing: /lab/itti/hellojevois/jvpkg/modules/Tutorial/HelloJeVois/HelloJeVois.so
+-- Removed runtime path from "/lab/itti/hellojevois/jvpkg/modules/Tutorial/HelloJeVois/HelloJeVois.so"
+\endverbatim
+
+The module has been cross-compiled for the JeVois processor and the resulting files have been copied to
+<b>~/hellojevois/jvpkg/</b>, where they are ready to be packaged into a single JeVois package file that can later be
+copied to microSD and run on the smart camera. Before we do that, let us actually implement our module, i.e., write the
+Hello JeVois message on the video frames.</li>
+
+</ul>
+
+Writing the module
+------------------
+
+The skeleton code already provides an initial implementation for the HelloJeVois class, and for its \c process()
+function. It actually even already writes "Hello JeVois". So Let us just have a look at that code and it seems that we
+will not need to modify much (if anything) for this tutorial:
+
+\includelineno HelloJeVois.C
+
+- Line 1: we include jevois/Core/Module.H to bring in from JeVois all the machinery necessary to create new modules.
+
+- Line 2: jevois/Image/RawImageOps.H contains some helper functions to deal with raw images captured by the camera
+  sensor, including one that can write text directly in those images. We will use that function to write our text.
+
+- Lines 6-37: We use [doxygen](http://dogygen.org) to document code in the JeVois framework. In addition we have created
+  custom doxygen tags to document video mappings and other features specific to JeVois. See \ref ProgrammerSDK for
+  details.
+
+- Line 38: We declare our class and make it derive from jevois::Module. Note that class name should exactly match file
+  name and also the directory name in which the module file immediately is (last level of directories before the file).
+
+- Line 42: Here we have nothing to do at construction so we just inherit the constructor of jevois::Module (see \ref
+  ModuleTutorial if you have not yet seen it, as it contains many useful links to concepts used in JeVois, such as,
+  here, inheriting constructors in C++17).
+
+- Lines 48-73: The process function here is very similar to that of the PassThrough tutorial module of \ref
+  ModuleTutorial, except for a notable addition, on line 66:
+  \verbatim
+  jevois::rawimage::writeText(outimg, "Hello JeVois!", 100, 230, jevois::yuyv::White, jevois::rawimage::Font20x38);
+  \endverbatim
+
+- Line 77: Always remember to register your module with the JeVois framework so that it can be loaded at runtime by the
+  JeVois engine.
+
+
+For fun, let us modify line 66 and add a couple more \c writeText() calls:
+
+\code
+  jevois::rawimage::writeText(outimg, "Hello JeVois!", 100, 230, jevois::yuyv::White, jevois::rawimage::Font20x38);
+  jevois::rawimage::writeText(outimg, "Hello JeVois!", 100, 30, jevois::yuyv::LightGreen, jevois::rawimage::Font20x38);
+  jevois::rawimage::writeText(outimg, "Hello JeVois!", 100, 400, jevois::yuyv::LightPink, jevois::rawimage::Font20x38);
+\endcode
+
+Compiling and testing on host
+-----------------------------
+
+Since we have already run \c rebuild-host.sh once and we have not added any new file since them (which would require
+that we run CMake again to detect them, for example by running \c rebuild-host.sh again, we can just use the partial
+compilation commands detailed in \ref ProgrammerSDK (but note that, since we only have one file to compile here, this
+does not save us much time):
+
+\verbatim
+cd hbuild
+make
+sudo make install
+\endverbatim
+
+Assuming that all of JeVois has been compiled previously, \c jevois-daemon should already exist and be ready to
+go. However, we need to add a new video mapping to <b>/jevois/config/videomappings.cfg</b> to let it know when and how
+to use our new module. We edit <b>/jevois/config/videomappings.cfg</b> (may require \c sudo if you get some permission
+denied error), and add a line:
+
+\verbatim
+YUYV 640 480 28.5 YUYV 640 480 28.5 Tutorial HelloJeVois
+\endverbatim
+
+Thus, the JeVois engine will now run module \b HelloJeVois from vendor \b Tutorial when video resolution 640x480 @
+28.5fps is requested. See \ref VideoMapping for more info.
+
+Now we need a regular webcam to test this, which should support YUYV 640x480 (frame rate not critical). Hopefully you
+have one. Of course we could use our JeVois camera configured in PassThrough mode to act like a regular dumb camera, but
+some people seem to be confused by this, so it may not be appropriate for this entry-level tutorial. If you do not have
+a regular USB webcam, just skip to the next section.
+
+Start by just running
+
+\verbatim
+jevois-daemon
+\endverbatim
+
+which will probably start in another mode (like DemoSaliency). Then, in the terminal in which you started \c
+jevois-daemon, type
+
+\verbatim
+listmappings
+\endverbatim
+
+and note the mapping number for the one that we just added and that uses our HelloJevois module. For us it was mapping
+16:
+
+\verbatim
+...
+   16 - OUT: YUYV 640x480 @ 28.5fps CAM: YUYV 640x480 @ 28.5fps MOD: Tutorial:HelloJeVois
+...
+\endverbatim
+
+See \ref UserCli for more info about sending commands to JeVois and about the \c listmappings command.
+
+So now just hit <code>CTRL-C</code> to stop \c jevois-daemon, and start it again using mapping 16 (or whatever that
+number was for you):
+
+\verbatim
+jevois-daemon --videomapping=16
+\endverbatim
+
+
+You should see something like that in your terminal:
+
+\verbatim
+INF Engine::Engine: Loaded 44 vision processing modes.
+ERR Engine::onParamChange: Cannot set cpu max frequency -- IGNORED
+ERR Engine::onParamChange: Cannot set cpu frequency governor mode -- IGNORED
+INF Engine::onParamChange: Using [stdio] hardware (4-pin connector) serial port
+INF Engine::onParamChange: No USB serial port used
+INF Engine::postInit: Starting camera device /dev/video0
+ERR Engine::postInit: Could not access VFE turbo parameter -- IGNORED
+INF Camera::Camera: [12] V4L2 camera /dev/video0 card JeVois-A33 Smart Camera bus usb-0000:09:00.0-1.1.4
+INF Engine::postInit: Using display for video output
+init done
+INF Engine::setFormatInternal: OUT: YUYV 640x480 @ 28.5fps CAM: YUYV 640x480 @ 28.5fps MOD: Tutorial:HelloJeVois
+INF Camera::setFormat: Camera set video format to 640x480 YUYV
+INF Engine::setFormatInternal: Instantiating dynamic loader for /jevois/modules/Tutorial/HelloJeVois/HelloJeVois.so
+INF Engine::setFormatInternal: Module [HelloJeVois] loaded, initialized, and ready.
+INF Camera::streamOn: 6 buffers of 614400 bytes allocated
+INF READY JEVOIS 1.0
+\endverbatim
+
+and this in a window:
+
+\image html HelloJeVois1.png
+
+Spicing it up a bit
+-------------------
+
+Let us add a small title in the top-left corner, and also a display of frames/s, CPU frequency, and temperature at the
+bottom, like in the other JeVois demos. For this, we will use the jevois::Timer class.
+
+Indeed, the JeVois framework provides a convenient jevois::Timer classes to help you measure how much time it
+takes to process each video frame. It works as follows:
+
+- on every frame, you should issue a \c start() on the timer object to indicate start of frame (start of \c process()
+  function). Do this just after you have received the frame from the camera, so you do not include wait time for that
+  frame.
+
+- at the end of process, issue a \c stop() command
+
+The timer class will accumulate average statistics over 100 frames and will display those once in a while as information
+messages. In addition to writing messages to the console, \c stop() returns a string we can directly write onto our
+video frames. Timer does not report stats on every frame as this could slow us down too much, especially if sending
+those reports over serial port.
+
+Let us first include the Timer declarations so we can use it:
+
+\code
+#include <jevois/Debug/Timer.H>
+\endcode
+
+and then we add it to our \c process() function, also adding the message at the top of the frame. The modified \c
+process() function now looks like this, with <code>////////////////////////////////////////////////////////</code>
+markers to help you see the modifications (note that here we configured the timer to report every 60 frames, and to
+output text reports at the \c LOG_DEBUG level, which will not be printed out to console by default):
+
+\code
+    virtual void process(jevois::InputFrame && inframe, jevois::OutputFrame && outframe) override
+    {
+      static jevois::Timer timer("processing", 60, LOG_DEBUG); ////////////////////////////////////////////////////////
+      
+      // Wait for next available camera image:
+      jevois::RawImage const inimg = inframe.get(true);
+
+      timer.start(); ////////////////////////////////////////////////////////
+
+      // We only support YUYV pixels in this example, any resolution:
+      inimg.require("input", inimg.width, inimg.height, V4L2_PIX_FMT_YUYV);
+      
+      // Wait for an image from our gadget driver into which we will put our results:
+      jevois::RawImage outimg = outframe.get();
+
+      // Enforce that the input and output formats and image sizes match:
+      outimg.require("output", inimg.width, inimg.height, inimg.fmt);
+      
+      // Just copy the pixel data over:
+      memcpy(outimg.pixelsw<void>(), inimg.pixels<void>(), std::min(inimg.buf->length(), outimg.buf->length()));
+
+      // Print a text message:
+      jevois::rawimage::writeText(outimg, "Hello JeVois!", 100, 230, jevois::yuyv::White, jevois::rawimage::Font20x38);
+      jevois::rawimage::writeText(outimg, "Hello JeVois!", 100, 30, jevois::yuyv::LightGreen, jevois::rawimage::Font20x38);
+      jevois::rawimage::writeText(outimg, "Hello JeVois!", 100, 400, jevois::yuyv::LightPink, jevois::rawimage::Font20x38);
+
+      // Let camera know we are done processing the input image:
+      inframe.done(); // NOTE: optional here, inframe destructor would call it anyway
+
+      ////////////////////////////////////////////////////////
+      jevois::rawimage::writeText(outimg, "HelloJeVois Tutorial", 3, 3, jevois::yuyv::White);
+
+      // Show processing fps:
+      std::string const & fpscpu = timer.stop();
+      jevois::rawimage::writeText(outimg, fpscpu, 3, outimg.height - 13, jevois::yuyv::White);
+      ////////////////////////////////////////////////////////
+
+      // Send the output image with our processing results to the host over USB:
+      outframe.send(); // NOTE: optional here, outframe destructor would call it anyway
+    }
+\endcode
+
+To re-compile and re-install the module, we just type:
+
+\verbatim
+cd hbuild
+make && sudo make install
+\endverbatim
+
+And we can start \c jevois-daemon again and the output now looks like this (pointing the camera to something darker so
+we can see the small white text):
+
+\image html HelloJeVois2.png
+
+This framerate is fast (this is a $15,000 host computer). We are now happy with our module. Let us run it inside the
+JeVois camera.
+
+Cross-compiling for JeVois hardware
+-----------------------------------
+
+Since we have already run \c rebuild-platform.sh on our module and we have not added any new file since then, we can
+just do a partial re-compilation for platform:
+
+\verbatim
+cd ~/hellojevois/pbuild
+make && make install
+\endverbatim
+
+\note If you get an error like <b>cc1plus: fatal error: jevois/Config/Config.H: No such file or directory</b>, you just
+need to run \c rebuild-platform.sh in your \b jevois directory first.
+
+JeVois provides two basic ways of installing new modules to microSD:
+
+- Pack all the module's files into a .jvpkg package and drop that package into <b>JEVOIS:/packages/</b> on your
+  microSD. Next time it starts up, JeVois will unpack, install, and then delete the package.
+
+- Install all the files into the buildroot staging area for the JeVois operating system and files, which is under the
+  jevois-sdk. Then flash a brand new microSD image with the latest JeVois core, jevoisbase modules, and your module(s)
+  pre-installed and ready to run.
+
+We look at both methods below.
+
+Installing to JeVois hardware using a .jvpkg package
+----------------------------------------------------
+
+Let us create a package with all the files of our module. One last thing before we pack is that we will include with our
+module an additional video mapping that we want to be automatically added to the \c videomappings.cfg of our JeVois
+camera as the package gets installed. For this, we edit <b>~/hellojevois/src/Module/HelloJeVois/videomappings.cfg</b> to
+contain this (plus any other valid mapping you would like to add for this module):
+
+\verbatim
+YUYV 640 480 28.5 YUYV 640 480 28.5 Tutorial HelloJeVois
+\endverbatim
+
+When the module is installed onto the smart camera, this mapping will automatically be added to the list of existing
+mappings. This will be achieved by running the \b postinstall script that is in the directory of our module. If such
+script exists, it will be run just after the package is unpacked. It will be run with the current directory set to the
+directory of the module. By default, \c postinstall contains simple commands that just append the \c videomappings.cfg
+of the new module to the main \c videomappings.cfg of JeVois:
+
+\code{.py}
+#!/bin/sh
+# This script is executed once after the module is installed by JeVois if it was added to the jevois/packages/ directory
+# of the microSD card as a .jvpkg file. The script is deleted from the microSD card after execution.
+#
+# The caller script will set the current directory to the location of this script before launching the script.
+
+# Add our video mappings to the main mappings file:
+cat videomappings.cfg >> /jevois/config/videomappings.cfg
+
+# Example of a simple message:
+echo "HelloJeVois is now installed"
+\endcode
+
+You can edit this script if you need additional custom configurations to be run as your package is installed.
+
+Now we create the package:
+
+\verbatim
+cd ~/hellojevois/pbuild
+make jvpkg
+\endverbatim
+
+which creates <b>~/hellojevois/Tutorial_hellojevois.jvpkg</b> that contains everything needed to install this module
+onto our smart camera.
+
+We connect the microSD card of our smart camera to our host computer and we copy the package file to
+<b>JEVOIS:/packages/</b> on the microSD card. Next time we start up the smart camera, it will unpack the package,
+install the module .so file, run the \c postinstall script which will update the video mappings, etc and we will be
+ready to go. Something like this:
+
+\verbatim
+cp Tutorial_hellojevois.jvpkg /media/itti/JEVOIS/packages/
+\endverbatim
+
+(replace \b itti above by your username).
+
+\warning You need to have an up-to-date core JeVois install (updated after May 12, 2017) for this to work, as we fixed
+some bugs in the module unpacking script on that day (while writing this tutorial).
+
+So let's insert the microSD into our JeVois smart camera and start it up, then start \c guvcview on your host computer
+(note that JeVois may take a bit more time to boot up as it is unpacking and installing our module. This is will be done
+this time only, and the package will be deleted from microSD once all its files have been installed).
+
+Set \c guvcview to YUYV 640x480 and you will notice the new 28.5fps framerate (will show up as 57/2 in some versions of
+\c guvcview). Select it and here you are:
+
+\image html HelloJeVois3.png
+
+If things go wrong here (the JeVois smart camera fails to start after you copied that .jvpkg file to
+<b>JEVOIS:/packages/</b>, or the 640x480 @ 28.5fps mode does not appear in \c guvcview), check the following:
+
+- the file \b Tutorial_hellojevois.jvpkg should have disappeared from <b>JEVOIS:/packages/</b> (it is deleted after
+  successful unpacking and installation of the package);
+
+- you should have a new directory <b>JEVOIS:/modules/Tutorial/HelloJeVois/</b> with, among others, a file \b
+  HelloJeVois.so in there (the module's executable code);
+
+- you should see the new 28.5fps mapping at the end of <b>JEVOIS:/config/videomappings.cfg</b>;
+
+- the file <b>JEVOIS:/modules/Tutorial/HelloJeVois/postinstall</b> should have been deleted (it is deleted after the
+  postinstall script runs).
+
+- to debug unpacking and installation issues, we recommend switching your JeVois smart camera to verbose boot (see \ref
+  Debugging) and using an FTDI cable or similar connected to the JeVois micro-serial port to monitor the boot process
+  and check for any error message during the .jvpkg unpacking and installation process (cables specifically designed for
+  JeVois are available
+  [here](https://www.jevoisinc.com/collections/accessories/products/usb-to-micro-serial-adapter-cable-3-feet-1m-long) if
+  you need one).
+
+Installing to JeVois hardware using buildroot of jevois-sdk
+-----------------------------------------------------------
+
+The entire operating system for JeVois is created under the jevois-sdk. It can then be installed onto a fresh new
+microSD card.
+
+To include your new module into buildroot, run this:
+
+\verbatim
+cd ~/hellojevois
+./rebuild-platform.sh -DJEVOIS_MODULES_TO_BUILDROOT=ON
+\endverbatim
+
+which will copy all the files to buildroot.
+
+You do need to edit <b>~/jevois/Config/videomappings.cfg</b> and add some mapping using your new module in there, then
+run \c rebuild-platform.sh in jevois to copy that config file to buildroot as well.
+
+Then you can flash a new microSD card as usual (see \ref FlashingToSD):
+
+\verbatim
+cd ~/jevois-sdk && ./jevois-build.sh -y /dev/sdX
+\endverbatim
+
+(replace \b sdX above by the device for your microSD).
+
+\warning Once you compile with \c -DJEVOIS_MODULES_TO_BUILDROOT=ON the files will be copied to buildroot and will never
+be deleted. So use with caution so that you do not get confused later on because an old version of a module was
+installed to buildroot while you are trying to install a new one as a package, etc. To figure out where the files are in
+buildroot, run <code>find ~/jevois-sdk -name HelloJevois.so</code> and you can then delete these files manually from
+buildroot (and the whole \b modules/Tutorial directory).
+
+
+*/
+

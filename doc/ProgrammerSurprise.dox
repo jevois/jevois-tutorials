@@ -17,6 +17,19 @@ This tutorial will show you how to
 - Use the jevois::Profiler to profile execution of your code
 - Use pre-recorded video to fine-tune your algorithm
 
+This is a fairly long and detailed tutorial. To get you excited, let us look at the payoff upfront: Here is an hour-long
+surveillance video. It is very boring overall, except that a few brief surprising things occur (a few seconds each). Can
+you find them?
+
+\youtube{aSKncW7Jxrs}
+
+Here is what the SurpriseRecorder module we develop in this tutorial found (4 true events plus 2 false alarms):
+
+\youtube{zIslIsHBfYw}
+
+That is, it summarized 1 hour of video into 6 snippets of about 12 seconds each (50x reduction: you just watch barely
+more than a minute of surprising snippets instead of 1 hour of mostly boring footage).
+
 Theory of operation
 -------------------
 
@@ -63,9 +76,9 @@ Here, we will:
 - Thus, the expected output of this module is a series of short video clips recorded to microSD, one for each surprising
   event that occurred.
 
-This approach is related to [R. C. Voorhies, L. Elazary, L. Itti, Neuromorphic Bayesian Surprise for Far-Range Event
-Detection, In: Proc. 9th IEEE International Conference on Advanced Video and Signal-Based Surveillance, Beijing, China,
-Sep 2012](http://ilab.usc.edu/publications/doc/Voorhies_etal12avss.pdf)
+This approach is related to [R. C. Voorhies, L. Elazary, L. Itti, Neuromorphic Bayesian Surprise for Far Range Event
+Detection, In Proc 9th IEEE AVSS, Beijing, China, Sep
+2012](http://ilab.usc.edu/publications/doc/Voorhies_etal12avss.pdf)
 
 Plan of attack
 --------------
@@ -159,7 +172,7 @@ JeVois components inherit from all of their parameters, as explained in \ref par
 contain a \b Saliency sub-component.
 
 Although lookup functions are provided by \ref jevois::Component to find sub-components by name, it is usually a good
-idea to maintain a redundant but more direct handle to the sub-components which we will oftern use. Hence, we add the
+idea to maintain a redundant but more direct handle to the sub-components which we will often use. Hence, we add the
 following to our class:
 
 \code
@@ -319,9 +332,9 @@ float Surprise::process(jevois::RawImage const & input)
   if (itsAlpha.size() != data.size())
   {
     itsAlpha.clear(); itsBeta.clear();
-    for (size_t i = 0; i < data.size(); ++i)
+    for (float d : data)
     {
-      itsAlpha.push_back(data[i] / (1.0F - updatefac));
+      itsAlpha.push_back(d / (1.0F - updatefac));
       itsBeta.push_back(1.0F / (1.0F - updatefac));
     }
   }
@@ -338,7 +351,7 @@ about also computing surprise on the gist vector, while we are at it, if the use
 features. First a parameter for \b updatefac:
 
 In \b Saliency.H, we create a namespace \b surprise that we will use for our parameters. This is to avoid clashes among
-different components that could be used jointly in a given higher-level component (some other compnent may also have a
+different components that could be used jointly in a given higher-level component (some other component may also have a
 parameter named \b updatefac). Convention here is to use the lowercase version of the class name as namespace name for
 its parameters. We create a parameter category so all our parameters will be grouped together when users type \c help,
 and note the \b \\relates directive to instruct doxygen to relate the parameter to our class in the online documentation:
@@ -362,7 +375,7 @@ Remember that the format of \c JEVOIS_DECLARE_PARAMETER() is:
 + parameter type
 + description
 + default value
-+ optional: specification of valid values; here we spaeified a valid range for \b updatefac and nothing for \b dogist.
++ optional: specification of valid values; here we specified a valid range for \b updatefac and nothing for \b dogist.
 + category for grouping in the help message.
 
 We then add these two parameters to our Component:
@@ -385,7 +398,7 @@ float Surprise::process(jevois::RawImage const & input)
   itsSaliency->process(input, dogist::get());
 
   // ...
-      itsAlpha.push_back(data[i] / (1.0F - updatefac::get()));
+      itsAlpha.push_back(d / (1.0F - updatefac::get()));
       itsBeta.push_back(1.0F / (1.0F - updatefac::get()));
 
   // ...
@@ -393,6 +406,27 @@ float Surprise::process(jevois::RawImage const & input)
 
 That's it. These parameters will now appear in the \c help message, users will able to set and get their values, and
 every component or module that includes our Surprise component as a sub-component will also expose them!
+
+Note, however, that doing a \c get() on a parameter is slightly heavier than just getting the value of a variable,
+because parameters are thread-safe, and hence a mutex must be locked during the get(). Hence, instead of calling \c
+updatefac::get() for each data element, we can here pre-compute our divider beforehand:
+
+\code
+  float const ufac = updatefac::get(); // get() is somewhat expensive (requires mutex lock), so cache it here.
+  float const initfac = 1.0F / (1.0F - ufac);
+ 
+  // ...
+   
+  if (itsAlpha.size() != datasiz)
+  {
+    itsAlpha.clear(); itsBeta.clear();
+    for (float d : data)
+    {
+      itsAlpha.push_back(d * initfac);
+      itsBeta.push_back(initfac);
+    }
+  }
+\endcode
 
 We update our function to concatenate the gist vector to the data:
 
@@ -418,7 +452,7 @@ Vision Toolkit, from which our implementation here is derived. Also see Itti & B
 \code
   size_t const datasiz = data.size(); // final data size
 
-  // Compute posterior and KL, independenly for every entry in our vectors. Here we assume Poisson data and a Gamma
+  // Compute posterior and KL, independently for every entry in our vectors. Here we assume Poisson data and a Gamma
   // conjugate prior, as in Itti & Baldi, Vision Research, 2009:
   for (size_t i = 0; i < datasiz; ++i)
   {
@@ -447,12 +481,12 @@ surprise on a Gamma prior. It ends up using hundreds of lines of code of no inte
 the Itti & Baldi implementation.
 </li>
 
-<li>One last imporvement before we are done with our component: instead of just a boolean \p dogist, how about allowing
+<li>One last improvement before we are done with our component: instead of just a boolean \p dogist, how about allowing
 users to choose which channels or combinations they like. We replace \p dogist by:
 
 \code
   //! Parameter \relates Surprise
-  JEVOIS_DECLARE_PARAMETER(channels, std::string, "Channels to use for suprise computation: any combination of "
+  JEVOIS_DECLARE_PARAMETER(channels, std::string, "Channels to use for surprise computation: any combination of "
                            "S (saliency), G (gist), C (color), I (intensity), O (orientation), F (flicker), and "
                            "M (motion). Duplicate letters will be ignored.",
                            "SCIOFMG", boost::regex("^[SCIOFMG]+$"), ParamCateg);
@@ -506,9 +540,9 @@ float Surprise::process(jevois::RawImage const & input)
 
 </ul>
 
-We are done with the Surprise component. Final code is in \ref Surprise.H and \ref Surprise.C and should be pretty close
-to what we have developed above, except for small optimizations introduced after this tutorial was written. The details
-of \c KLgamma() are also in there.
+We are done with the Surprise component. Final code is in Surprise.H and Surprise.C of jevoisbase and should be pretty
+close to what we have developed above, except for small optimizations introduced after this tutorial was written. The
+details of \c KLgamma() are also in there.
 
 SurpriseRecorder module
 -----------------------
@@ -703,7 +737,7 @@ We will use the following basic plan of attack:
   whether it is time to quit.
 
 - Finally, we need to handle the context frames and details like several surprising events occurring within the context
-  time period, which should then be merged (e.g., if users waht 10 seconds of context and two surprising events occur
+  time period, which should then be merged (e.g., if users want 10 seconds of context and two surprising events occur
   spaced by only 7 seconds, we should end up with a single video that starts 10 seconds before the start of the first
   event and ends 10 seconds after the end of the second event). We will thus keep the last \p ctxframes in another,
   non-thread-safe, queue to be used by the main thread only, so that they are ready to provide the context before a
@@ -727,8 +761,8 @@ jevois::Component::postUninit() to stop it.
     {
       itsRunning.store(true);
       
-      // Get our run() thread going, it is in charge of compresing and saving frames:
-      itsRunFut = std::async(std::launch::async, &SaveVideo::run, this);
+      // Get our run() thread going, it is in charge of compressing and saving frames:
+      itsRunFut = std::async(std::launch::async, &SurpriseRecorder::run, this);
     }
 
     // ####################################################################################################
@@ -862,7 +896,7 @@ we also compute surprise. We will do both in parallel by using an async thread f
 \endcode
 
 
-Anf finally our \c run() thread. As it turns out, we end up using it unmodified from that of SaveVideo. So, actually, we
+And finally our \c run() thread. As it turns out, we end up using it unmodified from that of SaveVideo. So, actually, we
 could benefit in splitting off this video saving machinery into a Component that would be used both by SaveVideo and
 SurpriseRecorder. We will leave that for future work:
 
@@ -976,7 +1010,7 @@ webcam to provide inputs, as long as it supports this format.  </li>
 \verbatim
 jevois-daemon
 \endverbatim
-to run the JeVois processing on your host prcessor. It will likely start DemoSaliency as default processing module. 
+to run the JeVois processing on your host processor. It will likely start DemoSaliency as default processing module. 
 </li>
 
 <li>To switch to our new module, type this into the terminal in which you launched \c jevois-daemon:
@@ -1303,7 +1337,7 @@ maps. This is subject to more experimentation.
 jevois-daemon --cameradev=blueservo23_66.asf
 \endverbatim
 
-and let it go though it. Watch the events that were extracted from this hourlong video.
+and let it go though it. Watch the events that were extracted from this hour-long video.
 
 \note Currently, when using video files as input, we loop over the input forever (to simulate a never-ending live
 feed). So, check for repeated saved clips and then just interrupt \c jevois-daemon for now. This could be changed in the
@@ -1328,12 +1362,12 @@ You could add the following to this module:
 - draw the location that was most surprising (with our remapping of everything into a 1D data array, this might be
   tricky).
 
-- add a \c process() function with video output, maybe showing the most surprising location and a bargraph plotting its
+- add a \c process() function with video output, maybe showing the most surprising location and a bar-graph plotting its
   surprise and the current surprise threshold.
 
-- save the time of the event. Note that JeVois does not have a real-time clock. It always initializes to Demember 31,
+- save the time of the event. Note that JeVois does not have a real-time clock. It always initializes to December 31,
   1979 or something like that when it boots. In future versions of the JeVois core, we may add a command to allow one to
-  set the time from the host computer, so that the timestamps of the recorded video files are veridical.
+  set the time from the host computer, so that the time stamps of the recorded video files are veridical.
 
 - In Itti & Baldi, 2009, we actually computed surprise in two ways: over space, and over time. In this tutorial, we only
   did over time. You could add spatial surprise as well.
