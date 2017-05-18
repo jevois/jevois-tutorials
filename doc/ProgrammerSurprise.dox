@@ -10,8 +10,9 @@ data.
 This tutorial will show you how to
 ----------------------------------
 
-- Create a new JeVois component within jevoisbase
-- Create a new JeVois module within jevoisbase
+- Create a new JeVois component within jevoisbase to compute surprise over video frames
+- Create a new JeVois module within jevoisbase to detect surprising events and save a short video clip to microSD for
+  each event
 - Compile, install and test on your host computer first
 - Then cross-compile, install and test on your JeVois smart camera
 - Use the jevois::Profiler to profile execution of your code
@@ -27,8 +28,14 @@ Here is what the SurpriseRecorder module we develop in this tutorial found (4 tr
 
 \youtube{zIslIsHBfYw}
 
-That is, it summarized 1 hour of video into 6 snippets of about 12 seconds each (50x reduction: you just watch barely
-more than a minute of surprising snippets instead of 1 hour of mostly boring footage).
+That is, it summarized 1 hour of video into 6 snippets of about 12 seconds each (50x reduction: you just watch slightly
+over a minute of surprising snippets instead of 1 hour of mostly boring footage). Upon closer inspection after this
+tutorial results video was made, the last detected event actually appears to be a bird flying very quickly across the
+video frames. So, as far as surprise is concerned, this is actually a hit rather than a false alarm noted in the results
+video (i.e., it was a surprising event, although possibly not \a relevant to a surveillance goal - see
+[here](https://www.ncbi.nlm.nih.gov/pubmed/28221085) for recent highly related work on relevance). So we got 5 hits and
+1 false alarm. No misses as far as we can tell by watching the full hour-long video, i.e., our module did detect all the
+boats (and birds) that passed by. Not bad at all!
 
 Theory of operation
 -------------------
@@ -1358,6 +1365,9 @@ Additional activities
 ---------------------
 
 You could add the following to this module:
+
+- play with the parameters some more: the update factor, the channels, the Saliency parameters, etc. and come up with
+  better default values.
 
 - draw the location that was most surprising (with our remapping of everything into a 1D data array, this might be
   tricky).

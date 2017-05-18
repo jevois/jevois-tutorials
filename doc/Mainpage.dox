@@ -1,6 +1,6 @@
 /*! \mainpage JeVois Smart Embedded Machine Vision Toolkit - Tutorials
 
-\section welcomebase Welcome to the tutorials for the JeVois Smart Embedded Machine Vision Toolkit.
+\section welcometut Welcome to the tutorials for the JeVois Smart Embedded Machine Vision Toolkit.
 
 This documentation present tutorials on how to use and program the JeVois smart camera.
 
@@ -11,17 +11,17 @@ Documentation](http://jevois.org/basedoc/).
 
 New users, be sure to check out [JeVois Start](/start/).
 
-\section contentsbase Table of contents
+\section contentstut Table of contents
 
 If you are not yet familiar with JeVois, see the documentation for [JeVois](http://jevois.org/doc/) first.
 
 - \subpage UserTutorials - tutorials for users of existing JeVois machine vision algorithms. In these tutorials, we
-  onbly use JeVois algorithms as provided by the standard distribution and the quick install microSD images. Explore
+  only use JeVois algorithms as provided by the standard distribution and the quick install microSD images. Explore
   these tutorials first as they can run with an out-of-the-box JeVois smart camera. We do program the host computer that
   is connected to JeVois in various ways, though.
 
 
-- \subpage ProgrammerTutorials - tutorials for those who wish to proram new machine vision modules for JeVois. In these
+- \subpage ProgrammerTutorials - tutorials for those who wish to program new machine vision modules for JeVois. In these
   tutorials, we develop new Components and Modules that add new machine vision algorithms to JeVois. This requires
   installing them to a microSD card for testing on the JeVois smart camera.
 

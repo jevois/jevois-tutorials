@@ -229,7 +229,7 @@ Compiling and testing on host
 -----------------------------
 
 Since we have already run \c rebuild-host.sh once and we have not added any new file since them (which would require
-that we run CMake again to detect them, for example by running \c rebuild-host.sh again, we can just use the partial
+that we run CMake again to detect them, for example by running \c rebuild-host.sh again), we can just use the partial
 compilation commands detailed in \ref ProgrammerSDK (but note that, since we only have one file to compile here, this
 does not save us much time):
 
