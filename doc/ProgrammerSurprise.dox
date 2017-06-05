@@ -114,12 +114,13 @@ Surprise component
 <ul>
 
 <li>We first create a new component and name it Surprise. Because it is closely related to \ref Saliency, we will just
-place it in <b>jevoisbase/src/Components/Saliency/</b> together with the Saliency component. We need \b Surprise.H and
-\b Surprise.C here so that users of our component will just include \b Surprise.H in their own components or modules. By
-placing the source under <b>jevoisbase/src/Components/</b> we ensure that the jevoisbase build rules (CMake) will
-automatically detect it and compile it into \b Surprise.o, which will also automatically be linked into the \b
-libjevoisbase.so library that contains all the components of jevoisbase. This is the result of the following line in the
-\b CMakeLists.txt of jevoisbase:
+place it in <b>jevoisbase/include/jevoisbase/Components/Saliency/</b> (for the .H file) and
+<b>jevoisbase/src/Components/Saliency/</b> (for the .C file), together with the Saliency component. We need \b
+Surprise.H and \b Surprise.C here so that users of our component will just include \b Surprise.H in their own components
+or modules. By placing the source under <b>jevoisbase/src/Components/</b> we ensure that the jevoisbase build rules
+(CMake) will automatically detect it and compile it into \b Surprise.o, which will also automatically be linked into the
+\b libjevoisbase.so library that contains all the components of jevoisbase. This is the result of the following line in
+the \b CMakeLists.txt of jevoisbase:
 
 \verbatim
 jevois_setup_library(src/Components jevoisbase 1.0)
@@ -133,7 +134,7 @@ which instructs CMake to build a new library called \b libjevoisbase.so from all
 \code
 #pragma once
 
-#include <jevoisbase/src/Components/Saliency/Saliency.H>
+#include <jevoisbase/Components/Saliency/Saliency.H>
 \endcode
 
 The first one tells the compiler to not include this file again if it was already included, thereby simplifying how
@@ -571,7 +572,7 @@ single .C file that contains declarations and implementation.
 <li>Our module will use the Surprise component, so we pull it in. We also include \b Module.H from jevois:
 \code
 #include <jevois/Core/Module.H>
-#include <jevoisbase/src/Components/Saliency/Surprise.H>
+#include <jevoisbase/Components/Saliency/Surprise.H>
 \endcode
 </li>
 
