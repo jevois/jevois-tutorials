@@ -3,7 +3,7 @@
 
 The color-based object tracker of JeVois is a simple but fast and effective way of tracking objects defined by a
 specific color. The behavior of the module can be fine-tuned by setting ranges for the hue (color tint), saturation
-(color fade), and value (color brightness) of the objects to track. While this can be achived by hand, by using the
+(color fade), and value (color brightness) of the objects to track. While this can be achieved by hand, by using the
 approach studied in \ref UserParameters, quickly one becomes tired of typing many \c setpar commands while searching for
 appropriate settings of the 6 color-related parameters (hue min and max, saturation min and max, and value min and max).
 
@@ -80,9 +80,9 @@ corresponding global variable and then send the corresponding updated range of v
 
 - Go ahead and play with the sliders. Recommended approach is as follows:
   + Widen all 3 ranges to 0...255 (that is, set Hue min to 0, Hue max to 255, etc)
-  + Point JeVois to a scene containing the object you are interested in, as well as a bunch of other objects that youare
-    not interested in. Indeed, our goal will be to detect the objects of interest while rejecting (not detectig) other
-    objects. The object should be big enough but not too big in the video captured by JeVois (another parameter in
+  + Point JeVois to a scene containing the object you are interested in, as well as a bunch of other objects that you
+    are not interested in. Indeed, our goal will be to detect the objects of interest while rejecting (not detecting)
+    other objects. The object should be big enough but not too big in the video captured by JeVois (another parameter in
     ObjectTracker called \p objectarea is by default set to look for objects of size between roughly 20x20 and 100x100
     pixels). The ObjectTracker module draws green contours around all regions that are within the specified HSV
     range. Regions that also fit the area range are declared good detection and get an additional green circle drawn

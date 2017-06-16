@@ -1226,15 +1226,15 @@ We basically follow the standard compilation instructions (see \ref FlashingToSD
 <ul>
 
 <li> Here we will first do a full cross-recompilation of everything for the JeVois platform hardware, but that may not
-always be necessary:
+always be necessary.
 
 \verbatim
 cd ~/jevois && ./rebuild-platform.sh
-cd ~/jevoisbase && ./rebuild-platform.sh -DJEVOIS_MODULES_TO_BUILDROOT=ON
-cd ~/jevois-sdk && ./jevois-build.sh -y /dev/sdX
+cd ~/jevoisbase && ./rebuild-platform.sh --microsd
+sudo jevois-flash-card -y /dev/sdX
 \endverbatim
 
-Make sure that you replace \b sdX above by the device of your microSD!
+Make sure that you replace \b sdX above by the device of your microSD.
 </li>
 
 
@@ -1272,9 +1272,11 @@ SAVEDNUM 200
 SAVEDONE /jevois/data/surpriserecorder/video000000.avi
 \endverbatim
 
-After you are done recording a bunch of events, unplug JeVois, get the microSD out, connect it to your host, and check out the videos that were saved to it!
+After you are done recording a bunch of events, unplug JeVois, get the microSD out, connect it to your host, and check
+out the videos that were saved to it!
 
-From the profiler, looks like our guess that we would be able to do 15fps at 640x480 was pretty good (see the overall average reports).
+From the profiler, looks like our guess that we would be able to do 15fps at 640x480 was pretty good (see the overall
+average reports).
 
 </li>
 

@@ -10,12 +10,10 @@ Here we will take the simple example of looking for different kinds of barcodes 
 Pre-requisites
 --------------
 
-\note We fixed a couple of bugs in JeVois while writing this tutorial, so be sure to download the JeVois MicroSD Image
-v1.0c or later from http://jevois/start/start.html, which was published on April 24, 2017.
-
 You need to know how to stream video from JeVois, how to change video mode, and how to communicate with the serial
 command-line interface of JeVois.
 
+- [Download and flash the latest JeVois microSD image](http://jevois.org/start/start.html)
 - \ref UserGettingStarted
 - \ref UserCli
 - \ref USBserialLinux
@@ -35,7 +33,7 @@ Getting started
 Listing the available parameters
 --------------------------------
 
-The [Demo QR-Code](http://jevois.org/moddoc/DemoQRcode/modinfo.html) module exposes sereral parameters that are
+The [Demo QR-Code](http://jevois.org/moddoc/DemoQRcode/modinfo.html) module exposes several parameters that are
 described in its [documentation page](http://jevois.org/moddoc/DemoQRcode/modinfo.html), see the table of parameters
 below the screenshots on that page.
 
@@ -85,12 +83,12 @@ OK
 
 We can verify that the change took place in three ways:
 
-- type \c help again and check the \p symbol parameter as it is listed there. At the bottom of the descirption of the
+- type \c help again and check the \p symbol parameter as it is listed there. At the bottom of the description of the
   parameter, note:
   \verbatim
   Exported By: DemoQRcode:qrcode value=[ALL]
   \endverbatim
-  The value shown is the one we selected. This extra information about th eparameter's value is only shown when the
+  The value shown is the one we selected. This extra information about the parameter's value is only shown when the
   currently selected value differs from the default value.
 
 - Get the current value of the parameter, by typing:
@@ -117,7 +115,7 @@ We can verify that the change took place in three ways:
 Setting default parameters
 --------------------------
 
-Once you have played with paremeters interactively, you may want to set some default values each time a given module is
+Once you have played with parameters interactively, you may want to set some default values each time a given module is
 loaded. This is possible in JeVois through two configuration files, which are located in the directory of the module of
 interest (if the files are absent, then no action is taken by the module):
 
