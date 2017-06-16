@@ -153,7 +153,7 @@ for aesthetic appeal.
   + edit <b>JEVOIS:/config/params.cfg</b> on the MicroSD card and in there turn \c camturbo to false.
 
 - Let's select a video mapping with 120 frames/s and no USB output. The Jevois camera sensor supports 120 fps at
-  resolutions 176x144 and 88x72. Because we will have no video output, here we can use the \c semapping2 command and
+  resolutions 176x144 and 88x72. Because we will have no video output, here we can use the \c setmapping2 command and
   specify the desired camera resolution directly without the need to edit the \b videomappings.cfg file on the MicroSD
   card. Try this:
 
@@ -194,8 +194,8 @@ individual frames, and then recode those frames into movies with declared 30fps 
 the 120fps movie.
 
 
-Activity 3: Starting the video saving when JeVois is plugged in
----------------------------------------------------------------
+Activity 3: Starting the video saving as soon as JeVois is plugged in
+---------------------------------------------------------------------
 
 To start saving immediately as soon as JeVois is plugged in, we just copy the commands above into
 <b>JEVOIS:/config/initscript.cfg</b>. This script is run as soon as JeVois starts. Hence, edit \b initscript.cfg to

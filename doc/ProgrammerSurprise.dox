@@ -114,12 +114,13 @@ Surprise component
 <ul>
 
 <li>We first create a new component and name it Surprise. Because it is closely related to \ref Saliency, we will just
-place it in <b>jevoisbase/src/Components/Saliency/</b> together with the Saliency component. We need \b Surprise.H and
-\b Surprise.C here so that users of our component will just include \b Surprise.H in their own components or modules. By
-placing the source under <b>jevoisbase/src/Components/</b> we ensure that the jevoisbase build rules (CMake) will
-automatically detect it and compile it into \b Surprise.o, which will also automatically be linked into the \b
-libjevoisbase.so library that contains all the components of jevoisbase. This is the result of the following line in the
-\b CMakeLists.txt of jevoisbase:
+place it in <b>jevoisbase/include/jevoisbase/Components/Saliency/</b> (for the .H file) and
+<b>jevoisbase/src/Components/Saliency/</b> (for the .C file), together with the Saliency component. We need \b
+Surprise.H and \b Surprise.C here so that users of our component will just include \b Surprise.H in their own components
+or modules. By placing the source under <b>jevoisbase/src/Components/</b> we ensure that the jevoisbase build rules
+(CMake) will automatically detect it and compile it into \b Surprise.o, which will also automatically be linked into the
+\b libjevoisbase.so library that contains all the components of jevoisbase. This is the result of the following line in
+the \b CMakeLists.txt of jevoisbase:
 
 \verbatim
 jevois_setup_library(src/Components jevoisbase 1.0)
@@ -133,7 +134,7 @@ which instructs CMake to build a new library called \b libjevoisbase.so from all
 \code
 #pragma once
 
-#include <jevoisbase/src/Components/Saliency/Saliency.H>
+#include <jevoisbase/Components/Saliency/Saliency.H>
 \endcode
 
 The first one tells the compiler to not include this file again if it was already included, thereby simplifying how
@@ -571,7 +572,7 @@ single .C file that contains declarations and implementation.
 <li>Our module will use the Surprise component, so we pull it in. We also include \b Module.H from jevois:
 \code
 #include <jevois/Core/Module.H>
-#include <jevoisbase/src/Components/Saliency/Surprise.H>
+#include <jevoisbase/Components/Saliency/Surprise.H>
 \endcode
 </li>
 
@@ -1225,15 +1226,15 @@ We basically follow the standard compilation instructions (see \ref FlashingToSD
 <ul>
 
 <li> Here we will first do a full cross-recompilation of everything for the JeVois platform hardware, but that may not
-always be necessary:
+always be necessary.
 
 \verbatim
 cd ~/jevois && ./rebuild-platform.sh
-cd ~/jevoisbase && ./rebuild-platform.sh -DJEVOIS_MODULES_TO_BUILDROOT=ON
-cd ~/jevois-sdk && ./jevois-build.sh -y /dev/sdX
+cd ~/jevoisbase && ./rebuild-platform.sh --microsd
+sudo jevois-flash-card -y /dev/sdX
 \endverbatim
 
-Make sure that you replace \b sdX above by the device of your microSD!
+Make sure that you replace \b sdX above by the device of your microSD.
 </li>
 
 
@@ -1271,9 +1272,11 @@ SAVEDNUM 200
 SAVEDONE /jevois/data/surpriserecorder/video000000.avi
 \endverbatim
 
-After you are done recording a bunch of events, unplug JeVois, get the microSD out, connect it to your host, and check out the videos that were saved to it!
+After you are done recording a bunch of events, unplug JeVois, get the microSD out, connect it to your host, and check
+out the videos that were saved to it!
 
-From the profiler, looks like our guess that we would be able to do 15fps at 640x480 was pretty good (see the overall average reports).
+From the profiler, looks like our guess that we would be able to do 15fps at 640x480 was pretty good (see the overall
+average reports).
 
 </li>
 

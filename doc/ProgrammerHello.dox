@@ -480,14 +480,23 @@ ready to go. Something like this:
 cp Tutorial_hellojevois.jvpkg /media/itti/JEVOIS/packages/
 \endverbatim
 
-(replace \b itti above by your username).
+(replace \b itti above by your username).  Then insert the microSD into our JeVois smart camera and start it up.
 
-\warning You need to have an up-to-date core JeVois install (updated after May 12, 2017) for this to work, as we fixed
-some bugs in the module unpacking script on that day (while writing this tutorial).
 
-So let's insert the microSD into our JeVois smart camera and start it up, then start \c guvcview on your host computer
-(note that JeVois may take a bit more time to boot up as it is unpacking and installing our module. This is will be done
-this time only, and the package will be deleted from microSD once all its files have been installed).
+\note With \jevoisversion{1.1} and later, you do not need to physically remove the microSD from JeVois, and you can
+instead just export it as a virtua USB flash drive while JeVois is connected to your host computer and running:
+- Export the microSD as a virtual USB flash drive by issuing the command \c usbsd to the JeVois command-line interface
+  (see \ref UserCli). Make sure JeVois is not streaming video. Then either connect to it using a terminal and send the
+  \c usbsd command, or, for short, you can just type on your host: `sudo sh -c 'echo usbsd > /dev/ttyACM0'`
+- The JEVOIS partition of the microSD inside JeVois appears as a new USB flash drive on your host. It should also get
+  mounted as /media/<em>username</em>/JEVOIS/
+- You can now copy the jvpkg to microSD with `cp Tutorial_hellojevois.jvpkg /media/<em>username</em>/JEVOIS/packages/`
+- Eject the USB flash drive and JeVois will automatically reboot and unpack and install the package.
+
+
+Start \c guvcview on your host computer. Note that JeVois may take a bit more time to boot up as it is unpacking and
+installing our module. This is will be done this time only, and the package will be deleted from microSD once all its
+files have been installed.
 
 Set \c guvcview to YUYV 640x480 and you will notice the new 28.5fps framerate (will show up as 57/2 in some versions of
 \c guvcview). Select it and here you are:
@@ -515,37 +524,76 @@ If things go wrong here (the JeVois smart camera fails to start after you copied
   [here](https://www.jevoisinc.com/collections/accessories/products/usb-to-micro-serial-adapter-cable-3-feet-1m-long) if
   you need one).
 
-Installing to JeVois hardware using buildroot of jevois-sdk
------------------------------------------------------------
+Installing to JeVois hardware using a live microSD card
+-------------------------------------------------------
 
-The entire operating system for JeVois is created under the jevois-sdk. It can then be installed onto a fresh new
-microSD card.
+Insert a properly installed JeVois microSD (follow the steps at [JeVois Start](http://jevois.org/start) to make one from
+a disk image) into your computer, either physically inserted into your host computer using a microSD-to-USB adapter, or
+exported live by JeVois using the \c usbsd command in the JeVois command-line interface; see \ref UserCli). The microSD
+card must be be available under <b>/media/<em>username</em>/JEVOIS/</b> where <em>username</em> is your Linux user name.
 
-To include your new module into buildroot, run this:
+Run:
 
 \verbatim
 cd ~/hellojevois
-./rebuild-platform.sh -DJEVOIS_MODULES_TO_BUILDROOT=ON
+./rebuild-platform.sh --microsd
 \endverbatim
 
-which will copy all the files to buildroot.
+Modules, config files, etc will be installed to the live microSD card at <b>/media/<em>username</em>/JEVOIS/</b> where
+<em>username</em> is your Linux user name.
 
-You do need to edit <b>~/jevois/Config/videomappings.cfg</b> and add some mapping using your new module in there, then
-run \c rebuild-platform.sh in jevois to copy that config file to buildroot as well.
+\note Once you select a destination in `rebuild-platform.sh` (none, staging, or microsd), that will remain for
+subsequent `make install` commands, until you change it by re-running `rebuild-platform.sh` with another destination.
+
+Here is a simple command to export the microSD of a live JeVois camera without having to start a terminal program, etc
+(make sure JeVois is not streaming video):
+
+\verbatim
+sudo sh -c 'echo usbsd > /dev/ttyACM0'
+\endverbatim
+
+If you have a \b postinstall script in your module and some mappings in a private \b videomappings.cfg in your module
+(as we did above), those will still get appended to the main \b videomappings.cfg next time JeVois reboots.
+
+
+
+Installing to JeVois hardware using the staging area of jevois-sdk
+------------------------------------------------------------------
+
+Use this method if you want to reflash the entire microSD using the latest operating system, core files, etc provided by
+jevois-sdk.
+
+The entire operating system for JeVois is created under the jevois-sdk and the resulting files are placed into two
+staging directories: <b>/var/lib/jevois-build</b> for system files, and <b>/var/lib/jevois-microsd</b> for files that
+will go into the JEVOIS partition. See \ref ProgrammerOrganization for details. It can then be installed onto a fresh
+new microSD card.
+
+To include your new module into the staging area, run this:
+
+\verbatim
+cd ~/hellojevois
+./rebuild-platform.sh --staging
+\endverbatim
+
+which will copy all the files to the staging area.
+
+If you have a \b postinstall script in your module and some mappings in a private \b videomappings.cfg in your module
+(as we did above), those will still get appended to the main \b videomappings.cfg next time JeVois reboots.
 
 Then you can flash a new microSD card as usual (see \ref FlashingToSD):
 
 \verbatim
-cd ~/jevois-sdk && ./jevois-build.sh -y /dev/sdX
+sudo jevois-flash-card -y /dev/sdX
 \endverbatim
 
 (replace \b sdX above by the device for your microSD).
 
-\warning Once you compile with \c -DJEVOIS_MODULES_TO_BUILDROOT=ON the files will be copied to buildroot and will never
+\warning Once you compile with the <b>--staging</b> option, the files will be copied to the staging area and will never
 be deleted. So use with caution so that you do not get confused later on because an old version of a module was
-installed to buildroot while you are trying to install a new one as a package, etc. To figure out where the files are in
-buildroot, run <code>find ~/jevois-sdk -name HelloJevois.so</code> and you can then delete these files manually from
-buildroot (and the whole \b modules/Tutorial directory).
+installed to staging while you are trying to install a new one as a package, etc. To figure out where the files are in
+staging, run `find /var/lib/jevois-microsd -name HelloJevois.so` and you can then delete these files manually
+from staging (and the whole \b modules/Tutorial directory).
+
 
 
 */
