@@ -6,7 +6,7 @@ on a specific color, on a specific type of shape (e.g., ArUco marker), or on a g
 modules issue messages to the JeVois serial ports that indicate the coordinates of the objects that were found (and
 adding such messages to those which do not yet send them is a simple modification).
 
-In this totorial, we use a motorized pan-tilt head and a small Arduino-compatible board to control the pan-tilt head, so
+In this tutorial, we use a motorized pan-tilt head and a small Arduino-compatible board to control the pan-tilt head, so
 that it will always try to center the detected object in the camera's field of view. That is, we will use the
 coordinates issued by JeVois, to counter-rotate the pan-tilt head (onto which JeVois should be mounted) so as to center
 the objects of interest. The net effect will be that JeVois mounted on the pan-tilt head will track the objects of
@@ -46,7 +46,7 @@ Basic plan of attack
 Hardware work
 -------------
 
-- Assemble your pan-tilt head. Follow the instructions that came wth it. This can take a while depending on which model
+- Assemble your pan-tilt head. Follow the instructions that came with it. This can take a while depending on which model
   you used.
 
 - Get the [JeVois mounting template](http://jevois.org/data/jevois-dimensions.pdf) and print it at 100% scale.
@@ -73,12 +73,12 @@ Hardware work
   \image html UserPanTiltCamera.jpg
 
 - Connect your JeVois micro-serial cable to your Arduino board as explained in \ref UserSerial. On our small ProMicro
-  board used here, there is no IOREF pin, so we just use VCC instead to provide a reference 5V votage to JeVois, to be
+  board used here, there is no IOREF pin, so we just use VCC instead to provide a reference 5V voltage to JeVois, to be
   used as the level at which serial communications will operate.
 
 - Connect two wires to power your Arduino. Here we will use one black wire to GND and one red wire to VCC (since we will
   use a clean 5V power supply, we provide it directly to the Arduino's VCC and we bypass the RAW voltage
-  input). Alternatively, you can power your arduino from its micro-USB port (which we will do during programming), or
+  input). Alternatively, you can power your Arduino from its micro-USB port (which we will do during programming), or
   you could use a 6V power supply (which will make your servos operate faster) and then connect that 6V to the RAW
   voltage supply pin of your Arduino (check specs of your Arduino to be sure).
 
@@ -192,7 +192,7 @@ serpar serout Hard
 
   Note that the Arduino pan-tilt code is written to apply a small \a relative offset to a memorized pan-tilt location
   each time a serial command is received. Indeed, because the Arduino code will receive target coordinates up to 60
-  times per socond, it would be too jerky to try each time to fully home onto the target. So, instead, the pan-tilt head
+  times per second, it would be too jerky to try each time to fully home onto the target. So, instead, the pan-tilt head
   will take a small step towards the target. The size of these steps is regulated by two control parameters in the
   Arduino code, \p PANGAIN and \p TILTGAIN, with default values of 100. Higher gain values will move the head more
   rapidly towards the target on each video frame.
@@ -260,8 +260,82 @@ serout PANGAIN 500
 
 \youtube{3V3vsoQrFo0}
 
-Activities
-----------
+Running with no USB output
+--------------------------
+
+Once you are comfortable with the operation of the algorithm, you can also try it as a true standalone machine vision
+system with no USB output. The steps are as follows:
+
+- Select a machine vision algorithm that supports processing with no USB output. Not all of them do. From the list of
+  \ref UserDemos, we can select, for example the [ObjectTracker](/moddoc/ObjectTracker/modinfo.html) and we see, towards
+  the top of the page:
+  \verbatim
+  Supports mappings with NO USB output:   Yes
+  \endverbatim
+  An example video mapping with no USB output (with \b NONE as USB pixel format) is also suggested:
+  \verbatim
+  Video Mapping:   NONE 0 0 0.0 YUYV 320 240 60.0 JeVois ObjectTracker
+  \endverbatim
+
+- If you are operating in low light, you may want to select a lower framerate than the suggested 60fps, so that the
+  camera sensor will be allowed longer exposure time. Here we will use 30fps.
+
+- Let us first try interactively:
+  + Power in the pan/tilt head
+  + Connect JeVois to your host computer and allow it to boot
+  + But do not start a video capture software
+  + Connect to the JeVois command line interface as we have done above.
+  + Issue the following:
+    \verbatim
+setmapping2 YUYV 320 240 30.0 JeVois ObjectTracker
+setpar serout Hard
+streamon
+    \endverbatim
+    which will load up the object tracker module and run it in the mode with no USB output. The \c setmapping2 command
+    instructs JeVois to configure a given camera pixel format, resolution, and framerate, and to load the module
+    ObjectTracker from Vendor JeVois. Because \c setmapping2 does not specify a USB output video format, the module will
+    run with no USB video output. We then manually initiate video streaming using the \c streamon command when running
+    with no USB output, because there is no video capture software that is going to initiate it. See \ref UserCli for
+    details on \c setmapping2 and \c streamon.
+  + Wave some object that was detected earlier in front of JeVois and your pan/tilt head should track it.
+
+- Once this works, we can configure JeVois to do this automatically at boot up:
+
+  + Assuming that you are using the latest microSD image, just type \c usbsd in the command line interface, and a
+    virtual USB flash drive named \b JEVOIS should appear on your host computer. See \ref MicroSD for details, towards
+    bottom of the page.
+  + Open the file <b>JEVOIS:/jevois/config/initscript.cfg</b> and add these lines:
+    \verbatim
+setmapping2 YUYV 320 240 30.0 JeVois ObjectTracker
+setpar serout Hard
+streamon
+    \endverbatim
+    \b initscript.cfg is executed by JeVois when it boots up. You can put in there any command that is valid for the
+    command-line interface of JeVois.
+  + Save and close the file and eject the JEVOIS virtual flash drive (drag to trash, click eject button, etc).
+    JeVois will reboot.
+  + After a few seconds, it should now start with the color-based pan/tilt control with no USB video output.
+  + From this point on, you do not need your host computer anymore. You can power JeVois from a USB charger, USB battery
+    bank, etc.
+
+\note Because we changed framerate here (from 60 fps while we were seeing the video over USB to 30 fps with no USB), the
+color tracking algorithm may need re-tuning. If it does not appear to track well, first try with 60 fps in your \c
+setmapping2 command, to match what we had before. You can then edit <b>JEVOIS:/config/videomapping.cfg</b> to change
+the framerate of the mode with USB output: Search for \b ObjectTracker and change this entry:
+\verbatim
+YUYV 320 254 60.0 YUYV 320 240 60.0 JeVois ObjectTracker
+\endverbatim
+to
+\verbatim
+YUYV 320 254 30.0 YUYV 320 240 30.0 JeVois ObjectTracker
+\endverbatim
+and see \ref UserModes for details about the format of video mappings. Next time you start your video capture software,
+be sure to select YUYV 320x254 at 30 fps.  Then have a look at \ref UserColorTracking for tuning. You can save your
+tuned parameters to the file <b>JEVOIS:/modules/JeVois/ObjectTracker/script.cfg</b> as we did in this tutorial.
+
+
+Additional activities
+---------------------
 
 - Try to play with the \c PANGAIN and \c TITLGAIN values. Notice how values that are too high will yield crazy
   oscillations of the pan-tilt head. Indeed, we only use a proportional control of the head. As an exercise, think about
@@ -269,7 +343,7 @@ Activities
   https://en.wikipedia.org/wiki/PID_controller).
 
 - Not many modules issue \b T2D serial messages as of now. As an exercise, try to modify a module you like (e.g.,
-  DemoArUco) to have it also issue \b T2D messages. Have a look at how it is done in, for example, DemoObjectTracker and
+  DemoArUco) to have it also issue \b T2D messages. Have a look at how it is done in, for example, ObjectTracker and
   try to replicate the commands in the DemoArUco module.
 
 */
