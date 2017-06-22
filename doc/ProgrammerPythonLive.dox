@@ -1,0 +1,125 @@
+/*! \page ProgrammerPythonLive Programming a live JeVois camera using Python
+
+
+In this tutorial, we modify some existing sandbox machine vision module written in Python and already pre-installed on
+the standard JeVois microSD image. We do this by accessing the microSD inside JeVois live over the USB connection.
+
+For this tutorial, you do not need to install any software (except for a video capture program, if you do not already
+have one): We will directly edit the Python code on the microSD card that is inside JeVois.
+
+Preliminaries
+-------------
+
+- Get the latest microSD image from [JeVois start](http://jevois.org/start)
+- Review the \ref UserTutorials so you know how to:
+  + Flash the latest microSD image to a physical card
+  + Connect JeVois to a host computer and power it up
+  + Grab video from JeVois and select different resolutions
+  + Communicate with JeVois using a serial-over-USB link, and use the JeVois command-line interface
+- Be sure to go through the \ref Programmer to understand the basic concepts.
+- Go through \ref ProgrammerPython
+- And finally check out \ref ModulePythonTutorial
+
+Here, we will focus on step-by-step instructions for how to make all of this work.
+
+Getting started
+---------------
+
+- Connect JeVois to your host with the latest microSD image inside
+
+- Start your video grabber and select resolution <b>YUYV 352x288 \@ 30fps</b> which starts the \ref PythonSandbox
+  module. By default this module computes the Laplacian of the input video image and streams the results to USB. It is
+  pretty much identical to the sandbox module covered in \ref ModulePythonTutorial. You should see something like this:
+  \image html PythonSandbox1.png
+
+- The basic workflow for live editing of machine vision modules on JeVois is as follows:
+  + Stop grabbing video
+  + Instruct JeVois to export its microSD card as a virtual USB drive
+  + Open the virtual USB drive on th ehost computer
+  + Open the Python source code on that USB drive using a text editor
+  + Modify the code and save
+  + Eject the virtual USB drive. Upon eject, JeVois will restart and when it comes back online we
+    can check the results of our edits by starting the video capture software again.
+
+- Let's do this! First, quit your video capture software. This is necessary as JeVois will refuse to export its microSD
+  as a virtual USB drive while video is streaming. The reason for that is that accessing that drive at the same time by
+  the JeVois CPU and the host computer poses datacoherency and caching problems. So we shutdown all machine vision
+  modules on JeVois before exporting the microSD over USB.
+
+- We need to send the command \c usbsd to JeVois to let it know that we want to export the microSD over USB. You can do
+  that by first connecting to JeVois and then typing this command. For example, use the Arduino IDE to connect, as done
+  in \ref UserArduinoIDE.
+
+  Here, since we only want to give that one command to JeVois, we can instead do:
+  + Linux: `sudo sh -c 'echo usbsd > /dev/ttyACM0'` or, in the latest \b jevois checkout from Github, you can use
+    `~/jevois/scripts/jevois-usbsd start` (to export it) and `~/jevois/scripts/jevois-usbsd stop` (to eject and reboot
+    JeVois).
+  + Mac OSX: `echo usbsd > /dev/cu.usbmodem*`
+  + Windows: FIXME anyone can contribute a short command?
+
+  Here is the result on a Mac:
+  \image html PythonSandbox2.png
+
+- Find \b PythonSandbox.py under <b>JEVOIS:/modules/JeVois/PythonSandbox</b> and open it (on my Mac, double-click opens
+  it in Emacs).
+
+- Let us edit the critical line, which computes the Laplacian (line 59). Let us change the \b ksize parameter a bit,
+  to 3:
+  \verbatim
+        outimg = cv2.Laplacian(inimg, -1, ksize=3, scale=0.25, delta=127)
+  \endverbatim
+  and save the file.
+
+- Properly eject the JEVOIS drive (drag to trash, click eject button, etc) and watch the LED on your camera:
+  + Blinks off - shutdown complete, restarting
+  + Orange blink - camera sensor detected
+  + Solid orange: ready for action
+
+- Start your video capture software again once JeVois is ready, and observe the results:
+  \image html PythonSandbox3.png
+  Subtle but clear differences compared to what the module used to do.
+
+- Let's compute something else than the Laplacian. Quite your video capture program, issue the \c usbsd command, edit
+  the file, and change line 59 to instead implement a color object tracker (threshold on colors), as explained at:
+  http://docs.opencv.org/trunk/df/d9d/tutorial_py_colorspaces.html
+
+  \code{.py}
+    # Convert BGR to HSV
+    hsv = cv2.cvtColor(inimg, cv2.COLOR_BGR2HSV)
+    
+    # define range of blue color in HSV
+    lower_blue = np.array([80,50,50])
+    upper_blue = np.array([150,255,255])
+    
+    # Threshold the HSV image to get only blue colors
+    mask = cv2.inRange(hsv, lower_blue, upper_blue)
+    
+    # Bitwise-AND mask and original image
+    outimg = cv2.bitwise_and(inimg, inimg, mask= mask)
+  \endcode
+  Make sure your indentation is correct as Python is picky about that. The lines you paste in place of the old line 59
+  should be indented by the same amount as the lines immediatly above and below.
+
+  Here is the result (you need to show a blue object to JeVois, here we showed our favorite USB flash drive):
+  \image html PythonSandbox4.png
+  We now have something that is beginning to ressemble the basic color tracker of \ref UserColorTracking, in just a
+  few lines of Python code.
+
+Errors
+------
+
+As always, you can connect to JeVois using the serial-over-USB port and issue a `setpar serlog USB` to see any error
+messages that might occur if your code has mistakes.
+
+In addition, we have worked very hard to add a new feature that displays these errors directly in the video stream. For
+example, insert the line:
+\verbatim
+      boo
+\endverbatim
+say, at line 59. Then try to capture video from JeVois, you should see:
+
+\image html PythonSandbox5.png
+
+
+
+*/
