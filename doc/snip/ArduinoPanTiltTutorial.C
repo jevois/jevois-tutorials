@@ -1,6 +1,6 @@
 // JeVois control steering or a pan/tilt head from the output of JeVois modules
 //
-// We handle messages "T2D <targetx> <targety>", "T1D <targetx>", "PANGAIN <gain>", and "TILTGAIN <gain>".
+// We handle messages "T2 <targetx> <targety>", "T1 <targetx>", "PANGAIN <gain>", and "TILTGAIN <gain>".
 // targetx and targety are assumed to be in the -1000 ... 1000 range as output by the JeVois Kalman filters.
 // Here we only do simple PD control under the assumption that target coordinates have already been filtered upstream.
 #include <Servo.h>
@@ -55,11 +55,11 @@ void loop()
   {
     // State machine:
     // 0: start parsing
-    // 1: T2D command, parse targx
-    // 2: T2D command, parse targy
-    // 3: T2D command complete
-    // 4: T1D command, parse targx
-    // 5: T1D command complete
+    // 1: T2 command, parse targx
+    // 2: T2 command, parse targy
+    // 3: T2 command complete
+    // 4: T1 command, parse targx
+    // 5: T1 command complete
     // 6: PANGAIN command, parse pangain
     // 7: PANGAIN command complete
     // 8: TILTGAIN command, parse tiltgain
@@ -68,8 +68,8 @@ void loop()
     switch (state)
     {
       case 0:
-        if (strcmp(tok, "T2D") == 0) state = 1;
-        else if (strcmp(tok, "T1D") == 0) state = 4;
+        if (strcmp(tok, "T2") == 0) state = 1;
+        else if (strcmp(tok, "T1") == 0) state = 4;
         else if (strcmp(tok, "PANGAIN") == 0) state = 6;
         else if (strcmp(tok, "TILTGAIN") == 0) state = 8;
         else state = 1000;

@@ -198,11 +198,11 @@ serpar serout Hard
   rapidly towards the target on each video frame.
 
 \verbatim
-serout T2D 10000 0
+serout T2 10000 0
 \endverbatim
 
 As the command is received, the pan-tilt head should turn right by some amount. If it turns left, your pan gain should
-be negated. The Arduino code supports two commands, in addition to T2D: \c PANGAIN and \c TILTGAIN. You can negate \c
+be negated. The Arduino code supports two commands, in addition to T2: \c PANGAIN and \c TILTGAIN. You can negate \c
 PANGAIN as follows if your pan-tilt head just turned left:
 
 \verbatim
@@ -211,7 +211,7 @@ serout PANGAIN -100
 
 Then try again
 \verbatim
-serout T2D 10000 0
+serout T2 10000 0
 \endverbatim
 
 and the camera should now pan in the other direction than previously.
@@ -219,7 +219,7 @@ and the camera should now pan in the other direction than previously.
 - Repeat this process to adjust the tilt direction, now using commands like:
 
 \verbatim
-serout T2D 0 10000
+serout T2 0 10000
 \endverbatim
 
 to tilt the camera up, and 
@@ -241,7 +241,8 @@ We are ready to get that pan-tilt head controlled by JeVois.
   + YUYV 640x300 @ 60.0 fps - Demo Saliency
   + YUYV 320x254 @ 60.0 fps - Color-based Object Tracker
   + YUYV 640x312 @ 50.0 fps - Demo Saliency + Gist + Face + object recognition
-  + any other that supports T2D or T1D serial outputs (see docs and/or source code).
+  + any other that supports T2 or T1 serial outputs (see docs and/or source code an dlook for modules that support
+    standardized serial messages).
 
 - Show some interesting object to JeVois and watch it track it.
 
@@ -342,9 +343,9 @@ Additional activities
   how you would modify the Arduino code to include a PID control (see for example
   https://en.wikipedia.org/wiki/PID_controller).
 
-- Not many modules issue \b T2D serial messages as of now. As an exercise, try to modify a module you like (e.g.,
-  DemoArUco) to have it also issue \b T2D messages. Have a look at how it is done in, for example, ObjectTracker and
-  try to replicate the commands in the DemoArUco module.
+- As an exercise, try to modify another module you like to have it also issue \b T2 messages. Have a look at how it is
+  done in, for example, ObjectTracker using \ref coordhelpers and the helper functions to send serial messages provided
+  by jevois::Module, and try to replicate the commands in your new module.
 
 */
 
