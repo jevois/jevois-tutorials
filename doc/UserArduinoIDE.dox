@@ -5,7 +5,7 @@ Chances are that at one point or another you will program an Arduino to communic
 In this tutorial, we install and use the Arduino IDE (Integrated Development Environment) to communicate with JeVois. We
 use the serial monitor included in the Arduino IDE. Communicating with your JeVois smart camera in this way allows you
 to set camera and machine vision parameters which are not otherwise available when you just grab video from JeVois. In
-fact, you can issue a number of interesting commands to JeVois t tune its behavior in many ways.
+fact, you can issue a number of interesting commands to JeVois to tune its behavior in many ways.
 
 Getting the Arduino IDE
 -----------------------

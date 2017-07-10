@@ -11,10 +11,13 @@ Programming JeVois machine vision modules using Python
 ======================================================
 
 - \subpage ProgrammerPythonLive
+- \subpage ProgrammerPythonDice
 
 
 Programming JeVois machine vision modules using C++
 ===================================================
+
+- \subpage ProgrammerSetup
 
 - \subpage ProgrammerHello
 

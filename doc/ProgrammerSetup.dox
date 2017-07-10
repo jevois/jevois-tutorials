@@ -1,0 +1,79 @@
+/*! \page ProgrammerSetup Setting up for programming JeVois
+
+
+This tutorial will help you get setup for programming JeVois.
+
+If all you want to do is use existing bundled machine vision algorithms, and possibly develop new modules in Python
+only, then simply get and flash a microSD image from http://jevois.org/start and check out:
+
+- \ref UserGettingStarted
+- \ref ProgrammerPythonLive
+
+The programming environment is Ubuntu 64-bit, version 17.04 (zesty) or 16.04 LTS (xenial).
+
+It is generally ok to setup the programming environment in a virtual machine (e.g., VirtualBox). Just beware that you
+may have to resolve issues having to do with granting proper access to either the video camera or the microSD card to
+the virtual machine.
+
+Upgrading
+---------
+
+When upgrading to a new version of JeVois (for example, from 1.1 to 1.2), we recommend deleting all previous generated
+files and rebuilding both \b /jevois for host and the staging area for platform in \c var/lib/jevois-build and \c
+/var/lib/jevois-microsd:
+
+\verbatim
+sudo rm -rf /jevois /usr/lib/jevois-build/usr /var/lib/jevois-microsd
+\endverbatim
+
+Then rebuild everything (except the Linux kernel, platform O.S., etc) as detailed below.
+
+\note If upgrading from version 1.0, you need to delete the files that were installed in different locations:
+- remove all OpenCV files in /usr/local/include/opencv*, /usr/local/lib/libopencv*, /usr/local/share/opencv
+- remove JeVois files /usr/bin/jevois*
+- remove JeVois libraries /usr/lib/libjevois*
+- remove /jevois
+
+Installing Debian packages
+--------------------------
+
+- Start by checking out \ref ProgrammerSource
+
+- Unless you want to recompile the Linux kernel that runs inside JeVois (most people would not want to do that), or the
+  operating system and Unix utilities in JeVois (most people would also not want that), follow the instructions at
+  http://jevois.usc.edu and install package \b jevois-sdk-dev which will pull in all other required packages as
+  dependencies.
+
+- If you do want to recompile the kernel or the operating system, you need to install everything from source as detailed
+  in the [INSTALL file of the jevois repository](https://github.com/jevois/jevois/blob/master/INSTALL).
+
+- Now review the \ref ProgrammerOrganization to get accustomed with where the various files are.
+
+Getting the latest source code from GitHub
+------------------------------------------
+
+\verbatim
+cd
+git clone https://github.com/jevois/jevois.git
+git clone https://github.com/jevois/jevoisbase.git
+git clone https://github.com/jevois/jevois-sdk.git
+git clone https://github.com/jevois/samplemodule.git
+git clone https://github.com/jevois/samplepythonmodule.git
+git clone https://github.com/jevois/jevois-tutorials.git
+\endverbatim
+
+Compiling JeVois, JeVoisBase, samplemodule
+------------------------------------------
+
+- First see \ref CompilingJeVois
+
+- Then see \ref CompilingJeVoisBase
+
+- For \b samplemodule, the compilation instructions and scripts are the same as for \b jevoisbase
+
+- Finally see \ref FlashingToSD
+
+- When you are ready to write new modules from scratch, just read the whole \ref Programmer.
+
+
+*/

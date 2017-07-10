@@ -1,0 +1,121 @@
+/*! \page UserObjectDetect Live training of the Object Detection module
+
+
+The \ref ObjectDetect module allows JeVois to detect objects that it has seen before.
+
+With \jvversion{1.2} and later you can train this algorithm live.
+
+In this tutorial, you will learn how to train the algorithm live to recognize new objects.
+
+Getting started
+---------------
+
+- Connect JeVois to a host computer.
+
+- Start video capture software and select <b>YUYV 320x252 @ 30.0 fps</b> which should launch the [Object
+  Detect](http://jevois.org/moddoc/ObjectDetect/modinfo.html).
+
+- Start a serial terminal and connect to the serial-over-USB port of JeVois.
+
+Theory of operation
+-------------------
+
+The module finds objects by matching keypoint descriptors between the current image and a set of training images. Here
+we use SURF keypoints and descriptors as provided by OpenCV.
+
+The algorithm consists of 4 phases:
+- detect keypoint locations, typically corners or other distinctive texture elements or markings;
+- compute keypoint descriptors, which are summary representations of the image neighborhood around each keypoint;
+- match descriptors from current image to descriptors previously extracted from training images;
+- if enough matches are found between the current image and a given training image, and they are of good enough
+  quality, compute the homography (geometric transformation) between keypoint locations in that training image and
+  locations of the matching keypoints in the current image. If it is well conditioned (i.e., a 3D viewpoint change
+  could well explain how the keypoints moved between the training and current images), declare that a match was
+  found, and draw a green rectangle around the detected object.
+
+Live training
+-------------
+
+Because this alogrithm performs matching between the current image captured by JeVois and a collection of reference
+images, only one training examplar is needed for each new object.
+
+The ObjectDetect module provides commands and parameters to assist you in collecting a good training image for each new
+object that you want to be able to detect:
+
+- parameter \p showwin - shows a rectangular window that will be used to collect training samples. Training images will
+  be collected for objects that should fit inside this window and occupy as much of it as possible.
+
+- parameter \p win - defines the size and shape of the window. You should size the window so that the training view of a
+  new object fills that window when the object of interest is placed at a distance from JeVois that is expected to be
+  the typical distance at which one would like to later recognize that object. The algorithm does provide some degree of
+  scale invariance, but training with the object at the typical distance at which you would later want to detect it will
+  help making detections even more reliable.
+
+First, enable display of a training window using:
+\verbatim
+setpar showwin true
+\endverbatim
+
+You should now see a grey rectangle. You can adjust the window size and aspect ratio using the \p win parameter. By
+default, the algorithm will train new objects that occupy half width and height of the camera image.
+    
+Point your JeVois camera to a clean view of an object you want to learn (if possible, with a blank, featureless
+background, as this algorithm does not attempt to segment objects and would otherwise also learn features of the
+backgrouns as part of the object). Make sure the objects fits inside the grey rectangle and fills as much of it as
+possible. You should adjust the distance between th eobject and the camera, and the grey rectangle, to roughly match the
+distance at which you want to detect that object in the future. Then issue the command:
+
+\verbatim
+save somename
+\endverbatim
+
+over a serial connection to JeVois, where <em>somename</em> is the name you want to give to this object. This will grab
+the current camera image, crop it using the grey rectangle, and save the crop as a new training image
+<b>somename.png</b> for immediate use. The algorithm will immediately re-train on all objects, including the new
+one. You should see the object being detected shortly after you send your save command. Note that we save the image as
+grayscale since this algorithm does not use color anyway.
+
+You can see the list of current images by using command:
+\verbatim
+list
+\endverbatim
+
+Finally, you can delete an image using command:
+
+\verbatim
+del somename
+\endverbatim
+where <em>somename</em> is the object name without extension, and a .png extension will be added. The image will
+immediately be deleted and that object will not be recognized anymore.
+
+See it in action
+----------------
+
+\youtube{qwJOcsbkZLE}
+
+Additional activities
+---------------------
+
+- This module does not attempt to discard any specular reflection off of shiny objects. Rather, it may learn
+  specularities (shiny spots) as spurious features of the object. This is problematic if one trains the algorithm with a
+  shiny object under one light source orientation, and then tests under a different orientation: the specular
+  reflections will move on the object and this will reduce the matching score. Hence, some consideration of the lighting
+  conditions during both training and test is warranted. You may want to try:
+
+  + Orienting the object during training so that no specular spot is visible. This may require using some soft lighting
+    (e.g., using a white umbrella to diffuse light).
+  + Using omnidirectional lighting (e.g., ring of LEDs).
+  + Possibly training several images corresponding to several distinct light source orientations.
+  
+  
+- The module provides additional parameters that you should adjust to get the best possible recognition accuracy. These
+  parameters will provide a trade-off between misses (object was present but JeVois did not detect it) and false alarms
+  (object was not there but JeVois mistakenly reported that it was because JeVois was tripped by other features that
+  looked similar). Try to adjust these:
+  + \p hessian - higher means that less crisp keypoints (smoother appearance) will not be used
+  + \p goodpts - a broader range will allow detection of an object under wider conditions but may slow down the
+    algorithm and/or give rise to more false alarms.
+  + \p distthresh - a higher value will enforce a stricter matching of descriptors between the training image and the
+    current image, which may decrease false alarms but also increase misses.
+
+*/

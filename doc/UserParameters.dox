@@ -7,6 +7,8 @@ Here we will take the simple example of looking for different kinds of barcodes 
 
 \image html UserParametersQR.png
 
+This tutorial requires a \jvversion{1.1} or later microSD card.
+
 Pre-requisites
 --------------
 
@@ -19,6 +21,7 @@ command-line interface of JeVois.
 - \ref USBserialLinux
 - \ref USBserialWindows
 - \ref USBserialMac
+- And/or \ref UserCMD
 
 Getting started
 ---------------

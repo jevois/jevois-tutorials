@@ -79,7 +79,7 @@ Getting started
   \image html PythonSandbox3.png
   Subtle but clear differences compared to what the module used to do.
 
-- Let's compute something else than the Laplacian. Quite your video capture program, issue the \c usbsd command, edit
+- Let's compute something else than the Laplacian. Quit your video capture program, issue the \c usbsd command, edit
   the file, and change line 59 to instead implement a color object tracker (threshold on colors), as explained at:
   http://docs.opencv.org/trunk/df/d9d/tutorial_py_colorspaces.html
 
