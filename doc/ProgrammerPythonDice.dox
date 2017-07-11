@@ -14,10 +14,12 @@ In this tutorial, you will learn:
 
 This tutorial assumes \jvversion{1.3} or later.
 
+See \ref ProgrammerDice for an implementation of this algorithm in C++ OpenCV (Linux host only).
+
 Preliminaries
 -------------
 
-- Review ProgrammerPythonLive so that you are comfortable with:
+- Review \ref ProgrammerPythonLive so that you are comfortable with:
   + Flashing the latest microSD image to a physical card
   + Connecting JeVois to a host computer and powering it up
   + Grabbing video from JeVois and selecting different resolutions
@@ -43,7 +45,7 @@ https://github.com/jevois/samplepythonmodule:
   + change the class name in src/Modules/PythonDiceCounter/PythonDiceCounter.py to PythonDiceCounter
 
 - Linux: If you have installed the \b jevois-sdk and followed the instructions in \ref ProgrammerSetup, you should
-  instead use the script `jevois-create-python-module` which will grab that same sample code from GitHub, but will also
+  instead use the script `jevois-create-python-module` which will grab that same sample code from GitHub, and will also
   immediately change names of classes and files to match our new module's name: usage is `jevois-create-python-module
   <VendorName> <ModuleName>`, so here let us just run:
   \verbatim
@@ -194,7 +196,7 @@ Initial import to live microSD
 ------------------------------
 
 The JeVois \b samplepythonmodule runs fine out of the box and thus our module should run as well if we have not
-introduces any mistakes.
+introduced any mistakes.
 
 - On Mac and Windows: 
   + Create a directory <b>JEVOIS:/modules/Tutorial</b> on the microSD for our new vendor name \a Tutorial
@@ -514,13 +516,13 @@ Packing the module
 ------------------
 
 If you are using a Linux host and have been developing the code by editing the Python file on your host and then running
-`./rebuild-platform.sh --live` to install it to a live JeVois camer afor debugging, you can now type:
+`./rebuild-platform.sh --live` to install it to a live JeVois camera for debugging, you can now type:
 
 \verbatim
 ./rebuild-platform.sh
 \endverbatim
 
-Which install sinstead to a directory \b jvpkg in your module:
+Which installs instead to a directory \b jvpkg in your module:
 
 \verbatim
 -- Installing: /lab/itti/pythondicecounter/jvpkg/modules/Tutorial/PythonDiceCounter
@@ -536,7 +538,7 @@ cd pbuild
 make jvpkg
 \endverbatim
 
-which create <b>~/pythondicecounter/Tutorial_pythondicecounter.jvpkg</b>
+which creates <b>~/pythondicecounter/Tutorial_pythondicecounter.jvpkg</b>
 
 You can send that file to your friends, and tell them to copy it to <b>JEVOIS:/packages/</b> on their microSD. Next time
 JeVois restarts, it will unpack, install, configure, and delete the package, and the new module will be ready for use.

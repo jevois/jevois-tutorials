@@ -1,0 +1,461 @@
+/*! \page ProgrammerDice A JeVois dice counting module in C++
+
+Here we develop a simple C++ OpenCV vision module that counts the total number of pits on some dice presented to
+JeVois. This application scenario was suggested by JeVois user mapembert at the [JeVois Tech Zone](http://jevois.org/qa)
+in this post:
+
+http://jevois.org/qa/index.php?qa=328
+
+In this tutorial, you will learn:
+
+- how to create a new C++ machine vision module for JeVois from scratch
+- how to implement the dice counting algorithm in Python
+- how to install the new module to live microSD
+
+This tutorial assumes \jvversion{1.3} or later.
+
+Because we need to cross-compile C++ code for execution on the JeVois processor, this tutorial is for Linux only.
+
+See \ref ProgrammerPythonDice for an implementation of this algorithm in Python + OpenCV (Linux, Windows, or Mac host).
+
+Preliminaries
+-------------
+
+- Review \ref ProgrammerSetup so that you are comfortable with:
+  + Flashing the latest microSD image to a physical card
+  + Connecting JeVois to a host computer and powering it up
+  + Grabbing video from JeVois and selecting different resolutions
+  + Communicating with JeVois using a serial-over-USB link, and using the JeVois command-line interface
+  + Exporting the microSD inside JeVois to your host computer
+
+Setting up a new C++ module
+------------------------------
+
+The easiest to get started is to grab a copy of the \b samplemodule in the JeVois github
+https://github.com/jevois/samplemodule and to modify it.
+
+If you have installed the \b jevois-sdk and followed the instructions in \ref ProgrammerSetup, you should use the script
+`jevois-create-module` which will grab that same sample code from GitHub, and will also immediately change names of
+classes and files to match our new module's name: usage is `jevois-create-module <VendorName> <ModuleName>`, so
+here let us just run:
+
+\verbatim
+cd
+jevois-create-module Tutorial DiceCounter
+\endverbatim
+
+you should now have the following:
+\verbatim
+dicecounter
+├── CMakeLists.txt
+├── COPYING
+├── INSTALL
+├── README
+├── rebuild-host.sh
+├── rebuild-platform.sh
+└── src
+    └── Modules
+        └── DiceCounter
+            ├── DiceCounter.C
+            ├── icon.png
+            ├── postinstall
+            ├── screenshot1.png
+            └── videomappings.cfg
+\endverbatim
+
+The algorithm
+-------------
+
+The author of the original module mentioned in the above post, Yohann Payet, sent us his code, which is written in C++
+and as follows (this is standalone code not intended for operation on JeVois; in this tutorial we will convert adapt it
+for use in JeVois):
+
+\code
+// Created by Yohann Payet (mechanical/embedded systems engineer)
+// Using opencv,c++
+// Contact Y.Payet@hotmail.com
+
+#include "opencv2/highgui/highgui.hpp"
+#include "opencv2/imgproc/imgproc.hpp"
+#include "opencv2/features2d.hpp"
+#include <iostream>
+
+int main() {
+    cv::Mat im_with_keypoints; std::vector<cv::KeyPoint> keypoints;
+    cv::Mat grayImage, camFrame, kernel;
+    int morphBNo2 = 2;
+    char str[200];
+
+
+    //Setting detector parameters
+    cv::SimpleBlobDetector::Params params;
+    params.filterByCircularity = true;
+    params.filterByArea = true;
+    params.minArea = 200.0f;
+
+    //Creating a detector object
+    cv::Ptr<cv::SimpleBlobDetector> detector = cv::SimpleBlobDetector::create(params);
+
+    //video capture settings
+    cv::VideoCapture cap(1); // open the default camera
+    cap.set(CV_CAP_PROP_FRAME_WIDTH, 640);
+    cap.set(CV_CAP_PROP_FRAME_HEIGHT, 480);
+
+    //checking video stream
+    if (!cap.isOpened()) {  // check if we succeeded
+        std::cout << ("Failure to open camera") << "\n";
+        std::cin.get();
+    }
+    else {
+        for (;;) {
+
+            // get a new frame from camera
+            cap >> camFrame;
+
+            //converting video to single channel grayscale
+            cv::cvtColor(camFrame, grayImage, CV_BGR2GRAY);
+            grayImage.convertTo(grayImage, CV_8U);
+
+            //filter noise
+            cv::GaussianBlur(grayImage, grayImage, cvSize(5, 5), 0, 0);
+
+            //apply automatic threshold
+            cv::threshold(grayImage, grayImage, 0.0, 255, cv::THRESH_BINARY_INV | cv::THRESH_OTSU);
+
+            //background area
+            cv::dilate(grayImage, grayImage, kernel, cv::Point(-1, -1), morphBNo2);
+            cv::Mat image(grayImage.rows, grayImage.cols, CV_8U, cv::Scalar(255, 255, 255));
+            cv::Mat invBack2 = image - grayImage;
+
+
+            //blob detection
+            detector->detect(invBack2, keypoints);
+            int nrOfBlobs = keypoints.size();
+
+            // draw keypoints
+            cv::drawKeypoints(camFrame, keypoints, im_with_keypoints, cv::Scalar(0, 0, 255),
+	    		      cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
+
+            //text only appears if at least 1 blob is detected
+            if (nrOfBlobs >0 ) {
+                sprintf(str, "total pips: %d ", nrOfBlobs);
+                cv::putText(im_with_keypoints, str, cv::Point2f(10, 25), cv::FONT_HERSHEY_PLAIN,
+		            2, cv::Scalar(0, 255, 255, 255));
+            }
+
+            //show image
+            imshow("keypoints", im_with_keypoints);
+            std::cout << "number of pips: " << nrOfBlobs << std::endl;
+
+            //hit esc to quit
+            if (cv::waitKey(1) == 27)  break;
+
+        }
+    }
+
+    return 0 ;
+}
+\endcode
+
+Our tasks now are:
+
+- Use the JeVois input frames as opposed to an OpenCV video capture object
+- Send result images to the host computer over USB using the JeVois framework as opposed to displaying them using OpenCV
+  HighGUI
+
+Deciding on capture and output resolutions
+------------------------------------------
+
+This algorithm was written for 640x480 resolution. Let us use that in our module as well. We edit
+<b>~/dicecounter/src/Modules/DiceCounter/videomappings.cfg</b> as follows:
+
+\verbatim
+# JeVois video mappings for DiceCounter by Tutorial:
+YUYV 640 480 17 YUYV 640 480 17 Tutorial DiceCounter
+\endverbatim
+
+Note how here we have chosen 17 frames/s as our initial guess for framerate. Because 640x480 is a popular resolution,
+this will also allow us to avoid clashes with other modules that use this same resolution but rates of 30 frames/s or
+others. We will adjust this rate later once we know how fast this algorithm runs on JeVois.
+
+Initial import to live microSD
+------------------------------
+
+The JeVois \b samplemodule runs fine out of the box and thus our module should run as well if we have not
+introduced any mistakes.
+
+Compiling and installing the module to live microSD inside a connected JeVois camera has been automated through CMake,
+just connect JeVois and let it boot, then type:
+
+\verbatim
+cd ~/dicecounter
+./rebuild-platform.sh --live
+\endverbatim
+
+Which will instruct JeVois to export its microSD as a virtual flash drive to the host computer, will copy the required
+files, and will eject the drive to reboot JeVois. The module will be ready for use once JeVois has restarted.
+
+You should see an output like this:
+
+\verbatim
+itti@iLab1:~/dicecounter$ ./rebuild-platform.sh --live
+-- JeVois version 1.2.3
+-- JEVOIS_PLATFORM: ON
+-- JEVOIS_VENDOR: Tutorial
+-- JeVois microSD card mount point: /media/itti/JEVOIS
+-- JeVois serial-over-USB device: /dev/ttyACM0
+-- JEVOIS_MODULES_TO_STAGING: OFF
+-- JEVOIS_MODULES_TO_MICROSD: OFF
+-- JEVOIS_MODULES_TO_LIVE: ON
+-- Install prefix for executable programs: /var/lib/jevois-build/usr
+-- Host path to jevois modules root: /var/lib/jevois-microsd
+-- The C compiler identification is GNU 6.1.0
+-- The CXX compiler identification is GNU 6.1.0
+-- Check for working C compiler: /lab/itti/jevois/software/jevois-sdk/out/sun8iw5p1/linux/common/buildroot/host/usr/bin/arm-buildroot-linux-gnueabihf-gcc
+-- Check for working C compiler: /lab/itti/jevois/software/jevois-sdk/out/sun8iw5p1/linux/common/buildroot/host/usr/bin/arm-buildroot-linux-gnueabihf-gcc -- works
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Check for working CXX compiler: /lab/itti/jevois/software/jevois-sdk/out/sun8iw5p1/linux/common/buildroot/host/usr/bin/arm-buildroot-linux-gnueabihf-g++
+-- Check for working CXX compiler: /lab/itti/jevois/software/jevois-sdk/out/sun8iw5p1/linux/common/buildroot/host/usr/bin/arm-buildroot-linux-gnueabihf-g++ -- works
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- JeVois SDK root: /lab/itti/jevois/software/jevois-sdk
+-- Adding compilation directives for C++ module DiceCounter base src/Modules
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /lab/itti/dicecounter/pbuild
+Scanning dependencies of target modinfo_DiceCounter
+[ 50%] Generating ../src/Modules/DiceCounter/modinfo.yaml, ../src/Modules/DiceCounter/modinfo.html
+[ 50%] Built target modinfo_DiceCounter
+Scanning dependencies of target DiceCounter
+[100%] Building CXX object CMakeFiles/DiceCounter.dir/src/Modules/DiceCounter/DiceCounter.C.o
+Linking CXX shared library DiceCounter.so
+[100%] Built target DiceCounter
+[ 50%] Built target modinfo_DiceCounter
+[100%] Built target DiceCounter
+Install the project...
+-- Install configuration: ""
+JeVois smart camera virtual USB ready at /media/itti/JEVOIS
+-- Installing: /media/itti/JEVOIS/modules/Tutorial/DiceCounter
+-- Installing: /media/itti/JEVOIS/modules/Tutorial/DiceCounter/postinstall
+-- Installing: /media/itti/JEVOIS/modules/Tutorial/DiceCounter/videomappings.cfg
+-- Installing: /media/itti/JEVOIS/modules/Tutorial/DiceCounter/screenshot1.png
+-- Installing: /media/itti/JEVOIS/modules/Tutorial/DiceCounter/icon.png
+-- Installing: /media/itti/JEVOIS/modules/Tutorial/DiceCounter/DiceCounter.so
+-- Removed runtime path from "/media/itti/JEVOIS/modules/Tutorial/DiceCounter/DiceCounter.so"
+JeVois smart camera virtual USB disk ejected -- rebooting JeVois
+\endverbatim
+
+Trying out the initial sample module
+------------------------------------
+
+Fire up your video capture software and set it to 640x480 @@ 17fps. You should see the sample python module running, but
+under our new name:
+
+\image html cdice1.png
+
+Implementing the module
+-----------------------
+
+Let us just edit \b DiceCounter.C to use the code above. The main changes are:
+
+- We will get a jevois::RawImage as input with YUYv format
+- In two parallel threads, we will:
+  + Copy the full input image to the USB output buffer, to show it to users
+  + Convert it to grayscale and process it to detect the dice pits
+- We will finally draw the detected pits into the output image, and send it over USB.
+
+Here is the resulting code:
+
+\code
+//! Counting dice pips
+/*! This module can help you automate counting your dice values, for example when playing games that involve throwing
+    multiple dice.
+
+    This application scenario was suggested by JeVois user mapembert at the [JeVois Tech Zone](http://jevois.org/qa)
+    in this post:
+
+    http://jevois.org/qa/index.php?qa=328
+
+    The code implemented by this module is a modified version of original code (mentioned in the above post) contributed
+    by Yohann Payet.
+
+    @author Laurent Itti
+
+    @videomapping YUYV 640 480 17.0 YUYV 640 480 17.0 SampleVendor DiceCounter
+    @email sampleemail\@samplecompany.com
+    @address 123 First Street, Los Angeles, CA 90012
+    @copyright Copyright (C) 2017 by Sample Author
+    @mainurl http://samplecompany.com
+    @supporturl http://samplecompany.com/support
+    @otherurl http://samplecompany.com/about
+    @license GPL v3
+    @distribution Unrestricted
+    @restrictions None */
+class DiceCounter : public jevois::Module
+{
+  public:
+    //! Constructor
+    DiceCounter(std::string const & instance) : jevois::Module(instance)
+    {
+      // Setting detector parameters
+      cv::SimpleBlobDetector::Params params;
+      params.filterByCircularity = true;
+      params.filterByArea = true;
+      params.minArea = 200.0f;
+
+      // Creating a detector object
+      itsDetector = cv::SimpleBlobDetector::create(params);
+    }
+
+    //! Virtual destructor for safe inheritance
+    virtual ~DiceCounter() { }
+
+    //! Processing function
+    virtual void process(jevois::InputFrame && inframe, jevois::OutputFrame && outframe) override
+    {
+      static jevois::Timer timer("processing");
+
+      // Wait for next available camera image:
+      jevois::RawImage const inimg = inframe.get(); unsigned int const w = inimg.width, h = inimg.height;
+
+      timer.start();
+
+      // We only support YUYV pixels in this example, any resolution:
+      inimg.require("input", inimg.width, inimg.height, V4L2_PIX_FMT_YUYV);
+
+      // Start a thread to wait for output image anc opy input into output:
+      jevois::RawImage outimg;
+      std::future<void> fut = std::async(std::launch::async, [&]() {
+          // Wait for an image from our gadget driver into which we will put our results:
+          outimg = outframe.get();
+
+          // Enforce that the input and output formats and image sizes match:
+          outimg.require("output", w, h, inimg.fmt);
+      
+          // Just copy the pixel data over:
+          jevois::rawimage::paste(inimg, outimg, 0, 0);
+        });
+
+      // Detect dice pits: FIrst convert input to grayscale:
+      cv::Mat grayImage = jevois::rawimage::convertToCvGray(inimg);
+
+      // filter noise
+      cv::GaussianBlur(grayImage, grayImage, cvSize(5, 5), 0, 0);
+
+      // apply automatic threshold
+      cv::threshold(grayImage, grayImage, 0.0, 255, cv::THRESH_BINARY_INV | cv::THRESH_OTSU);
+
+      // background area
+      cv::Mat kernel; // not initialized??
+      int const morphBNo2 = 2;
+      cv::dilate(grayImage, grayImage, kernel, cv::Point(-1, -1), morphBNo2);
+      cv::Mat image(grayImage.rows, grayImage.cols, CV_8U, cv::Scalar(255, 255, 255));
+      cv::Mat invBack2 = image - grayImage;
+
+      // blob detection
+      std::vector<cv::KeyPoint> keypoints;
+      itsDetector->detect(invBack2, keypoints);
+      int nrOfBlobs = keypoints.size();
+
+      // Wait until our other thread is done:
+      fut.get();
+
+      // Let camera know we are done processing the input image:
+      inframe.done();
+      
+      // draw keypoints
+      for (cv::KeyPoint const & kp : keypoints)
+        jevois::rawimage::drawCircle(outimg, int(kp.pt.x + 0.5F), int(kp.pt.y + 0.5F), int(kp.size * 0.5F),
+                                     2, jevois::yuyv::LightGreen);
+
+      // Show number of detected pips:
+      jevois::rawimage::writeText(outimg, "JeVois dice counter: " + std::to_string(nrOfBlobs) + " pips",
+                                  3, 3, jevois::yuyv::White);
+      
+      // Show processing fps:
+      std::string const & fpscpu = timer.stop();
+      jevois::rawimage::writeText(outimg, fpscpu, 3, h - 13, jevois::yuyv::White);
+    
+      // Send the output image with our processing results to the host over USB:
+      outframe.send();
+    }
+
+  private:
+    cv::Ptr<cv::SimpleBlobDetector> itsDetector;
+};
+
+// Allow the module to be loaded as a shared object (.so) file:
+JEVOIS_REGISTER_MODULE(DiceCounter);
+\endcode
+
+
+Result
+------
+
+You should see something like this:
+
+\image html cdice2.png
+
+Note that this algorithm runs a bit slow on JeVois, about 8 frames/s. One could adjust the videomapping accordingly.
+
+Interestingly, it runs at about the same speed with this implementation as the Python implementation developed in \ref
+ProgrammerPythonDice, although we had hypothesized in that Python tutorial that we might be able to make the C++ code
+run faster! Here is the reason: Image conversion from YUYV to BGR and to grayscale (in `img = inframe.getCvBGR()` and
+`grayImage = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)` of the python code, and from BGR to YUYV in
+`outframe.sendCvBGR(im_with_keypoints)` is not counted as processing time in the Python module, but all conversions are
+counted by the timer of the C++ implementation. So the C++ algorithm including all conversions runs about as fast as
+just the core of the Python implementation not including any conversion. In any case, it looks like the JeVois and the
+OpenCV Python bindings are indeed quite efficient!
+
+Given that anyone is unlikely to be needing any kind of fast frame rate for this application (since dice will not get
+thrown too often), here no further optimization is necessary. The low frame rate will allow the camera sensor to perform
+well even in low light conditions.
+
+Packing the module
+------------------
+
+To create a nice packaged module that you can send to your friends, just type:
+
+\verbatim
+./rebuild-platform.sh
+\endverbatim
+
+Which installs instead to a directory \b jvpkg in your module:
+
+\verbatim
+Install the project...
+-- Install configuration: ""
+-- Installing: /lab/itti/dicecounter/jvpkg/modules/Tutorial/DiceCounter
+-- Installing: /lab/itti/dicecounter/jvpkg/modules/Tutorial/DiceCounter/postinstall
+-- Installing: /lab/itti/dicecounter/jvpkg/modules/Tutorial/DiceCounter/videomappings.cfg
+-- Installing: /lab/itti/dicecounter/jvpkg/modules/Tutorial/DiceCounter/screenshot1.png
+-- Installing: /lab/itti/dicecounter/jvpkg/modules/Tutorial/DiceCounter/icon.png
+-- Installing: /lab/itti/dicecounter/jvpkg/modules/Tutorial/DiceCounter/DiceCounter.so
+-- Removed runtime path from "/lab/itti/dicecounter/jvpkg/modules/Tutorial/DiceCounter/DiceCounter.so"
+\endverbatim
+
+You would then finally type:
+
+\verbatim
+cd pbuild
+make jvpkg
+\endverbatim
+
+which creates <b>~/dicecounter/Tutorial_dicecounter.jvpkg</b>
+
+You can send that file to your friends, and tell them to copy it to <b>JEVOIS:/packages/</b> on their microSD. Next time
+JeVois restarts, it will unpack, install, configure, and delete the package, and the new module will be ready for use.
+
+Final note
+----------
+
+This module has now been integrated into \b jevoisbase, as the DiceCounter module with output resolution 640x480 @@ 7.5
+fps.
+
+*/
+

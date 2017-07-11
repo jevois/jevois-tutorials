@@ -18,9 +18,8 @@ Programming JeVois machine vision modules using C++
 ===================================================
 
 - \subpage ProgrammerSetup
-
 - \subpage ProgrammerHello
-
+- \subpage ProgrammerDice
 - \subpage ProgrammerSurprise
 
 */
