@@ -1,6 +1,6 @@
 /*! \page ProgrammerPythonDice JeVois python tutorial: A dice counting module
 
-Here we develop a simple Python+OpenCV vision module that counts the total number of pits on some dice presented to
+Here we develop a simple Python+OpenCV vision module that counts the total number of pips on some dice presented to
 JeVois. This application scenario was suggested by JeVois user mapembert at the [JeVois Tech Zone](http://jevois.org/qa)
 in this post:
 
@@ -65,8 +65,7 @@ https://github.com/jevois/samplepythonmodule:
       └── Modules
           └── PythonDiceCounter
               ├── postinstall
-              ├── PythonDiceCounter.py
-              └── videomappings.cfg
+              └── PythonDiceCounter.py
   \endverbatim
 
 \note Vision modules written in Python do not need to be compiled. The CMakeLists.txt is here to assist with:
@@ -181,12 +180,16 @@ Deciding on capture and output resolutions
 ------------------------------------------
 
 This algorithm was written for 640x480 resolution. Let us use that in our module as well. We edit
-<b>~/pythondicecounter/src/Modules/PythonDiceCounter/videomappings.cfg</b> as follows:
+<b>~/pythondicecounter/src/Modules/PythonDiceCounter/postinstall</b> as follows:
 
 \verbatim
-# JeVois video mappings for PythonDiceCounter by Tutorial:
-YUYV 640 480 22 YUYV 640 480 22 Tutorial PythonDiceCounter
+jevois-add-videomapping YUYV 640 480 22 YUYV 640 480 22 Tutorial PythonDiceCounter
 \endverbatim
+
+The \b postinstall script will be run by the JeVois camera after we install our new module to microSD. The video mapping
+required by our module and defined in \b postinstall will then be added to the main \b videomappings.cfg file on the
+microSD. Note that \b postinstall applies to the platform hardware only. To add the videomapping to your host
+configuration, just run the above command on your host computer (using sudo).
 
 Note how here we have chosen 22 frames/s as our initial guess for framerate. Because 640x480 is a popular resolution,
 this will also allow us to avoid clashes with other modules that use this same resolution but rates of 30 frames/s or
@@ -201,7 +204,7 @@ introduced any mistakes.
 - On Mac and Windows: 
   + Create a directory <b>JEVOIS:/modules/Tutorial</b> on the microSD for our new vendor name \a Tutorial
   + Create a directory <b>JEVOIS:/modules/Tutorial/PythonDiceCounter</b> on the microSD for our new module
-  + Copy files \b postinstall, \b PythonDiceCounter.py, and \b videomappings.cfg from
+  + Copy files \b postinstall and \b PythonDiceCounter.py from
     <b>pythondicecounter/src/Modules/PythonDiceCounter/</b> to <b>JEVOIS:/modules/Tutorial/PythonDiceCounter/</b> on the
     microSD
 
@@ -255,7 +258,6 @@ Install the project...
 JeVois smart camera virtual USB ready at /media/itti/JEVOIS
 -- Installing: /media/itti/JEVOIS/modules/Tutorial/PythonDiceCounter
 -- Installing: /media/itti/JEVOIS/modules/Tutorial/PythonDiceCounter/postinstall
--- Installing: /media/itti/JEVOIS/modules/Tutorial/PythonDiceCounter/videomappings.cfg
 -- Installing: /media/itti/JEVOIS/modules/Tutorial/PythonDiceCounter/PythonDiceCounter.py
 JeVois smart camera virtual USB disk ejected -- rebooting JeVois
 \endverbatim
@@ -294,7 +296,7 @@ import libjevois as jevois
 import cv2
 import numpy as np
 
-## Count the number of pits on dice seen by JeVois
+## Count the number of pips on dice seen by JeVois
 #
 # This module can help you automate counting your dice values, for example when playing games that involve throwing
 # multiple dice.
@@ -403,7 +405,7 @@ import libjevois as jevois
 import cv2
 import numpy as np
 
-## Count the number of pits on dice seen by JeVois
+## Count the number of pips on dice seen by JeVois
 #
 # This module can help you automate counting your dice values, for example when playing games that involve throwing
 # multiple dice.
@@ -527,7 +529,6 @@ Which installs instead to a directory \b jvpkg in your module:
 \verbatim
 -- Installing: /lab/itti/pythondicecounter/jvpkg/modules/Tutorial/PythonDiceCounter
 -- Installing: /lab/itti/pythondicecounter/jvpkg/modules/Tutorial/PythonDiceCounter/postinstall
--- Installing: /lab/itti/pythondicecounter/jvpkg/modules/Tutorial/PythonDiceCounter/videomappings.cfg
 -- Installing: /lab/itti/pythondicecounter/jvpkg/modules/Tutorial/PythonDiceCounter/PythonDiceCounter.py
 \endverbatim
 

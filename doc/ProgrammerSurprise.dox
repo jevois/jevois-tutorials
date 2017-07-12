@@ -1320,6 +1320,12 @@ recorder module right away:
 NONE 0 0 0.0 YUYV 320 240 70.0 JeVois SurpriseRecorder
 \endverbatim
 
+Or, with \jvversion{1.3} and later, you can just type, in a Linux terminal:
+\verbatim
+sudo jevois-add-videomapping NONE 0 0 0.0 YUYV 320 240 70.0 JeVois SurpriseRecorder
+\endverbatim
+
+
 Here we assume that your host is fast enough to run our surprise module at 70fps at 320x240.
 </li>
 

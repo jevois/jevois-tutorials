@@ -46,8 +46,7 @@ hellojevois/
             ├── HelloJeVois.C
             ├── icon.png
             ├── postinstall
-            ├── screenshot1.png
-            └── videomappings.cfg
+            └── screenshot1.png
 \endverbatim
 
 The source file for our module is <b>hellojevois/src/Modules/HelloJeVois.C</b>
@@ -106,7 +105,6 @@ Install the project...
 -- Install configuration: ""
 -- Installing: /jevois/modules/Tutorial/HelloJeVois
 -- Installing: /jevois/modules/Tutorial/HelloJeVois/postinstall
--- Installing: /jevois/modules/Tutorial/HelloJeVois/videomappings.cfg
 -- Installing: /jevois/modules/Tutorial/HelloJeVois/modinfo.yaml
 -- Installing: /jevois/modules/Tutorial/HelloJeVois/screenshot1.png
 -- Installing: /jevois/modules/Tutorial/HelloJeVois/modinfo.html
@@ -166,7 +164,6 @@ Install the project...
 -- Install configuration: ""
 -- Installing: /lab/itti/hellojevois/jvpkg/modules/Tutorial/HelloJeVois
 -- Installing: /lab/itti/hellojevois/jvpkg/modules/Tutorial/HelloJeVois/postinstall
--- Installing: /lab/itti/hellojevois/jvpkg/modules/Tutorial/HelloJeVois/videomappings.cfg
 -- Installing: /lab/itti/hellojevois/jvpkg/modules/Tutorial/HelloJeVois/modinfo.yaml
 -- Installing: /lab/itti/hellojevois/jvpkg/modules/Tutorial/HelloJeVois/screenshot1.png
 -- Installing: /lab/itti/hellojevois/jvpkg/modules/Tutorial/HelloJeVois/modinfo.html
@@ -247,6 +244,12 @@ denied error), and add a line:
 \verbatim
 YUYV 640 480 28.5 YUYV 640 480 28.5 Tutorial HelloJeVois
 \endverbatim
+
+Or, with \jvversion{1.3} and later, you can just type, in a Linux terminal:
+\verbatim
+sudo jevois-add-videomapping YUYV 640 480 28.5 YUYV 640 480 28.5 Tutorial HelloJeVois
+\endverbatim
+
 
 Thus, the JeVois engine will now run module \b HelloJeVois from vendor \b Tutorial when video resolution 640x480 @
 28.5fps is requested. See \ref VideoMapping for more info.
@@ -432,18 +435,8 @@ Installing to JeVois hardware using a .jvpkg package
 
 Let us create a package with all the files of our module. One last thing before we pack is that we will include with our
 module an additional video mapping that we want to be automatically added to the \c videomappings.cfg of our JeVois
-camera as the package gets installed. For this, we edit <b>~/hellojevois/src/Module/HelloJeVois/videomappings.cfg</b> to
-contain this (plus any other valid mapping you would like to add for this module):
-
-\verbatim
-YUYV 640 480 28.5 YUYV 640 480 28.5 Tutorial HelloJeVois
-\endverbatim
-
-When the module is installed onto the smart camera, this mapping will automatically be added to the list of existing
-mappings. This will be achieved by running the \b postinstall script that is in the directory of our module. If such
-script exists, it will be run just after the package is unpacked. It will be run with the current directory set to the
-directory of the module. By default, \c postinstall contains simple commands that just append the \c videomappings.cfg
-of the new module to the main \c videomappings.cfg of JeVois:
+camera as the package gets installed. For this, we edit <b>~/hellojevois/src/Module/HelloJeVois/postinstall</b> as
+follows:
 
 \code{.py}
 #!/bin/sh
@@ -453,13 +446,18 @@ of the new module to the main \c videomappings.cfg of JeVois:
 # The caller script will set the current directory to the location of this script before launching the script.
 
 # Add our video mappings to the main mappings file:
-cat videomappings.cfg >> /jevois/config/videomappings.cfg
+jevois-add-videomapping YUYV 640 480 28.5 YUYV 640 480 28.5 Tutorial HelloJeVois
 
 # Example of a simple message:
 echo "HelloJeVois is now installed"
 \endcode
 
-You can edit this script if you need additional custom configurations to be run as your package is installed.
+When the module is installed onto the smart camera, this mapping will automatically be added to the list of existing
+mappings. This will be achieved by JeVois automatically running the \b postinstall script that is in the directory of
+our module. If such script exists, it will be run just after the package is unpacked. It will be run with the current
+directory set to the directory of the module. By default, \c postinstall contains simple commands that just append the
+\c videomappings.cfg of the new module to the main \c videomappings.cfg of JeVois, but you can edit this script if you
+need additional custom configurations to be run as your package is installed.
 
 Now we create the package:
 
@@ -552,8 +550,8 @@ Here is a simple command to export the microSD of a live JeVois camera without h
 sudo sh -c 'echo usbsd > /dev/ttyACM0'
 \endverbatim
 
-If you have a \b postinstall script in your module and some mappings in a private \b videomappings.cfg in your module
-(as we did above), those will still get appended to the main \b videomappings.cfg next time JeVois reboots.
+If you have a \b postinstall script in your module that adds new video mappings, those will still get appended to the
+main \b videomappings.cfg next time JeVois reboots.
 
 
 
@@ -577,8 +575,8 @@ cd ~/hellojevois
 
 which will copy all the files to the staging area.
 
-If you have a \b postinstall script in your module and some mappings in a private \b videomappings.cfg in your module
-(as we did above), those will still get appended to the main \b videomappings.cfg next time JeVois reboots.
+If you have a \b postinstall script in your module that adds new video mappings, those will still get appended to the
+main \b videomappings.cfg next time JeVois reboots.
 
 Then you can flash a new microSD card as usual (see \ref FlashingToSD):
 

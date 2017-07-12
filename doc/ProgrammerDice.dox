@@ -1,6 +1,6 @@
 /*! \page ProgrammerDice A JeVois dice counting module in C++
 
-Here we develop a simple C++ OpenCV vision module that counts the total number of pits on some dice presented to
+Here we develop a simple C++ OpenCV vision module that counts the total number of pips on some dice presented to
 JeVois. This application scenario was suggested by JeVois user mapembert at the [JeVois Tech Zone](http://jevois.org/qa)
 in this post:
 
@@ -59,8 +59,7 @@ dicecounter
             ├── DiceCounter.C
             ├── icon.png
             ├── postinstall
-            ├── screenshot1.png
-            └── videomappings.cfg
+            └── screenshot1.png
 \endverbatim
 
 The algorithm
@@ -167,12 +166,16 @@ Deciding on capture and output resolutions
 ------------------------------------------
 
 This algorithm was written for 640x480 resolution. Let us use that in our module as well. We edit
-<b>~/dicecounter/src/Modules/DiceCounter/videomappings.cfg</b> as follows:
+<b>~/dicecounter/src/Modules/DiceCounter/postinstall</b> as follows:
 
 \verbatim
-# JeVois video mappings for DiceCounter by Tutorial:
-YUYV 640 480 17 YUYV 640 480 17 Tutorial DiceCounter
+jevois-add-videomapping YUYV 640 480 17 YUYV 640 480 17 Tutorial DiceCounter
 \endverbatim
+
+The \b postinstall script will be run by the JeVois camera after we install our new module to microSD. The video mapping
+required by our module and defined in \b postinstall will then be added to the main \b videomappings.cfg file on the
+microSD. Note that \b postinstall applies to the platform hardware only. To add the videomapping to your host
+configuration, just run the above command on your host computer (using sudo).
 
 Note how here we have chosen 17 frames/s as our initial guess for framerate. Because 640x480 is a popular resolution,
 this will also allow us to avoid clashes with other modules that use this same resolution but rates of 30 frames/s or
@@ -242,7 +245,6 @@ Install the project...
 JeVois smart camera virtual USB ready at /media/itti/JEVOIS
 -- Installing: /media/itti/JEVOIS/modules/Tutorial/DiceCounter
 -- Installing: /media/itti/JEVOIS/modules/Tutorial/DiceCounter/postinstall
--- Installing: /media/itti/JEVOIS/modules/Tutorial/DiceCounter/videomappings.cfg
 -- Installing: /media/itti/JEVOIS/modules/Tutorial/DiceCounter/screenshot1.png
 -- Installing: /media/itti/JEVOIS/modules/Tutorial/DiceCounter/icon.png
 -- Installing: /media/itti/JEVOIS/modules/Tutorial/DiceCounter/DiceCounter.so
@@ -266,8 +268,8 @@ Let us just edit \b DiceCounter.C to use the code above. The main changes are:
 - We will get a jevois::RawImage as input with YUYv format
 - In two parallel threads, we will:
   + Copy the full input image to the USB output buffer, to show it to users
-  + Convert it to grayscale and process it to detect the dice pits
-- We will finally draw the detected pits into the output image, and send it over USB.
+  + Convert it to grayscale and process it to detect the dice pips
+- We will finally draw the detected pips into the output image, and send it over USB.
 
 Here is the resulting code:
 
@@ -341,7 +343,7 @@ class DiceCounter : public jevois::Module
           jevois::rawimage::paste(inimg, outimg, 0, 0);
         });
 
-      // Detect dice pits: FIrst convert input to grayscale:
+      // Detect dice pips: First convert input to grayscale:
       cv::Mat grayImage = jevois::rawimage::convertToCvGray(inimg);
 
       // filter noise
@@ -432,7 +434,6 @@ Install the project...
 -- Install configuration: ""
 -- Installing: /lab/itti/dicecounter/jvpkg/modules/Tutorial/DiceCounter
 -- Installing: /lab/itti/dicecounter/jvpkg/modules/Tutorial/DiceCounter/postinstall
--- Installing: /lab/itti/dicecounter/jvpkg/modules/Tutorial/DiceCounter/videomappings.cfg
 -- Installing: /lab/itti/dicecounter/jvpkg/modules/Tutorial/DiceCounter/screenshot1.png
 -- Installing: /lab/itti/dicecounter/jvpkg/modules/Tutorial/DiceCounter/icon.png
 -- Installing: /lab/itti/dicecounter/jvpkg/modules/Tutorial/DiceCounter/DiceCounter.so
