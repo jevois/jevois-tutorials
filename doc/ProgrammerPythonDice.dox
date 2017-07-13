@@ -392,7 +392,7 @@ Let us try it by opening our video capture software, and we see some issues with
 
 There were a number of additional translation bugs in the above code, which we easily detect and fix using the JeVois
 video error messages as shown in the above image. Perhaps the most difficult to debug was to use a `+` operator to
-combine flags in the `cv2..threshold()` call instead of the `|` operator of C++, as well as noting how `vc2.threshold()`
+combine flags in the `cv2..threshold()` call instead of the `|` operator of C++, as well as noting how `cv2.threshold()`
 has two return values.
 
 Result
