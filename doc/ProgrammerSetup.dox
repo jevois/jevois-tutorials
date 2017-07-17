@@ -76,4 +76,11 @@ Compiling JeVois, JeVoisBase, samplemodule
 - When you are ready to write new modules from scratch, just read the whole \ref Programmer.
 
 
+\note If you recompile jevois and jevoisbase from the latest version from GitHub, then you should also flash those
+versions to microSD before you proceed with compiling and installing your own modules to microSD. Otherwise, you may end
+up with older versions of jevois and jevoisbase on your microSD (if it was installed from a microSD image from
+http://jevois.org/start) which may not work with your new module compiled against the latest version of jevois from
+GitHub. See \ref FlashingToSD for details, especially the section: Pulling the latest from github and re-flashing - full
+recompilation.
+
 */
