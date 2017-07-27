@@ -35,7 +35,7 @@ Getting started
 - The basic workflow for live editing of machine vision modules on JeVois is as follows:
   + Stop grabbing video
   + Instruct JeVois to export its microSD card as a virtual USB drive
-  + Open the virtual USB drive on th ehost computer
+  + Browse the virtual USB drive on the host computer
   + Open the Python source code on that USB drive using a text editor
   + Modify the code and save
   + Eject the virtual USB drive. Upon eject, JeVois will restart and when it comes back online we
@@ -46,16 +46,19 @@ Getting started
   the JeVois CPU and the host computer poses datacoherency and caching problems. So we shutdown all machine vision
   modules on JeVois before exporting the microSD over USB.
 
-- We need to send the command \c usbsd to JeVois to let it know that we want to export the microSD over USB. You can do
-  that by first connecting to JeVois and then typing this command. For example, use the Arduino IDE to connect, as done
-  in \ref UserArduinoIDE.
+- We need to send the command \c usbsd to JeVois over a serial link to let it know that we want to export the microSD
+  over USB. You can do that by first connecting to JeVois using a serial terminal and then typing this command. For
+  example, use the Arduino IDE to connect, as done in \ref UserArduinoIDE.
 
   Here, since we only want to give that one command to JeVois, we can instead do:
-  + Linux: `sudo sh -c 'echo usbsd > /dev/ttyACM0'` or, in the latest \b jevois checkout from Github, you can use
-    `~/jevois/scripts/jevois-usbsd start` (to export it) and `~/jevois/scripts/jevois-usbsd stop` (to eject and reboot
-    JeVois).
+
+  + Linux: `sudo sh -c 'echo usbsd > /dev/ttyACM0'` or, with \jvversion{1.3} or later, you can type, directly in a Linux
+    terminal on your host (not in a serial communication software):
+    - `jevois-usbsd start` (to export it),
+    - `jevois-usbsd stop` (to eject and reboot JeVois).
   + Mac OSX: `echo usbsd > /dev/cu.usbmodem*`
-  + Windows: FIXME anyone can contribute a short command?
+  + Windows: FIXME anyone can contribute a short command? Just use a serial terminal like Termite, Ardiuno IDE, etc
+    for now.
 
   Here is the result on a Mac:
   \image html PythonSandbox2.png
@@ -72,8 +75,9 @@ Getting started
 
 - Properly eject the JEVOIS drive (drag to trash, click eject button, etc) and watch the LED on your camera:
   + Blinks off - shutdown complete, restarting
+  + Solid green - reboot starts
   + Orange blink - camera sensor detected
-  + Solid orange: ready for action
+  + Solid orange - ready for action
 
 - Start your video capture software again once JeVois is ready, and observe the results:
   \image html PythonSandbox3.png

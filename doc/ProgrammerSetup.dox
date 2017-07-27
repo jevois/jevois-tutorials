@@ -62,6 +62,19 @@ git clone https://github.com/jevois/samplepythonmodule.git
 git clone https://github.com/jevois/jevois-tutorials.git
 \endverbatim
 
+Before compiling for the first time: Getting the contributed packages
+---------------------------------------------------------------------
+
+The directory <b>jevoisbase/Contrib</b> is for a collection of contributed source code packages.
+
+Before you attempt to compile jevoisbase the first time, you should download and patch those contributed packages, as
+follows:
+
+\verbatim
+cd ~/jevoisbase/Contrib
+./reinstall.sh
+\endverbatim
+
 Compiling JeVois, JeVoisBase, samplemodule
 ------------------------------------------
 

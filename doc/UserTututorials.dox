@@ -12,15 +12,15 @@ Beginner-level tutorials
 - \subpage UserUSBSD
 - \subpage UserCMD
 - \subpage UserParameters
+- \subpage UserColorFiltering
 - \subpage UserColorTracking
 - \subpage User120fps
-- \subpage UserPanTilt
 - \subpage UserObjectDetect
 
 Advanced tutorials
 -------------------
 
-todo
+- \subpage UserPanTilt
 
 */
 
