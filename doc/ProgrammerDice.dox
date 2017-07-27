@@ -35,9 +35,9 @@ The easiest to get started is to grab a copy of the \b samplemodule in the JeVoi
 https://github.com/jevois/samplemodule and to modify it.
 
 If you have installed the \b jevois-sdk and followed the instructions in \ref ProgrammerSetup, you should use the script
-`jevois-create-module` which will grab that same sample code from GitHub, and will also immediately change names of
-classes and files to match our new module's name: usage is `jevois-create-module <VendorName> <ModuleName>`, so
-here let us just run:
+`jevois-create-module` which will grab that sample code from GitHub, and will also immediately change names of classes
+and files to match our new module's name: usage is `jevois-create-module <VendorName> <ModuleName>`, so here let us just
+run:
 
 \verbatim
 cd
@@ -455,8 +455,8 @@ JeVois restarts, it will unpack, install, configure, and delete the package, and
 Final note
 ----------
 
-This module has now been integrated into \b jevoisbase, as the DiceCounter module with output resolution 640x480 @@ 7.5
-fps.
+This module has now been integrated into \b jevoisbase, as the \jvmod{DiceCounter} module with output resolution 640x480
+@@ 7.5 fps.
 
 */
 

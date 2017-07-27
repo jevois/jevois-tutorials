@@ -11,7 +11,7 @@ Here we write a simple graphical user interface in python to tune the parameters
 
 Hence, in this tutorial you will learn:
 
-- How to tune the ObjectTracker module to track any color you like.
+- How to tune the \jvmod{ObjectTracker} module to track any color you like.
 - How to communicate with JeVois from a python script.
 - How to develop a simple python GUI with sliders that update JeVois parameters when they are modified.
 
@@ -22,8 +22,7 @@ Getting started
 
 - Connect JeVois to a host computer.
 
-- Start video capture software and select <b>YUYV 320x254 @ 60.0 fps</b> which should launch the [Object
-  Tracker](http://jevois.org/moddoc/ObjectTracker/modinfo.html).
+- Start video capture software and select <b>YUYV 320x254 @ 60.0 fps</b> which should launch the \jvmod{ObjectTracker}
 
 - Start a serial terminal and connect to the serial-over-USB port of JeVois.
 
@@ -65,8 +64,8 @@ corresponding global variable and then send the corresponding updated range of v
 - Make sure the python TKinter and pySerial modules are installed, for example run <code>sudo apt-get install python
   python-tk python-serial</code>
 
-- Make sure you are currently grabbing video in <b>YUYV 320x254 @ 60.0 fps</b>, so that the ObjectTracker module is
-  loaded and running on JeVois.
+- Make sure you are currently grabbing video in <b>YUYV 320x254 @ 60.0 fps</b>, so that the \jvmod{ObjectTracker} module
+  is loaded and running on JeVois.
 
 - Then run the script:
   \verbatim
@@ -83,10 +82,10 @@ corresponding global variable and then send the corresponding updated range of v
   + Point JeVois to a scene containing the object you are interested in, as well as a bunch of other objects that you
     are not interested in. Indeed, our goal will be to detect the objects of interest while rejecting (not detecting)
     other objects. The object should be big enough but not too big in the video captured by JeVois (another parameter in
-    ObjectTracker called \p objectarea is by default set to look for objects of size between roughly 20x20 and 100x100
-    pixels). The ObjectTracker module draws green contours around all regions that are within the specified HSV
-    range. Regions that also fit the area range are declared good detection and get an additional green circle drawn
-    onto them.
+    \jvmod{ObjectTracker} called \p objectarea is by default set to look for objects of size between roughly 20x20
+    and 100x100 pixels). The \jvmod{ObjectTracker} module draws green contours around all regions that are within
+    the specified HSV range. Regions that also fit the area range are declared good detection and get an additional
+    green circle drawn onto them.
   + Narrow down the Hue range (increase Hue min until just before you start losing the green contours around your
     object, then decrease Hue max likewise).
   + Then proceed with narrowing the Saturation and Value ranges.

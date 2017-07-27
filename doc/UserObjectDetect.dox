@@ -1,7 +1,7 @@
 /*! \page UserObjectDetect Live training of the Object Detection module
 
 
-The \ref ObjectDetect module allows JeVois to detect objects that it has seen before.
+The \jvmod{ObjectDetect} module allows JeVois to detect objects that it has seen before.
 
 With \jvversion{1.2} and later you can train this algorithm live.
 
@@ -12,8 +12,8 @@ Getting started
 
 - Connect JeVois to a host computer.
 
-- Start video capture software and select <b>YUYV 320x252 @ 30.0 fps</b> which should launch the [Object
-  Detect](http://jevois.org/moddoc/ObjectDetect/modinfo.html).
+- Start video capture software and select <b>YUYV 320x252 @ 30.0 fps</b> which should launch the \jvmod{ObjectDetect}
+  module.
 
 - Start a serial terminal and connect to the serial-over-USB port of JeVois.
 
@@ -39,8 +39,8 @@ Live training
 Because this alogrithm performs matching between the current image captured by JeVois and a collection of reference
 images, only one training examplar is needed for each new object.
 
-The ObjectDetect module provides commands and parameters to assist you in collecting a good training image for each new
-object that you want to be able to detect:
+The \jvmod{ObjectDetect} module provides commands and parameters to assist you in collecting a good training image for
+each new object that you want to be able to detect:
 
 - parameter \p showwin - shows a rectangular window that will be used to collect training samples. Training images will
   be collected for objects that should fit inside this window and occupy as much of it as possible.

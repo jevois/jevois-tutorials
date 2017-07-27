@@ -1,6 +1,6 @@
 /*! \page UserColorFiltering Introduction to image processing with JeVois
 
-In this tutorial we use the \ref ColorFiltering module of JeVois to interactively explore how different image filters
+In this tutorial we use the \jvmod{ColorFiltering} module of JeVois to interactively explore how different image filters
 may affect an image, using a live video stream and live processing inside the JeVois smart camera.
 
 This tutorial is intended as a fun, interactive introduction to image processing for K-12 / STEM (kindergarten to
@@ -21,9 +21,9 @@ Setting up
 Operation
 ---------
 
-The ColorFiltering module implements an number of image filters. The original video captured by JeVois is shown to the
-left of the display, and the results of applying the selected filter is shown to the right. The parameter settings of
-the currently running filter are shown as an overlay on top of the filter results at right.
+The \jvmod{ColorFiltering} module implements an number of image filters. The original video captured by JeVois is shown
+to the left of the display, and the results of applying the selected filter is shown to the right. The parameter
+settings of the currently running filter are shown as an overlay on top of the filter results at right.
 
 The module has one main parameter that determines which filter to use: \p effect with values: \b NoEffect, \b Blur,
 \b Median, \b Morpho, \b Laplacian, and \b Bilateral.

@@ -7,19 +7,19 @@ a slow-motion effect when viewing the video at normal 30 frames/s rate.
 The SaveVideo module
 --------------------
 
-Start by inspecting the docs for the [SaveVideo module](http://jevois.org/moddoc/SaveVideo/modinfo.html). This module is
-the one we will use to record video to MicroSD.
+Start by inspecting the docs for the \jvmod{SaveVideo} module. This module is the one we will use to record video to
+MicroSD.
 
 Activity 1 - capture with display
 ---------------------------------
 
-We start by using SaveVideo in a mode with USB output, so we can check for proper operation using a video capture
-software on a host computer, and get a hang of it.
+We start by using \jvmod{SaveVideo} in a mode with USB output, so we can check for proper operation using a video
+capture software on a host computer, and get a hang of it.
 
 - Connect your JeVois smart camera to a host computer using a mini-USB cable.
 
 - Start video capture software (see \ref User, if needed), and set to <b>YUYV 320x240 @ 60fps</b>, which should select
-the SaveVideo module if you are using the default <b>videomappings.cfg</b> on your MicroSD card.
+the \jvmod{SaveVideo} module if you are using the default <b>videomappings.cfg</b> on your MicroSD card.
 
 - Establish a serial-over-USB connection to the command-line interface of JeVois (see \ref UserCli, if needed).
 
@@ -39,9 +39,12 @@ setpar serout USB
 Now, we will see serial output messages (messages issued by the running machine vision module and intended for user
 and/or Arduino consumption). See \ref UserCli for details about \b serout and \b serlog.
 
-The SaveVideo module has two extra commands, which are only available when that module is loaded. The commands thus become available in the command-line interface as you load the module (e.g., by selecting the resolution as we did above), and they disappear when that module is unloaded and another module is loaded. To check what the SaveVideo module provides, you should:
+The \jvmod{SaveVideo} module has two extra commands, which are only available when that module is loaded. The commands
+thus become available in the command-line interface as you load the module (e.g., by selecting the resolution as we did
+above), and they disappear when that module is unloaded and another module is loaded. To check what the
+\jvmod{SaveVideo} module provides, you should:
 
-- Check out the documentation page for the [SaveVideo Module](http://jevois.org/moddoc/SaveVideo/modinfo.html)
+- Check out the documentation page for the \jvmod{SaveVideo} module.
 
 - issue a command \c help in your serial terminal and observe the output, in particular, note these sections:
 
@@ -73,7 +76,7 @@ Video Saving Options:
 
 \endverbatim
 
-That is, SaveVideo has two custom commands (\c start and \c stop) and three parameters (\p fps, \p fourcc and \p
+That is, \jvmod{SaveVideo} has two custom commands (\c start and \c stop) and three parameters (\p fps, \p fourcc and \p
 filename).
 
 To start recording, issue the command
@@ -115,8 +118,8 @@ SAVESTOP
 OK
 \endverbatim
 
-As noted in the documentation of the SaveVideo module, you should be aware of two things when attempting video recording
-at high frame rates:
+As noted in the documentation of the \jvmod{SaveVideo} module, you should be aware of two things when attempting video
+recording at high frame rates:
 
 - If using a video mapping with USB output, the frame rate may be limited by the maximum rate at which the host computer
   can grab and display. On many host computers, for example, the display refresh rate might be 60Hz. Using a video
@@ -141,12 +144,12 @@ for aesthetic appeal.
 
 - First, quit your video capture software on the host computer if it is still running.
 
-- As noted in the SaveVideo module documentation, this module may suffer from DMA coherency artifacts if the \c camturbo
-  parameter of the jevois::Engine is turned on, which it is by default. The \c camturbo parameter relaxes some of the
-  cache coherency constraints on the video buffers captured by the camera sensor, which allows the JeVois processor to
-  access video pixel data from memory faster. But with modules that do not do much processing, sometimes this yields
-  video artifacts, we presume because some of the video data from previous frames still is in the CPU cache and hence is
-  not again fetched from main memory by the CPU.
+- As noted in the \jvmod{SaveVideo} module documentation, this module may suffer from DMA coherency artifacts if the \c
+  camturbo parameter of the jevois::Engine is turned on, which it is by default. The \c camturbo parameter relaxes some
+  of the cache coherency constraints on the video buffers captured by the camera sensor, which allows the JeVois
+  processor to access video pixel data from memory faster. But with modules that do not do much processing, sometimes
+  this yields video artifacts, we presume because some of the video data from previous frames still is in the CPU cache
+  and hence is not again fetched from main memory by the CPU.
 
   To avoid seeing short stripes of what appears to be wrong pixel colors in the video, let us disable \c camturbo:
   + Take the MicroSD card out of JeVois and connect to a computer
@@ -163,10 +166,10 @@ for aesthetic appeal.
   streamon
   \endverbatim
 
-  This will configure the camera sensor of JeVois for 176x144 capture at 120fps while using the SaveVideo module. We
-  also let the video writer know that we do want to not only capture, but also save the video at 120fps. Finally,
-  because we are using a video mapping with no USB output, we need to tell the camera to start streaming, as there sill
-  be no host computer to do that.
+  This will configure the camera sensor of JeVois for 176x144 capture at 120fps while using the \jvmod{SaveVideo}
+  module. We also let the video writer know that we do want to not only capture, but also save the video at
+  120fps. Finally, because we are using a video mapping with no USB output, we need to tell the camera to start
+  streaming, as there sill be no host computer to do that.
 
 - Now issue a \c start command and you will start recording at 120fps.
 

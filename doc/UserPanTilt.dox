@@ -238,10 +238,10 @@ Let's rock
 We are ready to get that pan-tilt head controlled by JeVois.
 
 - Connect a mini-USB cable from JeVois to a host computer. Start a video capture software. Select one of the following:
-  + YUYV 640x300 @ 60.0 fps - Demo Saliency
-  + YUYV 320x254 @ 60.0 fps - Color-based Object Tracker
-  + YUYV 640x312 @ 50.0 fps - Demo Saliency + Gist + Face + object recognition
-  + any other that supports T2 or T1 serial outputs (see docs and/or source code an dlook for modules that support
+  + YUYV 640x300 @ 60.0 fps - \jvmod{DemoSaliency}
+  + YUYV 320x254 @ 60.0 fps - Color-based \jvmod{ObjectTracker}
+  + YUYV 640x312 @ 50.0 fps - \jvmod{DemoSalGistFaceObj} Saliency + Gist + Face + object recognition
+  + any other that supports T2 or T1 serial outputs (see docs and/or source code and look for modules that support
     standardized serial messages).
 
 - Show some interesting object to JeVois and watch it track it.
@@ -268,7 +268,7 @@ Once you are comfortable with the operation of the algorithm, you can also try i
 system with no USB output. The steps are as follows:
 
 - Select a machine vision algorithm that supports processing with no USB output. Not all of them do. From the list of
-  \ref UserDemos, we can select, for example the [ObjectTracker](/moddoc/ObjectTracker/modinfo.html) and we see, towards
+  \ref UserDemos, we can select, for example the \jvmod{ObjectTracker} and we see, towards
   the top of the page:
   \verbatim
   Supports mappings with NO USB output:   Yes
@@ -344,8 +344,8 @@ Additional activities
   https://en.wikipedia.org/wiki/PID_controller).
 
 - As an exercise, try to modify another module you like to have it also issue \b T2 messages. Have a look at how it is
-  done in, for example, ObjectTracker using \ref coordhelpers and the helper functions to send serial messages provided
-  by jevois::Module, and try to replicate the commands in your new module.
+  done in, for example, \ref ObjectTracker using \ref coordhelpers and the helper functions to send serial messages
+  provided by jevois::StdModule, and try to replicate the commands in your new module.
 
 */
 

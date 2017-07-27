@@ -11,8 +11,7 @@ Preliminaries
 
 - Be sure to go through the \ref Programmer to understand the basic concepts.
 
-- Be sure to go through the [JeVois framework INSTALL
-  instructions](https://github.com/jevois/jevois/blob/master/INSTALL) at least once. As part of this, you will download
+- Be sure to go through \ref ProgrammerSetup at least once. As part of this, you will download
   and compile all the source code and tools needed here.
 
 Getting started
@@ -543,7 +542,7 @@ cp Tutorial_hellojevois.jvpkg /media/itti/JEVOIS/packages/
 
 
 \note With \jvversion{1.1} and later, you do not need to physically remove the microSD from JeVois, and you can
-instead just export it as a virtua USB flash drive while JeVois is connected to your host computer and running:
+instead just export it as a virtual USB flash drive while JeVois is connected to your host computer and running:
 
 - Export the microSD as a virtual USB flash drive by issuing the command \c usbsd to the JeVois command-line interface
   (see \ref UserCli). Make sure JeVois is not streaming video. Then either connect to it using a terminal and send the
@@ -620,7 +619,7 @@ sudo jevois-flash-card -y /dev/sdX
 
 (replace \b sdX above by the device for your microSD).
 
-\warning Once you compile with the <b>--staging</b> option, the files will be copied to the staging area and will never
+\warning Once you compile with the `--staging` option, the files will be copied to the staging area and will never
 be deleted. So use with caution so that you do not get confused later on because an old version of a module was
 installed to staging while you are trying to install a new one as a package, etc. To figure out where the files are in
 staging, run `find /var/lib/jevois-microsd -name HelloJevois.so` and you can then delete these files manually

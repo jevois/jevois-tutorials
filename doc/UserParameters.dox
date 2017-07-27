@@ -28,17 +28,16 @@ Getting started
 
 - Connect JeVois to a host computer.
 
-- Start video capture software and select <b>YUYV 320x286 @ 30.0 fps</b> which should launch the [Demo
-  QR-Code](http://jevois.org/moddoc/DemoQRcode/modinfo.html) module.
+- Start video capture software and select <b>YUYV 320x286 @ 30.0 fps</b> which should launch the \jvmod{DemoQRcode}
+  module.
 
 - Start a serial terminal and connect to the serial-over-USB port of JeVois.
 
 Listing the available parameters
 --------------------------------
 
-The [Demo QR-Code](http://jevois.org/moddoc/DemoQRcode/modinfo.html) module exposes several parameters that are
-described in its [documentation page](http://jevois.org/moddoc/DemoQRcode/modinfo.html), see the table of parameters
-below the screenshots on that page.
+The \jvmod{DemoQRcode} module exposes several parameters that are described in its [documentation
+page](http://jevois.org/moddoc/DemoQRcode/modinfo.html), see the table of parameters below the screenshots on that page.
 
 Once the module is loaded and running (by selecting the appropriate video resolution in the host video capture
 software), you can also see the parameters by typing, in the serial terminal connected to JeVois:
