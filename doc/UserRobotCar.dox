@@ -1,0 +1,118 @@
+/*! \page UserRobotCar Build a simple visually-guided toy robot car for under $100 with JeVois
+
+In this tutorial we build a simple visually-guided robot car, using the cheapest possible mechanical components and
+compensating for their brittleness by using high-framerate, closed-loop vision processing.
+
+As a first application, the toy robot card will detect, track, and follow ArUco markers (small 2D barcodes).
+
+In this tutorial, you will learn:
+
+- How to design and build a simple autonomous vehicle with vision processing
+- How to program a simple visually-guided behavior on an Arduino
+
+\youtube{7cMtD-ef83E}
+
+Theory of operation
+-------------------
+
+The robot car will feature a pan/tilt head onto which the JeVois camera will be mounted. This is so that we can very
+quickly track a moving target before it escapes out of the field of view of the JeVois camera, even though the car may
+be quite sluggish to turn and orient towards it.
+
+JeVois will detect an ArUco marker and will communicate its coordinates and size to an Arduino responsible for
+control. The Arduino implements two PD (proportional, differential) controllers to control the pan-tilt head smoothly so
+that it tracks the moving target. The Arduino then also implements two PID (proportional, integral, differential)
+controllers to steer and move the car, so as to 1) maintain a fixed distance from the target and 2) steep to zero out
+any pan angle on the pan-tilt head (i.e., re-center the pan-tilt head by rotating the whole vehicle).
+
+\image html RobotCarOperation.png
+
+Bill of materials
+-----------------
+
+Part                            |  Price | Where to buy
+--------------------------------|--------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+JeVois A33 Smart Camera	        | $49.99 | https://www.jevoisinc.com/collections/jevois-hardware/products/jevois-a33-smart-machine-vision-camera?variant=36249051018
+Dual motor robot chassis        |  $8.58 | http://www.ebay.com/itm/Smart-Robot-Car-Chassis-Kit-Speed-Encoder-Battery-Box-DIY-Kit-2WD-2-Motor-1-48-/132228276291?hash=item1ec96b6043:g:5x0AAOSwwzhZQlla
+Pan/tilt head hardware          |  $1.16 | http://www.ebay.com/itm/PT-Pan-Tilt-Camera-Platform-Anti-Vibration-Camera-Servo-Mount-for-Aircraft-FPV-I-/390961293160?hash=item5b071be768:g:5IgAAOSw4YdYz0ug
+2x 9g micro servos              |  $2.64 | http://www.ebay.com/itm/NT-9G-Servo-Mini-Micro-For-Trex-Align-450-Rc-Helicopter-Airplane-Foamy-Plane-/112489494262?epid=25005818319&hash=item1a30e576f6:g:zX4AAOSwAuZX18~p
+2600mAh battery bank, 1A output |  $7.99 | https://www.jevoisinc.com/collections/accessories/products/usb-power-bank-2600mah
+Mini + Micro USB splitter cable |  $4.99 | https://www.jevoisinc.com/collections/accessories/products/mini-usb-micro-usb-splitter-cable-15cm-6-in-long
+8GB class 10 Micro SD card      |  $8.99 | https://www.jevoisinc.com/collections/accessories/products/high-speed-8gb-microsd-card-with-jevois-software-pre-loaded
+Arduino 32u4 compatible         |  $6.99 | https://www.jevoisinc.com/collections/accessories/products/atmega32u4-16mhz-5v-arduino-compatible-micro-controller
+Dual 1.2A motor driver PWM      |  $1.33 | http://www.ebay.com/itm/TB6612FNG-Dual-DC-Stepper-Motor-Drive-Controller-Board-Module-Replace-L298N-/191661587054?epid=719645256&hash=item2c9febba6e:g:1PUAAOSwI3RW-22c
+AA batteries, screws, wires     |  $2.34 | misc
+<b>Total</b>                    | $95.00 | (Prices include shipping to the USA. Shipping to other countries may vary.)
+
+Assembly
+--------
+
+- Assemble the car chassis per the provided instructions
+
+\image html RobotCarChassis.jpg
+
+- Assemble the pan/tilt head per the provided instructions
+
+- Use the following Arduino connections:
+
+Arduino pin | Connect to
+------------|----------------------------------------------------------------------------------
+RX0         | JeVois micro-serial port white wire
+TX1         | JeVois micro-serial port yellow wire
+VCC         | JeVois micro-serial port red wire
+GND         | JeVois micro-serial port black wire
+3           | Motor driver PWM for left motor
+2           | Motor driver IN1 for left motor
+21          | Motor driver IN2 for left motor
+5           | Motor driver PWM for right motor
+20          | Motor driver IN1 for right motor
+4           | Motor driver IN2 for right motor
+9           | PWM control wire of pan servo
+10          | PWM control wire of tilt servo
+
+\note The pins used leave enough free pins to connect an optional additional SPI OLED screen should you want to have one
+on your robot. Search for, e.g., 0.96" OLED SPI on eBay to find a screen.
+
+Also connect the 6V power (from the 4xAA pack) to the power lines of the pan and tilt servos, and to the motor input
+voltage of the motor controller board. The Arduino and JeVois will be powered directly from the USB battery bank using
+the splitter mini + micro USB cable. Finally connect the Arduino GND (from USB battery) to motor GND (from 4xAA batteries).
+
+Your rig should roughly look as follows:
+
+\image html RobotCarAssembled.jpg
+
+JeVois configuration
+--------------------
+
+For our initial testing of this robot we will use the ArUco module with no USB output. Just edit <b>JEVOIS:/config/initscript.cfg</b> as follows:
+
+\verbatim
+setmapping2 YUYV 320 240 50.0 JeVois DemoArUco
+setpar serlog None
+setpar serout Hard
+setpar serstyle Normal
+streamon
+\endverbatim
+
+Arduino code
+------------
+
+We will use the Arduino PID Library by Brett Beauregard, make sure to install it in your Arduino IDE.
+
+Here is a simple sketch to follow a single ArUco marker and to attempt to stay at a fixed distance from it:
+
+\includelineno JeVoisRobotCar1.C
+
+
+Hopping from one target to the next
+-----------------------------------
+
+We modify the code slightly to handle multiple targets. When we receive messages from JeVois about multiple targets, we
+keep track of the current ArUco ID that is tracked, and the next one that is being detected. Once the currently tracked
+one is close to us, we switch to tracking the next one. See the slightly modified logic in the loop() function of the
+modified code:
+
+\includelineno JeVoisRobotCar2.C
+
+
+*/
