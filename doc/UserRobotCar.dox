@@ -63,9 +63,9 @@ VCC         | JeVois micro-serial port red wire
 GND         | JeVois micro-serial port black wire
 3           | Motor driver PWM for left motor
 2           | Motor driver IN1 for left motor
-21          | Motor driver IN2 for left motor
+21 (A3)     | Motor driver IN2 for left motor
 5           | Motor driver PWM for right motor
-20          | Motor driver IN1 for right motor
+20 (A2)     | Motor driver IN1 for right motor
 4           | Motor driver IN2 for right motor
 9           | PWM control wire of pan servo
 10          | PWM control wire of tilt servo
