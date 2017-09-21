@@ -13,14 +13,14 @@ The programming environment is Ubuntu 64-bit, version 17.04 (zesty) or 16.04 LTS
 
 It is generally ok to setup the programming environment in a virtual machine (e.g., VirtualBox). Just beware that you
 may have to resolve issues having to do with granting proper access to either the video camera or the microSD card to
-the virtual machine.
+the virtual machine. See \ref Virtualbox for more info.
 
 Upgrading
 ---------
 
 When upgrading to a new version of JeVois (for example, from 1.1 to 1.2), we recommend deleting all previous generated
-files and rebuilding both \b /jevois for host and the staging area for platform in \c var/lib/jevois-build and \c
-/var/lib/jevois-microsd:
+files and rebuilding both \b /jevois for host and the staging area for platform in \b var/lib/jevois-build and \b
+/var/lib/jevois-microsd as follows:
 
 \verbatim
 sudo rm -rf /jevois /usr/lib/jevois-build/usr /var/lib/jevois-microsd
@@ -62,8 +62,13 @@ git clone https://github.com/jevois/samplepythonmodule.git
 git clone https://github.com/jevois/jevois-tutorials.git
 \endverbatim
 
+\note If upgrading, cd to each directory instead and run a `git pull` command to bring your copy up to date with the
+master repository.
+
 Before compiling for the first time: Getting the contributed packages
 ---------------------------------------------------------------------
+
+This step is automatic as of \jvversion{1.5} and can be skipped for that version and later.
 
 The directory <b>jevoisbase/Contrib</b> is for a collection of contributed source code packages.
 
