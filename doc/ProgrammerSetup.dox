@@ -34,8 +34,15 @@ Then rebuild everything (except the Linux kernel, platform O.S., etc) as detaile
 - remove JeVois libraries /usr/lib/libjevois*
 - remove /jevois
 
-Installing Debian packages
---------------------------
+To upgrade previously installed JeVois Debian packages (jevois-sdk-dev and dependencies), do as follows:
+
+\verbatim
+sudo apt update
+sudo apt upgrade
+\endverbatim
+
+Installing Debian packages the first time
+-----------------------------------------
 
 - Start by checking out \ref ProgrammerSource
 

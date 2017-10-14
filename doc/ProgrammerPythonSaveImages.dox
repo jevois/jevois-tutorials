@@ -1,0 +1,214 @@
+/*! \page ProgrammerPythonSaveImages Saving camera images to microSD using Python
+
+
+In this tutorial, we write a very simple module to just save images captured by the JeVois camera sensor to the microSD
+card inside JeVois. This can be useful, for example, to collect training data when developing a new machine vision
+algorithm. As you will see, this can be achieved in just a few minutes.
+
+For this tutorial, you do not need to install any software (except for a video capture program, if you do not already
+have one): We will directly edit the Python code on the microSD card that is inside JeVois.
+
+Preliminaries
+-------------
+
+- Get the latest microSD image from [JeVois start](http://jevois.org/start) as this tutorial assumes \jvversion{1.5} or
+  later.
+
+- Review the \ref UserTutorials so you know how to:
+  + Flash the latest microSD image to a physical card
+  + Connect JeVois to a host computer and power it up
+  + Grab video from JeVois and select different resolutions
+  + Communicate with JeVois using a serial-over-USB link, and use the JeVois command-line interface
+- Be sure to go through the \ref Programmer to understand the basic concepts.
+- Go through \ref ProgrammerPython
+- And finally check out \ref ModulePythonTutorial
+
+Here, we will focus on step-by-step instructions for how to make all of this work.
+
+Getting started
+---------------
+
+- Connect JeVois to your host with the latest microSD image inside
+
+- In this tutorial we will:
+  + Stop grabbing video, if you were using a video capture software on your host computer
+  + Instruct JeVois to export its microSD card as a virtual USB drive
+  + Browse the virtual USB drive on the host computer
+  + Create a new Python module on that USB drive using a text editor
+  + Eject the virtual USB drive. Upon eject, JeVois will restart
+  + When it is back online, connect to JeVois, load your new module, and start saving images to microSD
+  + Stop saving and export the microSD as a virtual flash drive again
+  + Get the saved images.
+
+- Below we go over these steps one at a time.
+
+Stop grabbing video
+-------------------
+
+Exporting the microSD inside JeVois as a virtual USB flash drive poses potential data consistency issues between the
+host and JeVois camera, hence JeVois currently requires that no machine vision module be loaded and no video be
+streaming during access to its microSD over USB.
+
+Thus, just close any video capture program before you attempt to export the microSD of JeVois over USB.
+
+Instruct JeVois to export its microSD card as a virtual USB drive
+-----------------------------------------------------------------
+
+To export the microSD inside JeVois, send the command \c usbsd to JeVois over a serial link. You can do that by first
+connecting to JeVois using a serial terminal and then typing this command. For example, use the Arduino IDE to connect,
+as done in \ref UserArduinoIDE.
+
+Here, since we only want to give that one command to JeVois, we can also instead do:
+  - Linux: in a Linux terminal, type:
+    + `jevois-usbsd start` (to export it),
+    + `jevois-usbsd stop` (to eject and reboot JeVois).
+  - Mac OSX: `echo usbsd > /dev/cu.usbmodem*`
+  - Windows: FIXME anyone can contribute a short command? Just use a serial terminal like Termite, Arduino IDE, etc
+    for now.
+
+Browse the virtual USB drive on the host computer
+-------------------------------------------------
+
+Here is what the microSD inside JeVois looks like when exported to a Mac host computer:
+
+\image html PythonSandbox2.png
+
+Create a new Python module on that USB drive using a text editor
+----------------------------------------------------------------
+
+The conventions for creating a new module are as follows:
+
+- create a directory <b>JEVOIS:/modules/Vendor/ModuleName</b> where
+  + \a Vendor is a vendor name, used to group modules written by the same person or organization together
+  + \a ModuleName is the name of your module
+
+  Here, let us create a new directory <b>JEVOIS:/modules/Test/SaveImages/</b>
+
+- Then create a source code file which has the same file stem as the module's directory name, and in there create a
+  class with again the same name. For a module written in python, we thus create a new file
+  <b>JEVOIS:/modules/Test/SaveImages/SaveImages.py</b> using any text editor.
+
+- As explained in \ref ProgrammerPython and \ref ModulePythonTutorial, here we just need to implement a Python class
+  named \b SaveImages, with a function called `process()` in it which will receive the next image from the camera sensor
+  and will write it to disk.
+
+- Write the module:
+
+\code{.py}
+import libjevois as jevois
+import cv2
+import numpy as np
+
+class SaveImages:
+    # ###################################################################################################
+    ## Constructor
+    def __init__(self):
+        self.frame = 0
+        
+    # ###################################################################################################
+    ## Process function with no USB output
+    def process(self, inframe):
+        img = inframe.getCvBGR()
+        cv2.imwrite("/jevois/data/saveimages{}.png".format(self.frame), img)
+        self.frame += 1
+\endcode
+
+That is, we get the frame from the camera as an OpenCV image with BGR pixels, then use the OpenCV function `imwrite()`
+to save it to disk as a PNG file. We use <b>self.frame</b> as a counter to give each new image a new name.
+
+\note This module does not output any video, it just captures frames and saves them to microSD, with nothing to
+show. Have a look at the other Python tutorials for mudules that also output video frames over USB.
+
+Eject the virtual USB flash drive
+---------------------------------
+
+To stop exporting the microSD inside JeVois, just do a proper eject of that drive:
+- Linux: right click on its icon and select \b eject
+- Mac OSX: drag the drive's icon on your desktop to trash
+- Windows: safely remove USB drive.
+
+When you eject the drive, JeVois will restart. You will see its LED blink.
+
+
+Connect to JeVois, load your new module, and start saving images to microSD
+---------------------------------------------------------------------------
+
+Once JeVois is back online, connect to it, for example using the Arduino IDE, as done in \ref UserArduinoIDE.
+
+To load the module, we will use the `setmapping2` JeVois command (see \ref UserCli):
+
+\verbatim
+setmapping2 YUYV 320 240 30.0 Test SaveImages
+\endverbatim
+
+You can choose any resolution pixel format (here, YUYV), resolution (here, 320x240 pixels), and framerate (here, 30.0),
+that are supported by the JeVois camera sensor (see \ref PixelFormats and \ref VideoMapping for more info), namely:
+
+- Pixel formats: BAYER, YUYV, RGB565
+- Resolutions and frame rates:
+  + SXGA (1280 x 1024): up to 15 fps
+  + VGA (640 x 480): up to 30 fps
+  + CIF (352 x 288): up to 60 fps
+  + QVGA (320 x 240): up to 60 fps
+  + QCIF (176 x 144): up to 120 fps
+  + QQVGA (160 x 120): up to 60 fps
+  + QQCIF (88 x 72): up to 120 fps
+
+Finally, to start saving frames, we need to issue a:
+
+\verbatim
+streamon
+\endverbatim
+
+which instructs the camera sensor to start streaming video, after which the captured video frames will be sent to our
+module's `process()` function.
+
+\note Because this example is very simple, it does not do any buffering. If your images take a long time to compress to
+PNG, or your microSD is slow, you may not be able to sustain your desired frame rate. Any extra frames received from the
+camera sensor while your `process()` function is still running on a previous frame will just safely be dropped. You may
+want to also check out the \jvmod{SaveVideo} module which can save video using a more complex muti-threaded buffering
+setup.
+
+Stop saving and export the microSD as a virtual flash drive again
+-----------------------------------------------------------------
+
+When done with saving images, issue a
+
+\verbatim
+streamoff
+\endverbatim
+
+and, to export the microSD as flash drive again, issue a
+
+\verbatim
+usbsd
+\endverbatim
+
+Now browse <b>JEVOIS:/data/</b> for files named \a saveimagesXXX.png and enjoy! You can copy these files to your host
+computer, view them, delete them, etc as you would do with a regular USB flash drive.
+
+\image html SaveImages.png
+
+Autonomous operation
+--------------------
+
+It is possible to configure JeVois to automatically start capturing and saving images as soon as it is powered on. To
+achieve this, edit the file <b>JEVOIS:/config/initscript.cfg</b> and basically add the commands, which we have entered
+manually above, into that file:
+
+\verbatim
+setmapping2 YUYV 320 240 30.0 Test SaveImages
+streamon
+\endverbatim
+
+<b>initscript.cfg</b> is automatically executed when the camera starts up. You can just power JeVois from a USB battery
+pack and have it save pictures when it is powered on.
+
+\note Likely, when using such a setup, you will also want to just turn power off when you are done. This can give rise
+to corruption of the last or last few frames that were saved, as those may still be in the disk cache and in the process
+of being written to microSD as you remove power. This could also potentially corrupt the whole filesystem on the
+microSD, though JeVois is quite robust at recovering from abrupt power failures. Just keep the camera on for a little
+more time than you expect to get usable data, so that the last few frames would not be so important if they end up being
+corrupted.
+
+*/
