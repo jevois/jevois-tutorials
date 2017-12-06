@@ -1,6 +1,5 @@
 /*! \page ProgrammerPythonSaveImages Saving camera images to microSD using Python
 
-
 In this tutorial, we write a very simple module to just save images captured by the JeVois camera sensor to the microSD
 card inside JeVois. This can be useful, for example, to collect training data when developing a new machine vision
 algorithm. As you will see, this can be achieved in just a few minutes.
@@ -13,7 +12,6 @@ Preliminaries
 
 - Get the latest microSD image from [JeVois start](http://jevois.org/start) as this tutorial assumes \jvversion{1.5} or
   later.
-
 - Review the \ref UserTutorials so you know how to:
   + Flash the latest microSD image to a physical card
   + Connect JeVois to a host computer and power it up
@@ -117,7 +115,7 @@ That is, we get the frame from the camera as an OpenCV image with BGR pixels, th
 to save it to disk as a PNG file. We use <b>self.frame</b> as a counter to give each new image a new name.
 
 \note This module does not output any video, it just captures frames and saves them to microSD, with nothing to
-show. Have a look at the other Python tutorials for mudules that also output video frames over USB.
+show. Have a look at the other Python tutorials for modules that also output video frames over USB.
 
 Eject the virtual USB flash drive
 ---------------------------------
@@ -166,7 +164,7 @@ module's `process()` function.
 \note Because this example is very simple, it does not do any buffering. If your images take a long time to compress to
 PNG, or your microSD is slow, you may not be able to sustain your desired frame rate. Any extra frames received from the
 camera sensor while your `process()` function is still running on a previous frame will just safely be dropped. You may
-want to also check out the \jvmod{SaveVideo} module which can save video using a more complex muti-threaded buffering
+want to also check out the \jvmod{SaveVideo} module which can save video using a more complex multi-threaded buffering
 setup.
 
 Stop saving and export the microSD as a virtual flash drive again
