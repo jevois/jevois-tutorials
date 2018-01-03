@@ -1,0 +1,106 @@
+/*! \page UserFirstVision Using the sample FIRST Robotics vision module
+
+Starting with \jvversion{1.6.1}, JeVois provides a simple demo module that can detect a U-shaped object and estimate its
+location and pose in 3D space.  This module is provided for inspiration of FIRST Robotics teams. It has no pretension of
+actually solving the FIRST Robotics vision problem in a complete and reliable way. It is released in the hope that FRC
+teams will try it out and get inspired to develop something much better for their own robot.
+
+\youtube{BaWostkMClA}
+
+Theory of operation
+-------------------
+
+The basic idea of this module is the classic FIRST robotics vision pipeline: first, select a range of pixels in HSV
+color pixel space likely to include the object. Then, detect contours of all blobs in range. Then apply some tests on
+the shape of the detected blobs, their size, fill ratio (ratio of object area compared to its convex hull's area),
+etc. Finally, estimate the location and pose of the object in the world.
+
+In this module, we run up to 4 pipelines in parallel, using different settings for the range of HSV pixels considered:
+
+- Pipeline 0 uses the HSV values provided by user parameters;
+- Pipeline 1 broadens that fixed range a bit;
+- Pipelines 2-3 use a narrow and broader learned HSV window over time.
+
+Detections from all 4 pipelines are considered for overlap and quality (raggedness of their outlines), and only the
+cleanest of several overlapping detections is preserved. From those cleanest detections, pipelines 2-3 learn and adapt
+the HSV range for future video frames.
+
+For more details, please see the documentation of \jvmod{FirstVision}
+
+Getting started
+---------------
+
+- Build a rectangular U shape and measure its dimensions. Here we just used white paper on wood, but many teams use
+  retroreflective tape.
+
+  \image html firstvision-shape.jpg
+
+  This shape is 280mm wide by 175mm tall (outer dimensions of the white U)
+
+- Download JeVois microSD image \jvversion{1.6.1} or later from http://jevois.org/start
+
+- Flash it to microSD using Etcher or similar software as explained at http://jevois.org/start
+
+- Insert the microSD card into your JeVois smart camera and connect it to a host computer using a mini-USB cable.
+
+- We need to edit the config file of the module to use the shape dimensions we have measured. Allow JeVois to boot
+  up. Then instruct it to export its microSD as a virtual USB flash drive (see \ref UserUSBSD). Browse that flash drive
+  as it appear on your host computer, and open <b>JEVOIS:/modules/JeVois/FirstVision/script.cfg</b> using any plain text
+  editor.
+
+  \image html firstvision-edit.png
+
+  Look for the parameter \b objsize in that config file and enter the measured size of your shape, in millimeters.
+
+- Eject the virtual USB disk, and JeVois will restart.
+
+- Once JeVois has rebooted, start your favorite image capture software (guvcview, Open Broadcaster Studio, etc). Select
+  resolution YUYV 640x390 @ 60 fps
+
+- Point JeVois towards your shape. You will likely need to edit parameters for the HSV range selection, depending on
+  your target exact color, on lighting conditions, etc. To edit those parameters, stop video streaming (quit your video
+  capture software), export the microSD as virtual USB drive again, edit that config file again, and change the settings
+  for parameters \b hcue, \b scue, and \b vcue.
+
+  You may also want to play with the controls of your video capture software (e.g., change exposure, red balance, blue
+  balance, etc).
+
+  Eventually, you should be able to detect the shape!
+
+  \image html firstvision-detect.png
+
+Tuning
+------
+
+The module has many parameters you can tune.
+
+You can do that either interactively by communicating with JeVois over a serial communication while it is running (see
+\ref UserParameters), or you can edit the values in the \b script.cfg file as we have done above.
+
+See the documentation of the \jvmod{FirstVision} module for what the different parameters do.
+
+Building a vision rig
+---------------------
+
+Several users have contributed great mounts for the JeVois camera, some of which also include a mount for an LED
+ring. Search for \a jevois at http://thingiverse.com to download free models that you can print with a 3D printer.
+
+Here is for example the very nice mount of NickFury at https://www.thingiverse.com/thing:2692328
+
+\image html firstvision-mount.jpg
+
+
+
+How to program your own vision pipeline
+---------------------------------------
+
+Stay tuned, we will soon release two relevant pieces:
+
+- a skeleton python module (similar to \jvmod{PythonSandbox}, which you could already use to start experimenting with
+  vision pipelines written in Python and OpenCV on JeVois).
+
+- integration with GRIP software.
+
+*/
+
+
