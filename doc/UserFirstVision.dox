@@ -50,7 +50,7 @@ Getting started
 
   \image html firstvision-edit.png
 
-  Look for the parameter \b objsize in that config file and enter the measured size of your shape, in millimeters.
+  Look for the parameter \b objsize in that config file and enter the measured size of your shape, in meters.
 
 - Eject the virtual USB disk, and JeVois will restart.
 

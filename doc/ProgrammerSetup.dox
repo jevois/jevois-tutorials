@@ -15,11 +15,13 @@ It is generally ok to setup the programming environment in a virtual machine (e.
 may have to resolve issues having to do with granting proper access to either the video camera or the microSD card to
 the virtual machine. See \ref Virtualbox for more info.
 
-Upgrading
----------
+Upgrading the Debian packages
+-----------------------------
+
+Skip to the next section if installing the JeVois Debian packages for the first time.
 
 When upgrading to a new version of JeVois (for example, from 1.1 to 1.2), we recommend deleting all previous generated
-files and rebuilding both \b /jevois for host and the staging area for platform in \b var/lib/jevois-build and \b
+files and rebuilding both \b /jevois for host and the staging area for platform in \b /var/lib/jevois-build and \b
 /var/lib/jevois-microsd as follows:
 
 \verbatim

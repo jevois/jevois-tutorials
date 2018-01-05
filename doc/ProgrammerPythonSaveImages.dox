@@ -87,8 +87,9 @@ The conventions for creating a new module are as follows:
   <b>JEVOIS:/modules/Test/SaveImages/SaveImages.py</b> using any text editor.
 
 - As explained in \ref ProgrammerPython and \ref ModulePythonTutorial, here we just need to implement a Python class
-  named \b SaveImages, with a function called `process()` in it which will receive the next image from the camera sensor
-  and will write it to disk.
+  named \b SaveImages, with a function called `processNoUSB()` in it which will receive the next image from the camera
+  sensor and will write it to disk, while outputing no video stream over USB (so the camera can work in standalone mode
+  with no host computer).
 
 - Write the module:
 
@@ -105,7 +106,7 @@ class SaveImages:
         
     # ###################################################################################################
     ## Process function with no USB output
-    def process(self, inframe):
+    def processNoUSB(self, inframe):
         img = inframe.getCvBGR()
         cv2.imwrite("/jevois/data/saveimages{}.png".format(self.frame), img)
         self.frame += 1
@@ -159,13 +160,13 @@ streamon
 \endverbatim
 
 which instructs the camera sensor to start streaming video, after which the captured video frames will be sent to our
-module's `process()` function.
+module's `processNoUSB()` function.
 
 \note Because this example is very simple, it does not do any buffering. If your images take a long time to compress to
 PNG, or your microSD is slow, you may not be able to sustain your desired frame rate. Any extra frames received from the
-camera sensor while your `process()` function is still running on a previous frame will just safely be dropped. You may
-want to also check out the \jvmod{SaveVideo} module which can save video using a more complex multi-threaded buffering
-setup.
+camera sensor while your `processNoUSB()` function is still running on a previous frame will just safely be dropped. You
+may want to also check out the \jvmod{SaveVideo} module which can save video using a more complex multi-threaded
+buffering setup.
 
 Stop saving and export the microSD as a virtual flash drive again
 -----------------------------------------------------------------

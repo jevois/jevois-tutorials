@@ -336,8 +336,8 @@ class PythonDiceCounter:
         
     # ###################################################################################################
     ## Process function with no USB output
-    def process(self, inframe):
-        jevois.LFATAL("process no usb not implemented")
+    #def processNoUSB(self, inframe):
+    #    jevois.LFATAL("process no usb not implemented")
 
     # ###################################################################################################
     ## Process function with USB output
@@ -445,8 +445,8 @@ class PythonDiceCounter:
         
     # ###################################################################################################
     ## Process function with no USB output
-    def process(self, inframe):
-        jevois.LFATAL("process no usb not implemented")
+    #def processNoUSB(self, inframe):
+    #    jevois.LFATAL("process no usb not implemented")
 
     # ###################################################################################################
     ## Process function with USB output
