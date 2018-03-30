@@ -1,0 +1,304 @@
+/*! \page UserTensorFlowTraining Training custom TensorFlow networks for JeVois
+
+This tutorial will show you how to train TensorFlow deep neural networks using your own collection of images and object
+categories, and to run the trained network on the processor inside the JeVois smart camera. It closely follows the steps
+of the tutorial [TensorFlow for poets](https://codelabs.developers.google.com/codelabs/tensorflow-for-poets/) developed
+by the TensorFlow team, adding a few steps to get the trained network working on JeVois.
+
+\image html UserTF-roses.png Our network trained on 5 different kinds of flowers correctly recognizes roses.
+
+Pre-requisites
+==============
+
+- Make sure you download \jvversion{1.8.0} or later from http://jevois.org/start and flash it to microSD.
+
+- You need a Linux, Windows or Mac host computer (we used Ubuntu 17.10), onto which you will install and run TensorFlow
+  for network training.
+
+- You need to be generally familiar software installation procedures, compiling code, etc for your host computer.
+
+Plan of attack
+==============
+
+- Like in TensorFlow for poets, we will start with a MobileNet network (a small but high performing image recognition
+  network) pre-trained on ImageNet (a large dataset with 1.2 million images in 1000 different object categories). This
+  will save a lot of time compared to training a blank network from scratch.
+
+- We will install the latest TensorFlow on the host computer.
+
+- We will setup a collection of training images in several different categories.
+
+- We will do transfer learning and fine-tune the pre-trained network on our collection of images, switching from the
+  default 1000 object categories to a different number of categories available in our collection of images. This is
+  performed on the fast host computer using the fastest GPU you can get access to.
+
+- We will optimize it for inference and convert it to TensorFlow Lite (flatbuffer) so that it can be loaded and run on
+  JeVois.
+
+- We will copy the converted network to JeVois microSD card.
+
+- And finally we will run it from within the existing \jvmod{TensorFlowEasy} JeVois module.
+
+- If all goes well, you should be able to complete all steps in about 30 minutes.
+
+Detailed steps
+==============
+
+Below ate details on how to train and deploy your own deep network for JeVois.
+
+The first few steps will follow closely the TensorFlow for poets tutorial. We recommend that you look at it as you also
+follow the steps outlined here, as it provides additional details not duplicated here.
+
+Install the latest TensorFlow
+-----------------------------
+
+Follow the instructions at https://www.tensorflow.org/install/
+
+On Ubuntu 17.10, we did the following for an install no GPU support (which is shown here as it is much easier than a
+full install with GPU support). We used the VirtualEnv installation method and python3 (see
+https://www.tensorflow.org/install/install_linux for more details):
+
+\code{.py}
+sudo apt install python3-pip python3-dev python-virtualenv
+
+cd
+
+virtualenv --system-site-packages -p python3 tensorflow
+
+source ~/tensorflow/bin/activate
+\endcode
+
+Once activated, the shell prompt changes to show you the name of your VirtualEnv. We proceed as follows (still from
+https://www.tensorflow.org/install/install_linux):
+
+\code{.py}
+easy_install -U pip
+
+pip3 install --upgrade tensorflow 
+\endcode
+
+Get the TensorFlow for poets code
+---------------------------------
+
+We now follow the steps of the TensorFlow for poets tutorial at
+https://codelabs.developers.google.com/codelabs/tensorflow-for-poets/#1
+
+\code{.py}
+git clone https://github.com/googlecodelabs/tensorflow-for-poets-2
+
+cd tensorflow-for-poets-2
+\endcode
+
+Download training images (or create your own collection)
+--------------------------------------------------------
+
+We need to have a collection of images that we will use for training. The images should be organized under a number of
+directories, where each directory is the name of a given object category.
+
+Let us just use the sample images from https://codelabs.developers.google.com/codelabs/tensorflow-for-poets/#2 to set
+the ideas, but you can of course use your own images instead:
+
+\code{.py}
+curl http://download.tensorflow.org/example_images/flower_photos.tgz | tar xz -C tf_files
+
+ls tf_files/flower_photos
+\endcode
+
+You should see:
+
+\code{.py}
+daisy  dandelion  LICENSE.txt  roses  sunflowers  tulips
+\endcode
+
+and under each directory (daisy, dandelion, etc) we have a number of JPEG images which are pictures of that object:
+
+Category   | Number of images
+-----------|-----------------
+daisy      | 633
+dandelion  | 898
+roses      | 641
+sunflowers | 699
+tulips     | 799
+
+If you want to add more categories, or use different categories, just follow the same organization principle:
+
+- one directory under <b>tf_files/yourphotos/</b> for each category
+- in each directory, any number of JPEG pictures of objects in that category
+
+Also see https://codelabs.developers.google.com/codelabs/tensorflow-for-poets/#6
+
+Configuring MobileNet
+---------------------
+
+We proceed as outlined in https://codelabs.developers.google.com/codelabs/tensorflow-for-poets/#3 and we will use a
+MobileNet with compression factor 0.5 and input size 128x128, as this should run at about 30 frames/s in the JeVois
+\jvmod{TensorFlowEasy} module:
+
+\code{.py}
+IMAGE_SIZE=128
+
+ARCHITECTURE="mobilenet_0.50_${IMAGE_SIZE}"
+
+tensorboard --logdir tf_files/training_summaries &
+\endcode
+
+Then start training:
+
+\code{.py}
+python -m scripts.retrain \
+  --bottleneck_dir=tf_files/bottlenecks \
+  --model_dir=tf_files/models/ \
+  --summaries_dir=tf_files/training_summaries/"${ARCHITECTURE}" \
+  --output_graph=tf_files/retrained_graph.pb \
+  --output_labels=tf_files/retrained_labels.txt \
+  --architecture="${ARCHITECTURE}" \
+  --image_dir=tf_files/flower_photos
+\endcode
+
+After 4000 training steps, which here just took a few minutes, we get an accuracy of 84.8% in our particular run (your
+results will vary slightly).
+
+Using the trained model with TensorFlow on the host computer
+--------------------------------------------------------------
+
+We proceed as outlined in https://codelabs.developers.google.com/codelabs/tensorflow-for-poets/#4
+
+Let's test whether our trained model can now recognize our different types of flowers. We run the trained model on one
+image from our training set. This is expected to work very well since that image has been used for training:
+
+\code{.py}
+python -m scripts.label_image --input_width=${IMAGE_SIZE} --input_height=${IMAGE_SIZE} \
+    --graph=tf_files/retrained_graph.pb  \
+    --image=tf_files/flower_photos/daisy/21652746_cc379e0eea_m.jpg
+\endcode
+
+You should get something like this (actual numbers will vary):
+
+\verbatim
+Evaluation time (1-image): 0.098s
+
+daisy 0.9998286
+dandelion 0.00011135038
+sunflowers 6.0096758e-05
+tulips 3.6351743e-08
+roses 4.3815023e-09
+\endverbatim
+
+Which means the network thinks that this image of a daisy indeed is a daisy with 99.98% confidence, or it could be a
+dandelion with 0.01% confidence, etc
+
+Deploying the trained model to JeVois
+-------------------------------------
+
+We are done with the basic TensorFlow for poets tutorial. Let us now deploy the model to run on the JeVois smart
+camera. For that, we will convert it to the mobile-optimized TensorFlow Lite format.
+
+We will follow some of the steps of [TensorFlow for Poets 2:
+TFLite](https://codelabs.developers.google.com/codelabs/tensorflow-for-poets-2-tflite/index.html) which we recommend you
+check out. But this time we will skip some steps which are irrelevant to JeVois (installing an Android app, etc).
+
+After our retraining above, two files were created:
+
+- <b>tf_files/retrained_graph.pb</b> is the retrained model
+
+- <b>tf_files/retrained_labels.txt</b> are the category names used during retraining (note that internally TensorFlow
+  uses a category number, which is then mapped to a name using this file as key. It is hence important that you do not
+  modify that file or change the order of entries in it, etc).
+
+
+We start by optimizing the model for inference, and then we just convert the model to TensorFlow Lite format (.tflite
+file):
+
+\code{.py}
+# Optimize the model for inference:
+toco \
+  --input_file=tf_files/retrained_graph.pb \
+  --output_file=tf_files/optimized_graph.pb \
+  --input_format=TENSORFLOW_GRAPHDEF \
+  --output_format=TENSORFLOW_GRAPHDEF \
+  --input_shape=1,${IMAGE_SIZE},${IMAGE_SIZE},3 \
+  --input_array=input \
+  --output_array=final_result
+  
+# Test it:
+python -m scripts.label_image --input_width=${IMAGE_SIZE} --input_height=${IMAGE_SIZE} \
+    --graph=tf_files/optimized_graph.pb \
+    --image=tf_files/flower_photos/daisy/3475870145_685a19116d.jpg
+
+# Convert to TensorFlow Lite:
+toco \
+  --input_file=tf_files/optimized_graph.pb \
+  --input_format=TENSORFLOW_GRAPHDEF \
+  --output_file=tf_files/jevois_model.tflite \
+  --output_format=TFLITE \
+  --inference_type=FLOAT \
+  --input_shape=1,${IMAGE_SIZE},${IMAGE_SIZE},3 \
+  --input_array=input \
+  --output_array=final_result
+\endcode
+
+We are now ready to deploy the final model to our JeVois camera. Insert your JeVois microSD into your host computer and
+check that it is detected. Then copy the model and labels files to it:
+
+\code{.py}
+# Check that the card was properly detected:
+ls /media/${USER}/JEVOIS/share/tensorflow
+
+# You should see a bunch of directories and should get no error, otherwise check the path by which you can access your
+# microSD card.
+
+# Create a directory for our new model and copy the model and labels files to it:
+mkdir /media/${USER}/JEVOIS/share/tensorflow/flowers
+
+cp tf_files/jevois_model.tflite /media/${USER}/JEVOIS/share/tensorflow/flowers/model.tflite
+
+cp tf_files/retrained_labels.txt /media/${USER}/JEVOIS/share/tensorflow/flowers/labels.txt
+\endcode
+
+Optional: if you want your new model to be loaded by default when \jvmod{TensorFlowEasy} is loaded: edit
+<b>/media/${USER}/JEVOIS/modules/JeVois/TensorFlowEasy/params.cfg</b> and add:
+
+\verbatim
+netdir=flowers
+foa=128 128
+\endverbatim
+
+and comment out any other settings in that file so that the one you just added for flowers is the only uncommented one
+in the whole file.
+
+Insert the microSD into JeVois and connect it to your host computer, then launch \jvmod{TensorFlowEasy} by selecting
+<b>YUYV 320x308</b> resolution in guvcview or any other video capture software:
+
+\code{.py}
+guvcview -f YUYV -x 320x308
+\endcode
+
+If you did not edit <b>params.cfg</b> above, you need to manually select your new network by connecting to the JeVois
+command line interface and issuing:
+\verbatim
+setpar netdir flowers
+\endverbatim
+
+Point your JeVois camera to the different kinds of flowers we have trained it for (or to pictures of those from
+<b>tf_files/flower_photos/</b>) and see how well it can recognize them!
+
+\image html UserTF-roses.png Our network correctly recognizes roses.
+
+\image html UserTF-sunflowers.jpg Our network correctly recognizes sunflowers.
+
+Note that we did not train a negative or background category in this tutorial. So the model is likely to detect flowers
+when looking at other things, just because the only things it now knows about the world are those 5 types of flowers we
+have trained it on.
+
+\image html UserTF-car.jpg Our network incorrectly classifies a car (not among its possible output labels) as roses.
+
+Next steps
+==========
+
+- Try it yourself with your own pictures!
+
+- Investigate quantization. The steps outlined above yield a floating-point network, which is slower than a quantized
+  network. The toco utility should be able to produce a quantized network for JeVois, but we have not yet fully figured
+  out how (some issues with normalization and ranges of values).
+
+*/

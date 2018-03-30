@@ -23,6 +23,7 @@ Advanced tutorials
 
 - \subpage UserPanTilt
 - \subpage UserRobotCar
+- \subpage UserTensorFlowTraining
 
 */
 
