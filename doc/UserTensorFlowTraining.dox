@@ -1,9 +1,9 @@
 /*! \page UserTensorFlowTraining Training custom TensorFlow networks for JeVois
 
 This tutorial will show you how to train TensorFlow deep neural networks using your own collection of images and object
-categories, and to run the trained network on the processor inside the JeVois smart camera. It closely follows the steps
-of the tutorial [TensorFlow for poets](https://codelabs.developers.google.com/codelabs/tensorflow-for-poets/) developed
-by the TensorFlow team, adding a few steps to get the trained network working on JeVois.
+categories, and how to run the trained network on the processor inside the JeVois smart camera. It closely follows the
+steps of the tutorial [TensorFlow for poets](https://codelabs.developers.google.com/codelabs/tensorflow-for-poets/)
+developed by the TensorFlow team, adding a few steps to get the trained network working on JeVois.
 
 \image html UserTF-roses.png Our network trained on 5 different kinds of flowers correctly recognizes roses.
 
@@ -15,7 +15,7 @@ Pre-requisites
 - You need a Linux, Windows or Mac host computer (we used Ubuntu 17.10), onto which you will install and run TensorFlow
   for network training.
 
-- You need to be generally familiar software installation procedures, compiling code, etc for your host computer.
+- You need to be generally familiar software installation procedures, running programs, etc for your host computer.
 
 Plan of attack
 ==============
@@ -30,7 +30,7 @@ Plan of attack
 
 - We will do transfer learning and fine-tune the pre-trained network on our collection of images, switching from the
   default 1000 object categories to a different number of categories available in our collection of images. This is
-  performed on the fast host computer using the fastest GPU you can get access to.
+  performed on the fast host computer.
 
 - We will optimize it for inference and convert it to TensorFlow Lite (flatbuffer) so that it can be loaded and run on
   JeVois.
@@ -44,7 +44,7 @@ Plan of attack
 Detailed steps
 ==============
 
-Below ate details on how to train and deploy your own deep network for JeVois.
+Below are details on how to train and deploy your own deep network for JeVois.
 
 The first few steps will follow closely the TensorFlow for poets tutorial. We recommend that you look at it as you also
 follow the steps outlined here, as it provides additional details not duplicated here.
@@ -54,8 +54,8 @@ Install the latest TensorFlow
 
 Follow the instructions at https://www.tensorflow.org/install/
 
-On Ubuntu 17.10, we did the following for an install no GPU support (which is shown here as it is much easier than a
-full install with GPU support). We used the VirtualEnv installation method and python3 (see
+On Ubuntu 17.10, we did the following for an install with no GPU support (which is shown here as it is much easier than
+a full install with GPU support). We used the VirtualEnv installation method and python3 (see
 https://www.tensorflow.org/install/install_linux for more details):
 
 \code{.py}
@@ -204,7 +204,6 @@ After our retraining above, two files were created:
 - <b>tf_files/retrained_labels.txt</b> are the category names used during retraining (note that internally TensorFlow
   uses a category number, which is then mapped to a name using this file as key. It is hence important that you do not
   modify that file or change the order of entries in it, etc).
-
 
 We start by optimizing the model for inference, and then we just convert the model to TensorFlow Lite format (.tflite
 file):
