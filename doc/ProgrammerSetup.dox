@@ -9,11 +9,23 @@ only, then simply get and flash a microSD image from http://jevois.org/start and
 - \ref UserGettingStarted
 - \ref ProgrammerPythonLive
 
-The programming environment is Ubuntu 64-bit, version 17.04 (zesty) or 16.04 LTS (xenial).
+The programming environment is Ubuntu 64-bit, version 18.04 (bionic) or 16.04 LTS (xenial).
 
 It is generally ok to setup the programming environment in a virtual machine (e.g., VirtualBox). Just beware that you
 may have to resolve issues having to do with granting proper access to either the video camera or the microSD card to
 the virtual machine. See \ref Virtualbox for more info.
+
+\youtube{pgd7pW1XDU8}
+
+The video above gets you through the steps of:
+
+- installing Ubuntu 18.04 (bionic) on VirtualBox
+- installing the jevois ubuntu (.deb) packages
+- installing jevois-inventor and trying it out
+- getting the latest jevois source code from github
+- compiling that source code, both for host (your Intel computer) and platform (the ARM CPU inside JeVois)
+- flashing the freshly compiled code to microSD
+
 
 Upgrading the Debian packages
 -----------------------------
