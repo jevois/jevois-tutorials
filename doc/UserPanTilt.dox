@@ -182,7 +182,7 @@ Now let's try the following:
 - Issue the following command to configure the \b serout port to be the hardware 4-pin port of JeVois:
 
 \verbatim
-serpar serout Hard
+setpar serout Hard
 \endverbatim
 
 - Now let's move the pan-tilt head by hand. By default, it homes to standardized coordinates (0, 0). If we ask it to

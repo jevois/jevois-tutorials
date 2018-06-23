@@ -1,0 +1,109 @@
+/*! \page UserParseSerial Parsing serial messages from JeVois using Python
+
+Many machine vision modules running on JeVois send messages over serial port (either the hardware 4-pin connector, or
+the serial-over-USB port) to indicate what they have found (e.g., detected ArUco marker IDs, decoded QR-Code contents,
+identified TensorFlow objects).
+
+
+Objective
+---------
+
+In this tutorial, we will write a simple Python program to read and parse the messages sent by JeVois over serial.
+
+Getting started
+---------------
+
+- Connect JeVois to a host computer.
+
+- Start video capture software and select <b>YUYV 640x500 @ 20.0 fps</b> which should launch the \jvmod{DemoArUco}
+  machine vision module
+
+- Connect to JeVois using a serial terminal, and issue:
+  \verbatim
+setpar serout USB
+setpar serstyle Normal
+  \endverbatim
+  to instruct JeVois to send any detections to the serial-over-USB port, and to use the Normal standardized
+  message format.
+
+- See \ref UserSerialStyle for more information about standardized message formats. Since \jvmod{DemoArUco} sends 2D
+  messages and we selected the Normal format, we expect messages formatted as:
+  \verbatim
+N2 id x y w h
+  \endverbatim
+
+- Point JeVois towards some ArUco marker and confirm that you see these messages in your serial console. Use the
+  screenshots from the documentation page of \jvmod{DemoArUco} for example. You should see someghing like this:
+  \verbatim
+N2 U18 -322 -369 444 419
+N2 U5 352 259 434 450
+N2 U43 -358 228 459 456
+N2 U12 367 -323 416 428
+N2 U18 -317 -363 441 425
+N2 U5 380 288 428 463
+N2 U43 -333 256 453 463
+N2 U12 391 -303 413 425
+N2 U18 -294 -342 438 428
+  \endverbatim
+
+
+The Python program
+------------------
+
+- Now, quit your serial terminal so that it will not interfere with out Python program.
+
+- Make sure you have pyserial installed, it is a python module which we will use for serial communication with
+  JeVois. For example, on Ubuntu: `sudo apt install python-serial`
+
+- Check out the docs of PySerial here: https://pythonhosted.org/pyserial/
+
+- Using your favorite editor, create \b parseserial.py with these contents:
+
+\includelineno snip/parseserial.py
+
+- remember to edit the value of \p serdev in the Python code to be the name of the serial port for your JeVois camera:
+  same name as you use with your serial terminal program; typically:
+  + On Linux: /dev/ttyACM0
+  + On Mac: /dev/tty.usbmodem*
+  + On WIndows: COM3:
+
+- Point JeVois towards some ArUco marker and confirm that you see these messages in the terminal in which you launched
+  the \b parseserial.py program:
+  \verbatim
+received: 
+received: 
+received: 
+received: 
+received: 
+received: N2 U48 -203 220 356 353
+Found ArUco U48 at (-203,220) size 356x353
+received: N2 U48 -209 233 356 359
+Found ArUco U48 at (-209,233) size 356x359
+received: N2 U48 -52 253 366 369
+Found ArUco U48 at (-52,253) size 366x369
+received: N2 U48 11 269 359 369
+Found ArUco U48 at (11,269) size 359x369
+received: N2 U48 84 253 363 363
+Found ArUco U48 at (84,253) size 363x363
+  \endverbatim
+
+Note how the empty "received:" statements are because we have a chosen timeout of 1 second when opening the serial port,
+and JeVois was not looking at any ArUco for the first 5 seconds of this example.
+
+Troubleshooting
+---------------
+
+If you see nothing, review this:
+
+- permissions ok on the serial port? correct serial device/name? No other program using the serial port (e.g., a serial
+  terminal)?
+
+- do you have a module running and is it streaming? If you are seeing live video in a video capture software then you
+  are ok. If you started your module with no USB video out using `setmapping2`, did you also send a `streamon`?
+  
+- Was `setpar serout USB` issued (if listening to the serial-over-USB), or `setpar serout Hard` (if listening to the
+  4-pin port)?
+
+*/
+
+

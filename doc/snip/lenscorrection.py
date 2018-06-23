@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# Needed packages: sudo apt-get install python python-tk
+# Needed packages: sudo apt-get install python-serial python-tk
 
 # This tutorial is a simple program that allows one to play with two low-level camera sensor parameters that relate to
 # correction for lens sensitivity fall-off with eccentricity.
