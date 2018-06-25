@@ -26,34 +26,86 @@ The video above gets you through the steps of:
 - compiling that source code, both for host (your Intel computer) and platform (the ARM CPU inside JeVois)
 - flashing the freshly compiled code to microSD
 
+Choose your approach depending on your goals
+--------------------------------------------
+
+Not all the steps shown in the video above may be required, depending on your goals.
+
+A quick overview of the JeVois software development packages (see \ref ProgrammerSource for more details):
+
+- \b jevois-opencv: OpenCV 3.4.0 compiled for host computer with settings that match those used by the JeVois platform
+  hardware. We install this package into /usr/share/jevois-opencv-3.4.0 so that it will not interfere with any other
+  OpenCV install you might have on your host system and that might be required by some other software.
+
+- \b jevois-host: JeVois core software compiled for execution on a host computer
+
+- \b jevois-platform: JeVois core software cross-compiled for execution on the JeVois platform hardware
+
+- \b jevoisbase-host: JeVois base modules compiled for execution on a host computer
+
+- \b jevoisbase-platform: JeVois base modules cross-compiled for execution on the JeVois platform hardware
+
+- \b jevois-sdk: Compiled bootloaders, root filesystem, and other config files.
+
+- \b jevois-sdk-dev: Compiled cross-compilers and cross-compiled libraries for the JeVois platform architecture.
+
+Keeping that in mind:
+
+- <b>If you just want to compile a new module:</b> You do not need to re-compile \b jevois and \b jevoisbase, just use
+  the pre-compiled versions provided by the JeVois Ubuntu packages. You only need to:
+  + Install Ubuntu package \b jevois-sdk-dev
+  + Either get \b samplemodule from github as a starting point for your source code, or use script
+    `jevois-create-module` provided by \b jevois-sdk-dev to create a new module from scratch.
+  + Compile your module using `rebuild-host.sh` and `rebuild-platform.sh` scripts that are in your module's directory.
+
+- <b>If you want to update to the latest jevois and jevoisbase, and possibly modify them, then make new machine
+  vision modules:</b>
+  + Follow all the steps in the above video (also further explained below), precisely and in order.
+  + Make sure you update from github and compile both \b jevois and \b jevoisbase, and in this order (first \b jevois,
+    then \b jevoisbase).
+
+- <b>If you want to hack the Linux kernel that runs on JeVois or add software to its operating system:</b>
+  + This only recommended for advanced programmers! Kernel hacking knowledge and buildroot workflow knowledge required.
+  + Download and installation instructions are in the [INSTALL file of the jevois
+    repository](https://github.com/jevois/jevois/blob/master/INSTALL).
+
 
 Upgrading the Debian packages
 -----------------------------
 
 Skip to the next section if installing the JeVois Debian packages for the first time.
 
-When upgrading to a new version of JeVois (for example, from 1.1 to 1.2), we recommend deleting all previous generated
-files and rebuilding both \b /jevois for host and the staging area for platform in \b /var/lib/jevois-build and \b
-/var/lib/jevois-microsd as follows:
-
-\verbatim
+- When upgrading to a new version of JeVois, we recommend deleting all previous generated files and rebuilding both \b
+  /jevois for host and the staging area for platform in \b /var/lib/jevois-build and \b /var/lib/jevois-microsd as
+  follows:
+  
+  \verbatim
+sudo apt purge jevois-sdk-dev jevois-sdk jevoisbase-platform jevoisbase-host jevois-platform jevois-host jevois-opencv
 sudo rm -rf /jevois /usr/lib/jevois-build/usr /var/lib/jevois-microsd
-\endverbatim
+  \endverbatim
 
-Then rebuild everything (except the Linux kernel, platform O.S., etc) as detailed below.
+- Then re-install as detailed below.
+  
+  \note If upgrading from version 1.0, you need to delete the files that were installed in different locations:
+  - remove all OpenCV files in /usr/local/include/opencv*, /usr/local/lib/libopencv*, /usr/local/share/opencv
+  - remove JeVois files /usr/bin/jevois*
+  - remove JeVois libraries /usr/lib/libjevois*
+  - remove /jevois
 
-\note If upgrading from version 1.0, you need to delete the files that were installed in different locations:
-- remove all OpenCV files in /usr/local/include/opencv*, /usr/local/lib/libopencv*, /usr/local/share/opencv
-- remove JeVois files /usr/bin/jevois*
-- remove JeVois libraries /usr/lib/libjevois*
-- remove /jevois
+- To get out of Debian dependency hell:
 
-To upgrade previously installed JeVois Debian packages (jevois-sdk-dev and dependencies), do as follows:
+  If something went wrong during a previous installation of VeVois packages (e.g., interrupted by user, power failure,
+  etc), you may have entered <em>Debian dependency hell</em>, where you cannot install packages anymore because of
+  broken dependencies or pending installs. Try this:
 
-\verbatim
-sudo apt update
-sudo apt upgrade
-\endverbatim
+  \verbatim
+sudo apt -f install
+sudo apt purge jevois-sdk-dev jevois-sdk jevoisbase-platform jevoisbase-host jevois-platform jevois-host jevois-opencv
+dpkg --remove jevois-sdk-dev jevois-sdk jevoisbase-platform jevoisbase-host jevois-platform jevois-host jevois-opencv
+  \endverbatim
+
+  You should end up in a state where `dpkg --list | grep jevois` returns no hits and `sudo apt -f update` has nothing to
+  update. Then try again from the beginning.
 
 Installing Debian packages the first time
 -----------------------------------------
@@ -72,6 +124,10 @@ Installing Debian packages the first time
 
 Getting the latest source code from GitHub
 ------------------------------------------
+
+You only need to do this if you want to update to the latest version of JeVois from github. If you just want to create
+your own machine vision module, all you need is to install \b jevois-sdk-dev as explained above. The use script
+`jevois-create-module` to create a new module. See how we do it in the \ref ProgrammerHello tutorial.
 
 \verbatim
 cd
