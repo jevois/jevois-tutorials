@@ -85,8 +85,8 @@ Going further
 -------------
 
 - JeVois also provides a Profiler class that allows you to measure timing for different checkpoints between `start()`
-  and `stop()`. Launch \jvmod{DarknetSingle} and enable log outputs (in JeVois Inventor, swithc to the \b Console tab
+  and `stop()`. Launch \jvmod{DarknetSingle} and enable log outputs (in JeVois Inventor, switch to the \b Console tab
   and toggle log messages to \b USB) to see how it can be used, for example, to measure time spent computing each layer
-  of a multilayer neural network. Every few seconds, you will get a report of time spent computing each layer.
+  of a multi-layer neural network. Every few seconds, you will get a report of time spent computing each layer.
 
 */

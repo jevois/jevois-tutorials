@@ -31,7 +31,7 @@ Create your module
   - This can be changed later by editing \b videomappings.cfg, in case you decide to later add more panels to your
     output image.
 
-Allow JeVois to restart, select your new module from the <b>Vision Module</b> pulldown menu, and switch to the
+Allow JeVois to restart, select your new module from the <b>Vision Module</b> pull-down menu, and switch to the
 <b>Code</b> tab.
 
 Write the code

@@ -91,7 +91,7 @@ this tutorial let us first just focus on what was detected (ArUco ID numbers) an
 were detected (coordinates of corners).
 
 First, we need to get an idea of what type that `ids` variable returned by the ArUco module's `detectMarkers()` function
-is. The OpenCV docs just say OutputArray, and in C++ it should be a vecor of unsigned integers.
+is. The OpenCV docs just say OutputArray, and in C++ it should be a vector of unsigned integers.
 
 To check that, let us add a line to our code, just after we get the `ids`, that will send some debug message to the
 jevois console:

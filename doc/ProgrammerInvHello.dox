@@ -28,7 +28,7 @@ Creating your first module
 
   + You need to provide at least the data shown in black font in the above screenshot. If you do not provide the data
     shown in gray font in the above, blank values will be used (not the sample suggested values in gray font). The gray
-    values are just suggestions, but not defaults. So, even if you like those suggestins, you need to type them in
+    values are just suggestions, but not defaults. So, even if you like those suggestions, you need to type them in
     (e.g., you need to type 320, 240, and 33 for the USB output video format to confirm that this is indeed what you
     want).
   + USB output video format is the video resolution and frame rate that JeVois will send to your host computer. This is
