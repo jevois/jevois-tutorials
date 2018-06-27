@@ -1,0 +1,22 @@
+/*! \page UserInventor Getting started with JeVois Inventor
+
+
+JeVois Inventor was created to help you get started with JeVois very quickly.
+
+- Download and flash the latest JeVois microSD image from http://jevois.org/start/start.html (unless you have a kit that
+  includes a pre-flashed microSD card. Note that all kits that ship from jevoisinc.com will have the latest microSD
+  flashed, but our apologies if you purchased your kit from another distributor, you may need to update to at least
+  microSD image 1.8.1 to use JeVois Inventor).
+
+- Download and install JeVois Inventor from http://jevois.org/start/start.html
+
+- Check out the quick instructions at \ref JeVoisInventor
+
+  \youtube{XVMk8lRvm8k}
+
+- Download the [JeVois guided tour](http://jevois.org/data/jevois-guided-tour-latest.pdf)
+
+- Flip through the guided tour, select the corresponding machine vision modules from the "Vision Module" pulldown menu
+  in JeVois Inventor, and check out what JeVois can do!
+
+*/

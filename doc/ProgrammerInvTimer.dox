@@ -1,0 +1,92 @@
+/*! \page ProgrammerInvTimer Adding frames/s and CPU load information to Python modules
+
+The core JeVois software provides a number of helper classes to achieve things that are often useful in machine vision
+modules. One of them is a Timer class that computes average frames/s of processing, and adds some information about
+CPU usage, temperature, and frequency.
+
+JeVois Timer class
+------------------
+
+The jevois::Timer class is designed to be very simple to use. It has two functions, `start()` and `stop()`. From the
+Timer documentation:
+
+This class reports the time spent between `start()` and `stop()`, at specified intervals.  Because JeVois modules
+typically work at video rates, this class only reports the average time after some number of iterations through
+`start()` and `stop()`. Thus, even if the time of an operation between `start()` and `stop()` is only a few
+microseconds, by reporting it only every 100 frames one will not slow down the overall framerate too much. See Profiler
+for a class that provides additional checkpoints between `start()` and `stop()`.
+
+Setting up
+----------
+
+Here, we will start from where we ended in \ref ProgrammerInvHello: a simple ArUco tag detector written in Python +
+OpenCV using JeVois Inventor.
+
+If you have not yet done so, create a new module called \b Hello now, as follows:
+
+- Select <b>New Python Module...</b> from the pull-down menu of JeVois Inventor (or press `CTRL-N`).
+
+- Fill in the details as shown below:
+
+  \jvimg{invhello1.png, 40%}
+
+See \ref ProgrammerInvHello for more details.
+
+Trying it out
+-------------
+
+We add a timer to our ArUco detector as follows:
+- In the constructor of our class (the `__init__()` function), instantiate a Timer
+- After we have received our input frame, start a measuring period
+- Process the input frame, here to detect ArUco tags
+- After all processing is done, stop the measuring period
+- The `stop()` function returns a pre-formatted string with frames/s, CPU, etc info, so we can just write that
+  into our output image using `cv2.putText()`
+
+\code{.py}
+import libjevois as jevois
+import cv2
+import numpy as np
+
+class Hello:
+    def __init__(self):
+      self.dict = cv2.aruco.Dictionary_get(cv2.aruco.DICT_4X4_50)
+      self.params = cv2.aruco.DetectorParameters_create()
+      self.timer = jevois.Timer('ArUco detection', 50, jevois.LOG_DEBUG) # new code
+
+    def process(self, inframe, outframe):
+      img = inframe.getCvBGR()
+      self.timer.start()                              # new code
+      grayimg = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+      corners, ids, rej = cv2.aruco.detectMarkers(grayimg, self.dict, parameters = self.params)
+      img = cv2.aruco.drawDetectedMarkers(img, corners, ids)
+      fps = self.timer.stop()                         # new code
+      cv2.putText(img, fps, (3,img.shape[0]-7), cv2.FONT_HERSHEY_SIMPLEX,
+          0.4, (255,255,255), 1, cv2.LINE_AA)         # new code
+      outframe.sendCv(img)
+\endcode
+
+\jvimg{invtimer1.png, 70%}
+
+A few notes:
+
+- In python, the time measured by our timer here does not include conversion of the input image from the camera, from
+  the native pixel format of the camera to BGR. It also does not include conversion of the input from BGR to the output
+  pixel format that will be sent over USB.
+
+- In C++ modules, in which we often access camera and USB buffers at a lower level, we usually make these conversions
+  explicitly and then also include their time in the measurements reported by the timer.
+
+- Hence, do not get too excited if you create a module in Python that seems to operate faster than its C++ counterpart,
+  maybe the difference is just due to the fact that the timer in Python is not including the image format conversion
+  times.
+
+Going further
+-------------
+
+- JeVois also provides a Profiler class that allows you to measure timing for different checkpoints between `start()`
+  and `stop()`. Launch \jvmod{DarknetSingle} and enable log outputs (in JeVois Inventor, swithc to the \b Console tab
+  and toggle log messages to \b USB) to see how it can be used, for example, to measure time spent computing each layer
+  of a multilayer neural network. Every few seconds, you will get a report of time spent computing each layer.
+
+*/

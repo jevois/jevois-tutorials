@@ -1,0 +1,164 @@
+/*! \page ProgrammerInvSerial Sending serial message outputs to an Arduino or robot
+
+In addition to producing video outputs, JeVois machine vision modules can send message over serial ports, for example to
+inform an Arduino or other robotic controller of what JeVois is seeing.
+
+Serial communication types
+--------------------------
+
+JeVois distinguishes between two types of serial communications:
+
+1) <b>serlog:</b> For log messages (error messages, notices to users, etc). Log messages are categorized into severity
+tiers, and always start with `DBG` (for debug level), `INF` (info level), `ERR` (error level), or `FTL` (fatal error
+level). Log messages are intended for human consumption. They would typically be turned on during algorithm development
+and debugging, then turned off during production use.
+
+2) <b>serout:</b> For text-based outputs intended to be consumed by a machine (e.g., coordinates of an object detected
+by JeVois, to send to an Arduino).
+
+The assignment of actual ports, such as hardware 4-pin connector vs serial-over-USB port, to \p serlog and \p serout is
+controlled by parameters, detailed below. The assignment is very flexible, for example, you can decide to send \p serlog
+messages to both the 4-pin hardware serial port and to the serial-over-USB port, or or to no port, or to just one port,
+etc while sending \p serout messages to the hardware 4-pin serial port only, or all ports, no ports, etc.
+
+In JeVois Inventor, at the top of the \b Console tab, toggle buttons are available to allow you to send loge messages to
+nowhere, serial-over-USB port, 4-pin port, or both, and likewise for module output messages.
+
+See \ref UserCli for more information.
+
+Setting up
+----------
+
+Here, we will start from where we ended in \ref ProgrammerInvTimer: a simple ArUco tag detector written in Python +
+OpenCV using JeVois Inventor.
+
+If you have not yet done so, create a new module called \b Hello now, as follows:
+
+- Select <b>New Python Module...</b> from the pull-down menu of JeVois Inventor (or press `CTRL-N`).
+
+- Fill in the details as shown below:
+
+  \jvimg{invhello1.png, 40%}
+
+See \ref ProgrammerInvHello for more details.
+
+Trying it out
+-------------
+
+The JeVois core provides the following helper functions available in Python:
+
+- `jevois.LDEBUG()`, `jevois.LINFO()`, `jevois.LERROR()`, and `jevois.LFATAL()` to send messages of various severity to
+  the serlog channel.
+  + Note that `LDEBUG` level is disabled at compile-time by default. So, you should not use it unless you have
+    recompiled the JeVois core from source and enabled it.
+  + Note that `jevois.LFATAL()` also throws an exception after it sends the message. So you should only use it in cases
+    where an error has occurred which prevents you from going further (as is usually the case for exceptions: throw an
+    exception when the postcondition of your function cannot be achieved; here, the postcondition is that we have sent a
+    video frame to USB depicting results of our machine vision work). JeVois core will catch the exception and display
+    it in the video stream.
+
+- A helper function `jevois.sendSerial()` to help you send machine vision result strings to either the 4-pin serial port
+  of JeVois, or to the serial-over-USB port.  To which port the messages will be sent to is determined by the \b serout
+  parameter, as explained above.
+
+From the previous tutorial, we start with this code:
+
+\code{.py}
+import libjevois as jevois
+import cv2
+import numpy as np
+
+class Hello:
+    def __init__(self):
+      self.dict = cv2.aruco.Dictionary_get(cv2.aruco.DICT_4X4_50)
+      self.params = cv2.aruco.DetectorParameters_create()
+      self.timer = jevois.Timer('ArUco detection', 50, jevois.LOG_DEBUG)
+
+    def process(self, inframe, outframe):
+      img = inframe.getCvBGR()
+      self.timer.start()
+      grayimg = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+      corners, ids, rej = cv2.aruco.detectMarkers(grayimg, self.dict, parameters = self.params)
+      img = cv2.aruco.drawDetectedMarkers(img, corners, ids)
+      fps = self.timer.stop()
+      cv2.putText(img, fps, (3,img.shape[0]-7), cv2.FONT_HERSHEY_SIMPLEX,
+          0.4, (255,255,255), 1, cv2.LINE_AA)
+      outframe.sendCv(img)
+\endcode
+
+Let us add code to send information about each detected ArUco maker to our serout serial ports. To keep it simple in
+this tutorial let us first just focus on what was detected (ArUco ID numbers) and we will later focus on where those
+were detected (coordinates of corners).
+
+First, we need to get an idea of what type that `ids` variable returned by the ArUco module's `detectMarkers()` function
+is. The OpenCV docs just say OutputArray, and in C++ it should be a vecor of unsigned integers.
+
+To check that, let us add a line to our code, just after we get the `ids`, that will send some debug message to the
+jevois console:
+
+\verbatim
+jevois.LINFO('ids type is {}'.format(type(ids)))
+\endverbatim
+
+and then we switch to the \b Console tab of JeVois Inventor. Toggling \b USB on for log messages informs us that:
+
+\jvimg{invserial1.png, 70%}
+
+depending on whether we are looking at some ArUco (then it is a numpy ndarray), or not (then NoneType). Welcome to
+Python and dynamic typing I guess... Indeed, when developing code in Python + OpenCV, most of my time is spent trying to
+figure out what the data type may be of the various results returned by OpenCV functions. Let us delete that LINFO line
+now and get to parsing these ids. We need to first detect whether the `ids` is of type None, and, if not, we should be
+able to iterate over the ndarray. After some more fiddling around we insert 3 new lines of code just after the call to
+`drawDetectedMarkers()`:
+
+\code{.py}
+import libjevois as jevois
+import cv2
+import numpy as np
+
+class Hello:
+    def __init__(self):
+      self.dict = cv2.aruco.Dictionary_get(cv2.aruco.DICT_4X4_50)
+      self.params = cv2.aruco.DetectorParameters_create()
+      self.timer = jevois.Timer('ArUco detection', 50, jevois.LOG_DEBUG)
+
+    def process(self, inframe, outframe):
+      img = inframe.getCvBGR()
+      self.timer.start()
+      grayimg = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+      corners, ids, rej = cv2.aruco.detectMarkers(grayimg, self.dict, parameters = self.params)
+      img = cv2.aruco.drawDetectedMarkers(img, corners, ids)
+      
+      if str(ids) != 'None':                                # new code
+        for id in ids:                                      # new code
+          jevois.sendSerial('Detected ArUco {}'.format(id)) # new code
+      
+      fps = self.timer.stop()
+      cv2.putText(img, fps, (3,img.shape[0]-7), cv2.FONT_HERSHEY_SIMPLEX,
+          0.4, (255,255,255), 1, cv2.LINE_AA)
+      outframe.sendCv(img)
+\endcode
+
+Switching to the \b Console, and toggling serial outputs to USB on, we can see our messages, when JeVois is pointed
+towards some ArUco markers:
+
+\jvimg{invserial2.png, 70%}
+
+Going further
+-------------
+
+Try to parse and send the coordinates as well!
+
+For further reading:
+
+- \ref ProgrammerPython
+- \ref ModulePythonTutorial
+- \ref ProgrammerTutorials
+
+For tutorials on how to write Arduino or Python code to receive and decode messages sent by JeVois, see:
+
+- \ref UserParseSerial
+- \ref UserPanTilt
+- \ref UserRobotCar
+
+*/

@@ -1,0 +1,144 @@
+/*! \page ProgrammerInvComposite Creating composite output video frames
+
+Many of the machine vision modules that come with JeVois feature nice composite displays that show machine vision
+results side-by-side with the original video captured by JeVois.
+
+This tutorial will show you how to achieve this in Python + OpenCV. We will use JeVois Inventor because it makes
+programming Python modules for JeVois so much easier.
+
+Plan you display
+----------------
+
+First think about your layout. Why do you need several display panels and what information do you want them to convey?
+
+For this tutorial, we will assume that we want to show the original 320x240 video captured by JeVois at left, some
+320x240 machine vision results at right, and a 50-pixel-tall area for messages below.
+
+Create your module
+------------------
+
+- Select <b>New Python Module...</b> from the pull-down menu of JeVois Inventor (or press `CTRL-N`).
+
+- Fill in the details as shown below:
+
+  \jvimg{invcompo1.png, 40%}
+
+  A few notes:
+
+  - Based on the above proposed layout, and for input video that is 320x240, our output video should hence be 640 pixels
+    wide (for the two side-by-side video images) by 290 pixels tall (240 of the input video plus 50 for our message
+    area).
+  - This can be changed later by editing \b videomappings.cfg, in case you decide to later add more panels to your
+    output image.
+
+Allow JeVois to restart, select your new module from the <b>Vision Module</b> pulldown menu, and switch to the
+<b>Code</b> tab.
+
+Write the code
+--------------
+
+Let us start simple by just creating a machine vision processing result that is just a blurred version of the input.
+
+We create our composite displays as follows:
+
+\code{.py}
+import libjevois as jevois
+import cv2
+import numpy as np
+class CompoTest:
+    def process(self, inframe, outframe):
+      # Get the next camera frame as BGR:
+      img = inframe.getCvBGR()
+      
+      # Blur it with a 11x11 kernel; this is our result image:
+      res = cv2.blur(img, (11, 11))
+      
+      # Horizontally concatenate input at left + result at right:
+      sidebyside = np.hstack((img, res))
+      
+      # Create dark-gray (value 80) image for the bottom panel, 50 pixels tall:
+      msgbox = np.zeros((50, sidebyside.shape[1], 3), dtype = np.uint8) + 80
+      
+      # Write some text in the bottom panel:
+      cv2.putText(msgbox, 'Hello JeVois!', (10, 40), cv2.FONT_HERSHEY_SIMPLEX,
+          1, (255,255,255), 2, cv2.LINE_AA)
+      
+      # Stack bottom panel below side by side images:
+      out = np.vstack((sidebyside, msgbox))
+      
+      # Send off the result:
+      outframe.sendCv(out)
+\endcode
+
+And here it is:
+
+\jvimg{invcompo2.png, 60%}
+
+A few things to remember:
+
+- OpenCV and numpy use the linear algebra matrix convention for images, where the first index is row (y) and the second
+  column (x). For example, see the size we used in the `np.zeros()` call or the indices of `np.shape`.
+
+- But they use the image processing convention for things like coordinates, where the first index is x and the second
+  y. See for example the coordinates of the text in `cv2.putText()`.
+
+- If you write your code in a manner that does not assume a specific input video size, then you will be able to use it
+  with different camera sensor resolutions. For example, in the above, we use `sidebyside.shape[1]` instead of just
+  `640` as the width of our side-by-side image.
+
+
+Mixing pixel types
+------------------
+
+Sometimes results will be obtained which are not in the same pixel format as the input. In such case, just convert those
+back to BGR before assembling your final composite output.
+
+Here, for example, let us change our results to grayscale by using a Canny edge detector instead of a color blur. We
+then use `cv2.cvtColor()` to convert the grayscale edge map back to BGR before creating the side-by-side image:
+
+\code{.py}
+import libjevois as jevois
+import cv2
+import numpy as np
+class CompoTest:
+    def process(self, inframe, outframe):
+      # Get the next camera frame as BGR:
+      img = inframe.getCvBGR()
+      
+      # Compute edges in the image; this is our grayscale result:
+      res = cv2.Canny(img, 100, 200)                                  # new code
+      
+      # Convert the grayscale results to BGR:
+      resbgr = cv2.cvtColor(res, cv2.COLOR_GRAY2BGR)                  # new code
+      
+      # Horizontally concatenate input at left + result at right:
+      sidebyside = np.hstack((img, resbgr))                           # modified code
+      
+      # Create dark-gray (value 80) image for the bottom panel, 50 pixels tall:
+      msgbox = np.zeros((50, sidebyside.shape[1], 3), dtype = np.uint8) + 80
+      
+      # Write some text in the bottom panel:
+      cv2.putText(msgbox, 'Hello JeVois!', (10, 40), cv2.FONT_HERSHEY_SIMPLEX,
+          1, (255,255,255), 2, cv2.LINE_AA)
+      
+      # Stack bottom panel below side by side images:
+      out = np.vstack((sidebyside, msgbox))
+      
+      # Send off the result:
+      outframe.sendCv(out)
+\endcode
+
+
+\jvimg{invcompo3.png, 60%}
+
+Going deeper
+------------
+
+The method explained in this tutorial works well and is intuitive, but there is significant CPU cost associated with
+copying and concatenating the BGR images.
+
+A more efficient approach is to directly paste input and result images into the output image buffer that will be sent
+over USB. This more advanced but more efficient approach is briefly explained in the \ref ModulePythonTutorial, section
+on "More fine-grained control using JeVois raw images".
+
+*/

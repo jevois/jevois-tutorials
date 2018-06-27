@@ -7,6 +7,14 @@ by modifying the core JeVois framework.
 Make sure you check out the basic [programmer tutorials in the base JeVois doc](/doc/ModuleTutorial.html) for some
 conceptual understanding and overview of capabilities.
 
+Programming JeVois machine vision modules using Python and JeVois Inventor
+==========================================================================
+
+- \subpage ProgrammerInvHello
+- \subpage ProgrammerInvTimer
+- \subpage ProgrammerInvSerial
+- \subpage ProgrammerInvComposite
+
 Programming JeVois machine vision modules using Python
 ======================================================
 
