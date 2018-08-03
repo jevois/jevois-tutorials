@@ -7,6 +7,9 @@ use the serial monitor included in the Arduino IDE. Communicating with your JeVo
 to set camera and machine vision parameters which are not otherwise available when you just grab video from JeVois. In
 fact, you can issue a number of interesting commands to JeVois to tune its behavior in many ways.
 
+\note Note that since June 2018 it may be easier to use \ref JeVoisInventor.  The instructions below do not require
+JeVois Inventor are are provided in case you do not want to use the Inventor.
+
 Getting the Arduino IDE
 -----------------------
 

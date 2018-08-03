@@ -7,6 +7,9 @@ specific color. The behavior of the module can be fine-tuned by setting ranges f
 approach studied in \ref UserParameters, quickly one becomes tired of typing many \c setpar commands while searching for
 appropriate settings of the 6 color-related parameters (hue min and max, saturation min and max, and value min and max).
 
+\note Note that since June 2018 it may be easier to use \ref JeVoisInventor.  The instructions below do not require
+JeVois Inventor are are provided in case you do not want to use the Inventor.
+
 Here we write a simple graphical user interface in python to tune the parameters.
 
 Hence, in this tutorial you will learn:

@@ -1,0 +1,176 @@
+/*! \page UserArduinoBlink JeVois + Arduino: blink for X
+
+In this tutorial, we program an Arduino connected to JeVois to make it turn on its LED when a particular object is in
+sight. This is the JeVois version of the Arduino blink LED tutorial.
+
+Getting started
+---------------
+
+- Setup Jevois and JeVois Inventor using the other tutorials in this series
+- Download and install the Arduino software from http://arduino.cc
+
+Approach
+--------
+
+- We will use any of the JeVois modules that can recognize 1000 different types of objects using deep neural networks
+  trained on the ImageNet dataset. This includes the following JeVois modules: \jvmod{TensorFlowEasy},
+  \jvmod{DarknetSingle}, \jvmod{TensorFlowSingle}
+
+- These modules send standardized serial messages that describe what they have detected.
+
+- These modules only detect objects at the center of the field of view. Hence the messages are only about what ws
+  detected and has no information about where it was detected. Other modules like \jvmod{TensorFlowSaliency} or
+  \jvmod{DarknetYOLO} send more complex messages that describe both what (category) and where (boundinx box) for each
+  detected object.
+
+- We will write an Arduino program to decode these messages.
+
+Hardware setup
+--------------
+
+- We use an Arduino compatible Pro Micro with Atmega 32u4 since this is
+  [available at jevoisinc.com](https://www.jevoisinc.com/products/atmega32u4-16mhz-5v-arduino-compatible-micro-controller)
+
+- First let's review \ref UserSerial
+
+- Then, let's find pinout information for our Arduino on the web, for example at
+  https://cdn.sparkfun.com/assets/9/c/3/c/4/523a1765757b7f5c6e8b4567.png and reproduced here:
+
+  \image html promicro.png
+
+- Finally, we solder the micro-serial cable that came with our JeVois camera to the Arduino, as follows:
+
+  Wire color | Arduino Pro Micro 32u4 pin
+  -----------|---------------------------------------------------------------
+  White      | RX (0)
+  Yellow     | TX (1)
+  Black      | GND (3 GND pins are available)
+  Red        | VCC (this Arduino has no IOREF pin)
+
+  \image html arduinoconnect.jpg
+
+Test the Arduino and LED
+------------------------
+
+On the Pro Micro 32u4, there is no LED on the standard pin 13 this is the LED of other models. However, there are 2 LEDs
+we can use. One possible LED pin is number 17, labeled 'RX LED'.
+
+- In the Arduino software, go to \b File, \b Examples, \b 01.Basic, and open \b Blink
+
+- Replace all instances of \b LED_BUILTIN (on recent Arduino software) \b 13 (on older software) in there by \b 17
+
+  \image html ardublink.png
+
+- Connect your Arduino to your computer using a micro-USB cable.
+
+- Under \b Tools, \b Board, select <b>Arduino Leonardo</b> since the pro micro model is not an official Arduino model
+  (but a third-party design). You may also have to select the \b Port.
+
+- Flash the code (Arrow-shaped button in the top left corner of the Arduino editor window).
+
+- You should see the RX LED (next to pin 7) blink slowly (1 second on / one second off).
+
+- It is not obvious now, but note that this LED is inverted: on when the pin is LOW and off when it is HIGH.
+
+Decoding serial messages sent by JeVois
+---------------------------------------
+
+Two pages of the main JeVois doc are critical here:
+
+- \ref UserSerialStyle for info on standardized serial messages, and
+- \ref coordhelpers for info on standardized coordinates.
+
+From the doc of one of the object recognition modules, for example, \jvmod{TensorFlowEasy}, we read that:
+
+\verbatim
+    When detections are found with confidence scores above 'thresh', a message containing up to 'top' category:score
+    pairs will be sent per video frame. Exact message format depends on the current \p serstyle setting and is described
+    in Standardized serial messages formatting. For example, when 'serstyle' is 'Detail', this module sends:
+
+    DO category:score category:score ... category:score
+
+    where 'category' is a category name (from 'namefile') and 'score' is the confidence score from 0.0 to 100.0 that
+    this category was recognized. The pairs are in order of decreasing score. Beware that some category names contain
+    spaces, hence you should always look for a ':' to mark the end of a category name and the start of a score value.
+\endverbatim
+
+We can further read about the messages in \ref UserSerialStyle
+
+So now we just need to modify the Arduino program to receive and decode these strings, and to turn on the LED when
+a particular object category is detected.
+
+Writing the code
+----------------
+
+Our general approach for the Arduino code is going to be:
+
+- read a whole line of text from JeVois.
+
+- decode it into tokens, where successive tokens are separated by white space.
+
+- parse the tokens using a <b>state machine</b>. In this case, the state machine will be very simple: an integer
+  variable will keep track of how far we are with parsing the tokens. We call it the \b state. The \b machine is our
+  algorithm that does something in each state, then possibly transitions to a different state. Here:
+  
+  + We start with state=0 when a new line of text has been received and we start parsing it. We then look for the
+    first token and check that it is \b TO (which is the symbol for object in terse mode). If so, we move to the
+    next step, by changing to state=1.
+  + When state is 1 we want to decode the first \b category chunk. If it is a match with the desired category, we
+    switch to state 2.
+  + And that's pretty much it. We now have a <b>state machine</b> message parser!
+
+- Note that, according to the \ref UserSerialStyle, when we are in \b Terse serial message mode, only category name will
+  be sent (no ':' and score). This is the default whan JeVois starts up and we will use it here.
+
+- To get started, let's fire up JeVois Inventor, select machine vision module \jvmod{TensorFlowEasy}, and turn on serial
+  output messages to both \b USB and \b 4-pin in the \b Console tab. We see object category names as we point JeVois to
+  various things:
+  
+  \image html ardukeyboard.png
+
+- Let's now write our Arduino code to decode those <b>TO category</b> messages:
+
+\includelineno ardublink.C
+
+A few comments on the code:
+
+- Line 4: we use pin 17 as it is connected to a LED on our Arduino board
+
+- Line 8: we use Serial1 as it is the port connected to pins 0 and 1 on this board
+
+- Line 15: put any ImageNet category name here, with spaces replaced by underscores
+
+- Lines 19-20: We setup the serial port. We use a timeout of 500ms. Note that JeVois by defaulr does not send anything
+  when it does not detect anything. This timeout will allow us to stop waiting for serial data after half a second, so
+  that we can turn off the LED if it was on. Another approach would be to use frame markers as described in \ref
+  UserSerialStyle
+
+- Lines 22-23: We set our LED pin as output. As noted above, it is inverted, so setting it HIGH actually turns it off.
+
+- Lines 28-29: We read a whole line of text from serial (could be empty if we time out).
+
+- Line 31: We start our tokenizer at the start of the line. `strtok()` is a standard C function, see Arduino docs or
+  other standard C/C++ docs like http://www.cplusplus.com/reference/cstring/strtok/ At this stage, \p tok points to the
+  first chunk of characters until the first white space.
+
+- Line 32: We start in state 0, which we decide means 'start of line'.
+
+- Line 34: We will loop until we run out of space-separated tokens.
+
+- Lines 44-47: If we are in state 0, we expect that the first token should be \b TO; if so, advance to state 1;
+  otherwise switch to state 1000 which we decide means some other kind of message was received which we will not handle.
+  We are done with this first token and break out of the `switch()` statement. We will then advance to the next token
+  on line 62. Remember that `strcmp()` returns 0 when both strings are equal.
+
+- Lines 50-54: If we are in state 1, we have successfully parsed the first token as \b TO, and we are looking at the
+  second token now. If it is equal to the category we want, advance to state 2. Otherwise, stay in state 1 (could also
+  switch to state 1000 when decoding \b TO messages).
+
+- Lines 67-70: We have parsed all the tokens. If we are in state 2, we have detected our desired object, turn on the
+  led (by setting it LOW on this inverted led). Otherwise, turn it off (by setting HIGH).
+
+\image html ardublinkon.jpg Above: Arduino LED near pin 7 is on when looking at a computer keyboard
+
+\image html ardublinkoff.jpg Above: Arduino LED near pin 7 is off when looking at anything else
+
+*/

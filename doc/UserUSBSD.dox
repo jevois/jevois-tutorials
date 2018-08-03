@@ -6,6 +6,9 @@
 For user convenience, JeVois allows users to access the contents of the microSD card inside the camera live, while the
 JeVois smart camera is running.
 
+\note Note that since June 2018 it may be easier to use \ref JeVoisInventor.  The instructions below do not require
+JeVois Inventor are are provided in case you do not want to use the Inventor.
+
 Getting started
 ===============
 

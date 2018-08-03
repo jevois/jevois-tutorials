@@ -9,6 +9,9 @@ Here we will take the simple example of looking for different kinds of barcodes 
 
 This tutorial requires a \jvversion{1.1} or later microSD card.
 
+\note Note that since June 2018 it may be easier to use \ref JeVoisInventor.  The instructions below do not require
+JeVois Inventor are are provided in case you do not want to use the Inventor.
+
 Pre-requisites
 --------------
 
