@@ -61,7 +61,8 @@ We will use a <b>state machine</b> approach as in \ref UserArduinoBlink, just no
 have a total of 6 tokens to decode for each message.
 
 For the sake of developing a non-trivial example, let's say we want to turn on the LED of the Arduino when we detect
-<b>a dog at least 200 units wide</b>.
+<b>a dog at least 200 units wide</b> (i.e., the bounding box around the dog should be at least as wide as 1/10th of the
+field of view, which is 2000 standardized units wide as explained above).
 
 We extend the state machine code developed in \ref UserArduinoBlink as follows:
 
