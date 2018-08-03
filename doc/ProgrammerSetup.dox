@@ -81,7 +81,7 @@ Skip to the next section if installing the JeVois Debian packages for the first 
   
   \verbatim
 sudo apt purge jevois-sdk-dev jevois-sdk jevoisbase-platform jevoisbase-host jevois-platform jevois-host jevois-opencv
-sudo rm -rf /jevois /usr/lib/jevois-build/usr /var/lib/jevois-microsd
+sudo rm -rf /jevois /var/lib/jevois-build /var/lib/jevois-microsd
   \endverbatim
 
 - Then re-install as detailed below.
