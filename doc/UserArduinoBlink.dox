@@ -20,9 +20,9 @@ Approach
 
 - These modules send standardized serial messages that describe what they have detected.
 
-- These modules only detect objects at the center of the field of view. Hence the messages are only about what ws
+- These modules only detect objects at the center of the field of view. Hence the messages are only about what was
   detected and has no information about where it was detected. Other modules like \jvmod{TensorFlowSaliency} or
-  \jvmod{DarknetYOLO} send more complex messages that describe both what (category) and where (boundinx box) for each
+  \jvmod{DarknetYOLO} send more complex messages that describe both what (category) and where (bounding box) for each
   detected object.
 
 - We will write two Arduino programs to decode these messages:
@@ -37,7 +37,7 @@ Hardware setup
 
 - First let's review \ref UserSerial
 
-- Then, let's find pinout information for our Arduino on the web, for example at
+- Then, let's find pin-out information for our Arduino on the web, for example at
   https://cdn.sparkfun.com/assets/9/c/3/c/4/523a1765757b7f5c6e8b4567.png and reproduced here:
 
   \image html promicro.png
@@ -157,7 +157,7 @@ A few comments on the code:
 - line 45: Compare the received message to our desired message. Remember that `strcmp()` returns 0 when the two strings
   are equal.
 
-- lines 46-48: If it was a match, tuen LED on, otherwise turn it off.
+- lines 46-48: If it was a match, turn LED on, otherwise turn it off.
 
 Compile and upload the code to your Arduino and here you go!
 
@@ -243,16 +243,17 @@ A few comments on the code:
 
 - lines 50-65: If we are in state 1, we have successfully parsed the first token as \b DO, and we are looking at the
   second token now, which should be of the form <b>category:score</b>. We look for the ':' separator starting from the
-  end of the token and moving backwards to the start. If we found it, we replace it by a \0 string termination chracter,
-  to isolate the category name. If that is equal to the category we want, advance to state 2. Otherwise, stay in state 1
-  so that we will try again to decode the next token in the list, after line 76 advances us to the next token.
+  end of the token and moving backwards to the start. If we found it, we replace it by a \0 string termination
+  character, to isolate the category name. If that is equal to the category we want, advance to state 2. Otherwise, stay
+  in state 1 so that we will try again to decode the next token in the list, after line 76 advances us to the next
+  token.
 
 - lines 81-84: We have parsed all the tokens. If we are in state 2, we have detected our desired object, turn on the
   led (by setting it LOW on this inverted led). Otherwise, turn it off (by setting HIGH).
 
-This code should behave like the previous one, but remeber that you need \p serstyle to be \b Detail for the messages to
-be decoded by the Arduino now. The LED should still turn on even if the desired category was second guess, third guess,
-etc.
+This code should behave like the previous one, but remember that you need \p serstyle to be \b Detail for the messages
+to be decoded by the Arduino now. The LED should still turn on even if the desired category was second guess, third
+guess, etc.
 
 Going further
 -------------

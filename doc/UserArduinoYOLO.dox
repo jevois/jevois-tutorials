@@ -15,7 +15,7 @@ This tutorial directly builds on \ref UserArduinoBlink, which you go through fir
 Setting up
 ----------
 
-- We start with teh same Arduino board and ardware hookup as in \ref UserArduinoBlink
+- We start with the same Arduino board and hardware hookup as in \ref UserArduinoBlink
 
 - The message format that these modules outputs is described in \ref UserSerialStyle, in the section on <b>Object
   detection + recognition messages</b>, which itself refers to the section on <b>Two-dimensional (2D) location
@@ -23,24 +23,24 @@ Setting up
   about object category and recognition scores in the \a id and \a extra fields of the 2D location messages.
 
 - To get a feel for these messages, let's fire up JeVois Inventor and launch \jvmod{DarknetYOLO}. In the \b Console tab
-  of the Inventor, we turn on serial messages to \b USB and \b 4-pin, and we select messge detail level \b Normal so we
+  of the Inventor, we turn on serial messages to \b USB and \b 4-pin, and we select message detail level \b Normal so we
   get some information about each bounding box and its top-scoring object category:
 
 \image html arduyolo.png
 
 - In the example above, we are detecting a dog, a bicycle, and a car on each video frame. Hence, 3 messages of type \b
-  N2 are sent by JeVois on each frame. Note that here we don't knwo which message came from which frame. If you need to
-  know, review \ref UserSerStyle and look for parameter \p serstamp which can be set to prepend a frame number to each
-  serial message. We will not use this here.
+  N2 are sent by JeVois on each frame. Note that here we don't know which message came from which frame. If you need to
+  know, review \ref UserSerialStyle and look for parameter \p serstamp which can be set to pre-pend a frame number to
+  each serial message. We will not use this here.
 
-- The messages are as follows (from \ref UserSerStyle):
+- The messages are as follows (from \ref UserSerialStyle):
 
 \verbatim
 N2 category:score left top width height
 \endverbatim
 
 - Note that the coordinates are in the JeVois standardized coordinates system described in \ref coordhelpers, where:
-  + center fo the camera's field of view is at x=0, y=0
+  + center of the camera's field of view is at x=0, y=0
   + left edge of the camera image is always at x=-1000
   + right edge of the camera image is always at x=1000
   + top edge of the camera image is usually at y=-750 (unless camera image aspect ratio is not 4:3)
