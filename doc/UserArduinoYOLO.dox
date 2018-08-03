@@ -1,0 +1,104 @@
+/*! \page UserArduinoYOLO JeVois + Arduino: Decoding object detection boxes
+
+
+\jvversion{1.9.0}
+
+In this tutorial, we program an Arduino to decode the results of JeVois modules that detect and identify multiple object
+in scenes, sending one message with information about the bounding box, object category, and recognition score for each
+detection.
+
+Example modules with these outputs are \jvmod{DarknetYOLO}, \jvmod{TensorFlowSaliency}, \jvmod{DetectionDNN}, and
+\jvmod{DarknetSaliency}.
+
+This tutorial directly builds on \ref UserArduinoBlink, which you go through first.
+
+Setting up
+----------
+
+- We start with teh same Arduino board and ardware hookup as in \ref UserArduinoBlink
+
+- The message format that these modules outputs is described in \ref UserSerialStyle, in the section on <b>Object
+  detection + recognition messages</b>, which itself refers to the section on <b>Two-dimensional (2D) location
+  messages</b>. Indeed, the messages describe the bounding box of the object (2D location message), with information
+  about object category and recognition scores in the \a id and \a extra fields of the 2D location messages.
+
+- To get a feel for these messages, let's fire up JeVois Inventor and launch \jvmod{DarknetYOLO}. In the \b Console tab
+  of the Inventor, we turn on serial messages to \b USB and \b 4-pin, and we select messge detail level \b Normal so we
+  get some information about each bounding box and its top-scoring object category:
+
+\image html arduyolo.png
+
+- In the example above, we are detecting a dog, a bicycle, and a car on each video frame. Hence, 3 messages of type \b
+  N2 are sent by JeVois on each frame. Note that here we don't knwo which message came from which frame. If you need to
+  know, review \ref UserSerStyle and look for parameter \p serstamp which can be set to prepend a frame number to each
+  serial message. We will not use this here.
+
+- The messages are as follows (from \ref UserSerStyle):
+
+\verbatim
+N2 category:score left top width height
+\endverbatim
+
+- Note that the coordinates are in the JeVois standardized coordinates system described in \ref coordhelpers, where:
+  + center fo the camera's field of view is at x=0, y=0
+  + left edge of the camera image is always at x=-1000
+  + right edge of the camera image is always at x=1000
+  + top edge of the camera image is usually at y=-750 (unless camera image aspect ratio is not 4:3)
+  + bottom edge of the camera image is usually at y=750
+
+  This is so that detections reported by JeVois are independent of the camera resolution at which JeVois is grabbing
+  frames (e.g., 320x240 or 640x480).
+
+- Note that by default, the floating-point precision of the standardized messages is zero digit after the decimal point,
+  i.e., we get integer scores and coordinates. If you change that using the parameter \p serprec described in \ref
+  UserSerialStyle, you can get more precise floating-point values (e.g., try `setpar serprec 3` in the Console of JeVois
+  Inventor). For the code below, we will assume floating point values which could be integers as well.
+
+Writing the code
+----------------
+
+We will use a <b>state machine</b> approach as in \ref UserArduinoBlink, just now it has a few more states because we
+have a total of 6 tokens to decode for each message.
+
+For the sake of developing a non-trivial example, let's say we want to turn on the LED of the Arduino when we detect
+<b>a dog at least 200 units wide</b>.
+
+We extend the state machine code developed in \ref UserArduinoBlink as follows:
+
+\includelineno arduyolo.C
+
+A few notes:
+
+- lines 1-36: The preliminaries are as in \ref UserArduinoBlink, except that we change the category name to \b dog (line
+  15) and we define \b MIN_WIDTH to be the minimum desired object width (line 18).
+
+- lines 39-47: We decide on the various states for our state machine.
+
+- line 52: Now we look for \b N2 instead of \b DO in \ref UserArduinoBlink
+
+- lines 76-98: We decode left, top, width and height one at a time. Note that those could be floating point depending on
+  \p serprec, hence we use `atof()` to decode them.
+
+- line 111: We just check that we are in state 6 (complete decoding went through, and category matched) and that the
+  width is large enough; if so, turn on the LED, otherwise turn it off.
+
+Compile and upload the code to your Arduino and here you go!
+
+\image html arduyolodog.jpg
+
+Woohoo, the LED turns on when JeVois detects a dog that is big enough!
+
+Note that in scenes where JeVois also detects other things, the code as written will turn off the LED. So it may only
+briefly blink if something else is detected (e.g., the bicycle in the above scene) just after the dog is.
+
+Going further
+-------------
+
+Check out these other tutorials. They use similar state machine decoding:
+
+- \ref ArduinoTutorial
+- \ref UserPanTilt
+- \ref UserRobotCar
+
+*/
+

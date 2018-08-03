@@ -120,6 +120,60 @@
     </member>
   </compound>
   <compound kind="file">
+    <name>ardublinkez.C</name>
+    <path>/lab/itti/jevois/software/jevois-tutorials/doc/snip/</path>
+    <filename>ardublinkez_8C</filename>
+    <member kind="define">
+      <type>#define</type>
+      <name>LEDPIN</name>
+      <anchorfile>ardublinkez_8C.html</anchorfile>
+      <anchor>a2b3671e090b0831bfba7d12cfcf2d481</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="define">
+      <type>#define</type>
+      <name>SERIAL</name>
+      <anchorfile>ardublinkez_8C.html</anchorfile>
+      <anchor>aae3f0b4211ba45d265973d40ccbb5fd1</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="define">
+      <type>#define</type>
+      <name>INLEN</name>
+      <anchorfile>ardublinkez_8C.html</anchorfile>
+      <anchor>a521f3ecc1f65c99158412624756c3479</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="define">
+      <type>#define</type>
+      <name>CATEGORY</name>
+      <anchorfile>ardublinkez_8C.html</anchorfile>
+      <anchor>a60d401f420413a119c88879ab1a4ab58</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>setup</name>
+      <anchorfile>ardublinkez_8C.html</anchorfile>
+      <anchor>a4fc01d736fe50cf5b977f755b675f11d</anchor>
+      <arglist>()</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>loop</name>
+      <anchorfile>ardublinkez_8C.html</anchorfile>
+      <anchor>afe461d27b9c48d5921c00d521181f12f</anchor>
+      <arglist>()</arglist>
+    </member>
+    <member kind="variable">
+      <type>char</type>
+      <name>instr</name>
+      <anchorfile>ardublinkez_8C.html</anchorfile>
+      <anchor>abbbf8117d906893e17b8ae88586cb131</anchor>
+      <arglist>[INLEN+1]</arglist>
+    </member>
+  </compound>
+  <compound kind="file">
     <name>ArduinoPanTiltTutorial.C</name>
     <path>/lab/itti/jevois/software/jevois-tutorials/doc/snip/</path>
     <filename>ArduinoPanTiltTutorial_8C</filename>
@@ -239,6 +293,67 @@
       <type>char</type>
       <name>instr</name>
       <anchorfile>ArduinoPanTiltTutorial_8C.html</anchorfile>
+      <anchor>abbbf8117d906893e17b8ae88586cb131</anchor>
+      <arglist>[INLEN+1]</arglist>
+    </member>
+  </compound>
+  <compound kind="file">
+    <name>arduyolo.C</name>
+    <path>/lab/itti/jevois/software/jevois-tutorials/doc/snip/</path>
+    <filename>arduyolo_8C</filename>
+    <member kind="define">
+      <type>#define</type>
+      <name>LEDPIN</name>
+      <anchorfile>arduyolo_8C.html</anchorfile>
+      <anchor>a2b3671e090b0831bfba7d12cfcf2d481</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="define">
+      <type>#define</type>
+      <name>SERIAL</name>
+      <anchorfile>arduyolo_8C.html</anchorfile>
+      <anchor>aae3f0b4211ba45d265973d40ccbb5fd1</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="define">
+      <type>#define</type>
+      <name>INLEN</name>
+      <anchorfile>arduyolo_8C.html</anchorfile>
+      <anchor>a521f3ecc1f65c99158412624756c3479</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="define">
+      <type>#define</type>
+      <name>CATEGORY</name>
+      <anchorfile>arduyolo_8C.html</anchorfile>
+      <anchor>a60d401f420413a119c88879ab1a4ab58</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="define">
+      <type>#define</type>
+      <name>MIN_WIDTH</name>
+      <anchorfile>arduyolo_8C.html</anchorfile>
+      <anchor>ad3ee0cc681d736cb6d41c4ebb04c0ae4</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>setup</name>
+      <anchorfile>arduyolo_8C.html</anchorfile>
+      <anchor>a4fc01d736fe50cf5b977f755b675f11d</anchor>
+      <arglist>()</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>loop</name>
+      <anchorfile>arduyolo_8C.html</anchorfile>
+      <anchor>afe461d27b9c48d5921c00d521181f12f</anchor>
+      <arglist>()</arglist>
+    </member>
+    <member kind="variable">
+      <type>char</type>
+      <name>instr</name>
+      <anchorfile>arduyolo_8C.html</anchorfile>
       <anchor>abbbf8117d906893e17b8ae88586cb131</anchor>
       <arglist>[INLEN+1]</arglist>
     </member>
@@ -823,6 +938,11 @@
     <filename>UserArduinoIDE_8dox</filename>
   </compound>
   <compound kind="file">
+    <name>UserArduinoYOLO.dox</name>
+    <path>/lab/itti/jevois/software/jevois-tutorials/doc/</path>
+    <filename>UserArduinoYOLO_8dox</filename>
+  </compound>
+  <compound kind="file">
     <name>UserCMD.dox</name>
     <path>/lab/itti/jevois/software/jevois-tutorials/doc/</path>
     <filename>UserCMD_8dox</filename>
@@ -1087,6 +1207,11 @@
     <name>UserArduinoIDE</name>
     <title>Using the Arduino IDE (Integrated Development Environment) to talk to JeVois</title>
     <filename>UserArduinoIDE</filename>
+  </compound>
+  <compound kind="page">
+    <name>UserArduinoYOLO</name>
+    <title>JeVois + Arduino: Decoding object detection boxes</title>
+    <filename>UserArduinoYOLO</filename>
   </compound>
   <compound kind="page">
     <name>UserCMD</name>

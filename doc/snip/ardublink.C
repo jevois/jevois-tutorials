@@ -29,27 +29,41 @@ void loop()
   instr[len] = 0;
 
   char * tok = strtok(instr, " \r\n");
-  int state = 0;
+  int state = 0, i; float score;
   
   while (tok)
   {
     // State machine:
-    // 0: start parsing; if we get TO, move to state 1, otherwise state 1000
-    // 1: got TO, decode category name; if it is the one we want, move to state 2, otherwise stay in state 1
-    // 2: got TO followed by the category we are interested in - it's a hit!
-    // 1000: did not get TO, we stay in this state until we run out of tokens
+    // 0: start parsing; if we get DO, move to state 1, otherwise state 1000
+    // 1: got DO, decode category name; if it is the one we want, move to state 2, otherwise stay in state 1
+    // 2: got DO followed by the category we are interested in - it's a hit!
+    // 1000: did not get DO, we stay in this state until we run out of tokens
     switch (state)
     {
-      // First token should be: TO
+      // First token should be: DO
       case 0:
-        if (strcmp(tok, "TO") == 0) state = 1; else state = 1000;
+        if (strcmp(tok, "DO") == 0) state = 1; else state = 1000;
         // We are done with this token. Break from the switch() statement
         break;
 
-      // Second token should be: category
-      case 1:         
+      // Second token should be: category:score
+      case 1:
+        // Find the ':' between category and score:
+        i = strlen(tok) - 1;
+        while (i >= 0 && tok[i] != ':') --i;
+        
+        // If i is >= 0, we found a ':'; terminate the tok string at that ':':
+        if (i >= 0)
+        {
+          tok[i] = '\0';
+ 
+          // Note: we don't care about score here, but it could be obtained as:
+          score = atof(&tok[i+1]);
+         }
+        
         // Is the category name what we want?
-        if (strcmp(tok, CATEGORY) == 0) state = 2;  
+        if (strcmp(tok, CATEGORY) == 0) state = 2;
+        
         // We are done with this token. Break from the switch() statement
         break;
       
