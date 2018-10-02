@@ -57,8 +57,8 @@ Assembly
 
 Arduino pin | Connect to
 ------------|----------------------------------------------------------------------------------
-RX0         | JeVois micro-serial port white wire
-TX1         | JeVois micro-serial port yellow wire
+RX          | JeVois micro-serial port white wire
+TX          | JeVois micro-serial port yellow wire
 VCC         | JeVois micro-serial port red wire
 GND         | JeVois micro-serial port black wire
 3           | Motor driver PWM for left motor

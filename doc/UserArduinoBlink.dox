@@ -21,9 +21,9 @@ Approach
 - These modules send standardized serial messages that describe what they have detected.
 
 - These modules only detect objects at the center of the field of view. Hence the messages are only about what was
-  detected and has no information about where it was detected. Other modules like \jvmod{TensorFlowSaliency} or
+  detected and contain no information about where it was detected. Other modules like \jvmod{TensorFlowSaliency} or
   \jvmod{DarknetYOLO} send more complex messages that describe both what (category) and where (bounding box) for each
-  detected object.
+  detected object. Those are covered in another tutorial, \ref UserArduinoYOLO
 
 - We will write two Arduino programs to decode these messages:
   + First a simple one that matches the whole message sent by JeVois to a desired message,
@@ -48,8 +48,8 @@ Hardware setup
 
   Wire color | Arduino Pro Micro 32u4 pin
   -----------|---------------------------------------------------------------
-  White      | RX (0)
-  Yellow     | TX (1)
+  White      | RX
+  Yellow     | TX
   Black      | GND (3 GND pins are available)
   Red        | VCC (this Arduino has no IOREF pin)
 
@@ -92,7 +92,7 @@ From the doc of one of the object recognition modules, for example, \jvmod{Tenso
 
 \verbatim
     When detections are found with confidence scores above 'thresh', a message containing up to 'top' category:score
-    pairs will be sent per video frame. Exact message format depends on the current \p serstyle setting and is described
+    pairs will be sent per video frame. Exact message format depends on the current serstyle setting and is described
     in Standardized serial messages formatting. For example, when 'serstyle' is 'Detail', this module sends:
 
     DO category:score category:score ... category:score
@@ -111,9 +111,9 @@ Writing the code - whole message match
 
 Our approach for the Arduino code that matches the whole message from JeVois is going to be:
 
-- read a whole line of text from JeVois.
+- Read a whole line of text from JeVois.
 
-- match it against a desired message in one step.
+- Match it against a desired message in one step.
 
 
 - Note that, according to the \ref UserSerialStyle, when we are in \b Terse serial message mode, only category name will
@@ -132,11 +132,11 @@ Our approach for the Arduino code that matches the whole message from JeVois is 
 
 A few comments on the code:
 
-- line 4: we use pin 17 as it is connected to a LED on our Arduino board
+- line 4: We use pin 17 as it is connected to a LED on our Arduino board
 
-- line 8: we use Serial1 as it is the port connected to pins 0 and 1 on this board
+- line 8: We use Serial1 as it is the port connected to pins 0 and 1 on this board
 
-- line 15: put any ImageNet category name here, with spaces replaced by underscores
+- line 15: Put any ImageNet category name here, with spaces replaced by underscores
 
 - lines 19-20: We setup the serial port. We use a timeout of 500ms. Note that JeVois by default does not send anything
   when it does not detect anything. This timeout will allow us to stop waiting for serial data after half a second, so
@@ -149,7 +149,7 @@ A few comments on the code:
 
 - line 32: Make sure the line is null-terminated so it is a proper C string.
 
-- line 35: Remove any trailing white space, including CR (\r) and LF (\n) characters so they do not interfere with our
+- line 35: Remove any trailing white space, including CR (\\r) and LF (\\n) characters so they do not interfere with our
   later matching.
 
 - lines 38-42: If we end up with empty data, just turn off the LED and stop here.
@@ -191,12 +191,12 @@ cat (with confidence 42.3).
 Note that \jvmod{TensorFlowEasy} already applies a threshold to confidence scores (see parameter \p thresh of the
 module), so that only categories that score above that threshold are reported.
 
-Let's see how we could parse these messages, so that our Arduino now blinks if any of the categories in the list, i.e.,
-the LED should still turn on if \b computer_keyboard was the second or third guess.
+Let's see how we could parse these messages, so that our Arduino now blinks if any of the categories in the list is a
+match, i.e., the LED should still turn on if \b computer_keyboard was the second or third guess.
 
 Our approach for the Arduino code that parses the message from JeVois is going to be:
 
-- set parameter \p serstyle to \b Detail so we get the detailed messages as above and as explained in \ref
+- Set parameter \p serstyle to \b Detail so we get the detailed messages as above and as explained in \ref
   UserSerialStyle, and turn on serial output messages to both \b USB and \b 4-pin in the \b Console tab. We see object
   category names as we point JeVois to various things:
 
@@ -207,16 +207,16 @@ Our approach for the Arduino code that parses the message from JeVois is going t
   can get more precise floating-point values (e.g., try `setpar serprec 3` in the Console of JeVois Inventor). For the
   code below, we will assume floating point values which could be integers as well.
 
-- read a whole line of text from JeVois.
+- Our code hence will first read a whole line of text from JeVois.
 
-- decode it into tokens, where successive tokens are separated by white space.
+- Then, decode it into tokens, where successive tokens are separated by white space.
 
-- parse the tokens using a <b>state machine</b>. In this case, the state machine will be very simple: an integer
+- Parse the tokens using a <b>state machine</b>. In this case, the state machine will be very simple: an integer
   variable will keep track of how far we are with parsing the tokens. We call it the \b state. The \b machine is our
   algorithm that does something in each state, then possibly transitions to a different state. Here:
   
   + We start with state=0 when a new line of text has been received and we start parsing it. We then look for the
-    first token and check that it is \b DO (which is the symbol for object in terse mode). If so, we move to the
+    first token and check that it is \b DO (which is the symbol for object in Detail mode). If so, we move to the
     next step, by changing to state=1.
   + When state is 1 we want to decode the first <b>category:score</b> chunk. If it is a match with the desired
     category, we switch to state 2.

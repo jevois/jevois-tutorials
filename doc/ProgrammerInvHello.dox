@@ -92,7 +92,7 @@ In the above code, we basically:
 
 - Request the next video frame from the camera sensor, as a BGR image (blue, green, red - the format most commonly used
   by OpenCV) by calling <b>inframe.getCvBGR()</b>
-- Send that image to the host computer over USB by calling outframe.sendCv()
+- Send that image to the host computer over USB by calling <b>outframe.sendCv()</b>
 
 Try it for yourself:
 - In JeVois Inventor, select all the code with `CTRL-A` and delete it with `DEL`
@@ -161,6 +161,10 @@ NameError: name 'font' is not defined
 \endverbatim
 
 Paste the line you deleted back in its proper place, save to JeVois, and you should see the module working again.
+
+\note If the message is too long to read in the video image (e.g., if you are writing a module with very low output
+resolution), you can also see the same message as text by switching to the \b Console tab of the Inventor and clicking
+on the \b USB button for <a>Log messages</a>.
 
 How do I make the ArUco tag detector you showed in the JeVois Inventor video?
 -----------------------------------------------------------------------------

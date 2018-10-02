@@ -11,6 +11,11 @@
     <filename>ProgrammerDice_8dox</filename>
   </compound>
   <compound kind="file">
+    <name>ProgrammerDlib.dox</name>
+    <path>/lab/itti/jevois/software/jevois-tutorials/doc/</path>
+    <filename>ProgrammerDlib_8dox</filename>
+  </compound>
+  <compound kind="file">
     <name>ProgrammerHello.dox</name>
     <path>/lab/itti/jevois/software/jevois-tutorials/doc/</path>
     <filename>ProgrammerHello_8dox</filename>
@@ -24,6 +29,11 @@
     <name>ProgrammerInvHello.dox</name>
     <path>/lab/itti/jevois/software/jevois-tutorials/doc/</path>
     <filename>ProgrammerInvHello_8dox</filename>
+  </compound>
+  <compound kind="file">
+    <name>ProgrammerInvOCR.dox</name>
+    <path>/lab/itti/jevois/software/jevois-tutorials/doc/</path>
+    <filename>ProgrammerInvOCR_8dox</filename>
   </compound>
   <compound kind="file">
     <name>ProgrammerInvSerial.dox</name>
@@ -1139,6 +1149,11 @@
     <filename>ProgrammerDice</filename>
   </compound>
   <compound kind="page">
+    <name>ProgrammerDlib</name>
+    <title>Creating a module with dependencies: Dlib face detector</title>
+    <filename>ProgrammerDlib</filename>
+  </compound>
+  <compound kind="page">
     <name>ProgrammerHello</name>
     <title>Hello JeVois</title>
     <filename>ProgrammerHello</filename>
@@ -1152,6 +1167,11 @@
     <name>ProgrammerInvHello</name>
     <title>Hello JeVois using JeVois Inventor</title>
     <filename>ProgrammerInvHello</filename>
+  </compound>
+  <compound kind="page">
+    <name>ProgrammerInvOCR</name>
+    <title>Reading text with OpenCV and Tesseract</title>
+    <filename>ProgrammerInvOCR</filename>
   </compound>
   <compound kind="page">
     <name>ProgrammerInvSerial</name>

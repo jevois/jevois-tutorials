@@ -17,7 +17,7 @@ Setting up
 
 - We start with the same Arduino board and hardware hookup as in \ref UserArduinoBlink
 
-- The message format that these modules outputs is described in \ref UserSerialStyle, in the section on <b>Object
+- The message format that these modules output is described in \ref UserSerialStyle, in the section on <b>Object
   detection + recognition messages</b>, which itself refers to the section on <b>Two-dimensional (2D) location
   messages</b>. Indeed, the messages describe the bounding box of the object (2D location message), with information
   about object category and recognition scores in the \a id and \a extra fields of the 2D location messages.
@@ -62,7 +62,7 @@ have a total of 6 tokens to decode for each message.
 
 For the sake of developing a non-trivial example, let's say we want to turn on the LED of the Arduino when we detect
 <b>a dog at least 200 units wide</b> (i.e., the bounding box around the dog should be at least as wide as 1/10th of the
-field of view, which is 2000 standardized units wide as explained above).
+field of view, and the full field of view is 2000 standardized units wide as explained above).
 
 We extend the state machine code developed in \ref UserArduinoBlink as follows:
 

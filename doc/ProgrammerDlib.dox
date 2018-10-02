@@ -1,0 +1,671 @@
+/*! \page ProgrammerDlib Creating a module with dependencies: Dlib face detector
+
+This tutorial walks through the steps of creating a C++ JeVois module that has some external dependencies -- here the
+excellent Dlib C++11 library of machine vision algorithms.
+
+Setting up
+----------
+
+- First go through the steps outlined in \ref ProgrammerSetup
+
+- Since we just want to compile a new module, we do not need to re-compile \b jevois and \b jevoisbase, we just use
+  the pre-compiled versions provided by the JeVois Ubuntu packages. Thus, we only need to:
+  + Install Ubuntu package \b jevois-sdk-dev using instructions from http://jevois.usc.edu
+  + Use the script `jevois-create-module` provided by \b jevois-sdk-dev to create a new module from scratch.
+  + Compile the module using `rebuild-host.sh` and `rebuild-platform.sh` scripts that are in the module's directory.
+
+Creating the module
+-------------------
+
+We use the script `jevois-create-module` which will grab sample module code from GitHub, and will also immediately
+change names of classes and files to match our new module's name: usage is `jevois-create-module <VendorName>
+<ModuleName>`, so here let us just run:
+
+\verbatim
+cd
+jevois-create-module Tutorial FaceDetector
+\endverbatim
+
+you should now have the following:
+\verbatim
+facedetector/
+├── CMakeLists.txt
+├── COPYING
+├── INSTALL
+├── README
+├── rebuild-host.sh
+├── rebuild-platform.sh
+├── share
+│   └── README.txt
+└── src
+    └── Modules
+        └── FaceDetector
+            ├── FaceDetector.C
+            ├── icon.png
+            ├── postinstall
+            └── screenshot1.png
+\endverbatim
+
+Pulling the dependency
+----------------------
+
+Let's write a small shell script to get Dlib, so that others can use that script when they want to compile our
+module. We create <b>facedetector/download-dlib.sh</b> as follows:
+
+\code{.py}
+#!/bin/bash
+# Download and extract dlib:
+
+ver=19.15
+
+if [ -d dlib ]; then
+    echo "dlib/ directory already present! Delete it if you want to reinstall -- SKIPPING DLIB DOWNLOAD"
+    exit 0
+fi
+
+wget http://dlib.net/files/dlib-${ver}.tar.bz2
+tar jxvf dlib-${ver}.tar.bz2
+/bin/rm dlib-${ver}.tar.bz2
+mv dlib-${ver} dlib
+\endcode
+
+This script will download Dlib with a given version, unpack, and install into <b>facedetector/dlib/</b>.
+
+Downloading a fixed version is usually better than downloading the latest version, as changes in the latest version may
+introduce incompatibilities with our module, which would confuse future users. When a new version of Dlib is available,
+we will download it, test it with our module, make any adjustments, and update this download script.
+
+Run the script from inside directory \b facedetector by calling:
+
+\code{.py}
+cd facedetector
+./download-dlib.sh
+\endcode
+
+To make sure Dlib is automatically pulled and installed, we add the following line to both \b rebuild-host.sh and \b
+rebuild-platform.sh, somewhere before the \b make command is invoked:
+
+\code{.py}
+# Get dlib if not here:
+if [ ! -d dlib ]; then ./download-dlib.sh; fi
+\endcode
+
+Compiling the dependency
+------------------------
+
+We now turn to the docs of our dependency to try to understand how it should be compiled.
+
+We find two options at http://dlib.net/compile.html
+- with CMake, compiling Dlib as a sub-project
+- directly from the command-line without cmake
+
+After trying the first option, we could not make it work. But the second option worked fine. We simply add
+<b>dlib/all/source.cpp</b> as a new C++ file that needs to be compiled into our module. We also add \b dlib to our
+include path, and finally, after reading http://dlib.net/compile.html until the end, we add flag \b DLIB_NO_GUI_SUPPORT
+since JeVois has no display. We end up with the following modified \b CMakeLists.txt for our module:
+
+\code{.py}
+cmake_minimum_required(VERSION 3.1)
+
+## Set vendor names, our modules will be placed in a directory by that name under /jevois/modules:
+set(JEVOIS_VENDOR "Tutorial")
+set(JEVOIS_CONFIG "/jevois/config" CACHE STRING "Path to JeVois config to use")
+
+## Include helper functions, config, etc from the JeVois install:
+set(CMAKE_MODULE_PATH ${JEVOIS_CONFIG})
+include(jevois_config)
+include(JeVois)
+
+## Set project name, detects compiler (which has been set by our helper module). Then set some compilation flags:
+project(facedetector)
+jevois_project_set_flags()
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+
+## Setup our modules that are in src/Modules:
+jevois_setup_modules(src/Modules "")
+
+## Disable GUI support in Dlib:
+add_definitions("-DDLIB_NO_GUI_SUPPORT")
+
+## Include dlib include files:
+include_directories("dlib")
+
+## Add dlib source files (see http://dlib.net/compile.html):
+target_sources(FaceDetector PRIVATE dlib/dlib/all/source.cpp)
+
+## Add any link libraries for our module:
+target_link_libraries(FaceDetector ${JEVOIS_OPENCV_LIBS} opencv_imgproc opencv_core)
+
+## Install any shared resources (cascade classifiers, neural network weights, etc) in the share/ sub-directory:
+install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/share"
+  DESTINATION "${JEVOIS_INSTALL_ROOT}" COMPONENT bin)
+
+## Wrapping up:
+jevois_project_finalize()  # call this last in your CMakeLists.txt, will un-mount the live microSD if applicable
+\endcode
+
+\note Have a look at the \b CMakeLists.txt of \b jevoisbase, available at
+https://github.com/jevois/jevoisbase/blob/master/CMakeLists.txt - it contains many examples of how to import different
+kinds of C++ and C dependencies into JeVois modules. Typically, we end up using the following CMake commands:
+- `include_directories()` to add directories that contain include files.
+- `target_sources()` to add source files that should be compiled. For complex dependencies with tons of source files,
+  usually we use shell commands to list them, see for example the ARToolkit or TensorFlow sections in the \b
+  CMakelists.txt of \b jevoisbase.
+- `target_link_libraries()` to add libraries that your module should be linked against.
+- `add_definitions()` if you need to do set for flags for your dependency.
+
+Writing the module
+------------------
+
+We are now ready to write the module.
+
+We edit <b>facedetector/src/Modules/FaceDetector.C</b> to include the face detection algorithm described in
+http://dlib.net/face_detection_ex.cpp.html
+
+One thing that we need to resolve is how to get our images from the JeVois sensor into the Dlib image format. A quick
+web search reveals that Dlib provides functions to reinterpret (without copy) OpenCV images as Dlib images. So we will
+use that, for example as suggested at
+https://stackoverflow.com/questions/29118317/how-to-convert-mat-to-array2drgb-pixel
+
+So we will grab into JeVois YUYV RawImage, convert to OpenCV RGB, and reinterpret that as Dlib RGB.
+
+As far as output, let us just do a very simple layout for this module where we show the input video with boxes drawn
+around detected faces, and a little 24-pixel tall message area below to display the number of detections. So, we plan
+for 320x240 video capture from the sensor and 320x264 video output to USB.
+
+We end up with this module, which is very similar to many of the modules in \b jevoisbase:
+
+\code
+// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// JeVois Smart Embedded Machine Vision Toolkit - Copyright (C) 2016 by Laurent Itti, the University of Southern
+// California (USC), and iLab at USC. See http://iLab.usc.edu and http://jevois.org for information about this project.
+//
+// This file is part of the JeVois Smart Embedded Machine Vision Toolkit.  This program is free software; you can
+// redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software
+// Foundation, version 2.  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+// without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+// License for more details.  You should have received a copy of the GNU General Public License along with this program;
+// if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+//
+// Contact information: Laurent Itti - 3641 Watt Way, HNB-07A - Los Angeles, CA 90089-2520 - USA.
+// Tel: +1 213 740 3527 - itti@pollux.usc.edu - http://iLab.usc.edu - http://jevois.org
+// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/*! \file */
+
+#include <jevois/Core/Module.H>
+#include <jevois/Image/RawImageOps.H>
+#include <jevois/Debug/Timer.H>
+
+#include <dlib/opencv/cv_image.h>
+#include <dlib/array2d/array2d_generic_image.h>
+#include <dlib/image_processing/frontal_face_detector.h>
+
+// icon by dlib team
+
+//! Face Detection using the Dlib C++ machine vision library
+/*! Detect faces using the HOG (histogram of gradients) algorithm provided by dlib.
+
+    This module is heavily inspired from
+    http://dlib.net/face_detection_ex.cpp.html
+
+    It is an example of how to use dlib with JeVois.
+
+    For more information about dlib, see http://dlib.net - Dlib provides a large number of high-quality C++11 algorithms
+    for machine vision, deep neural networks, image processing, and machine learning.
+
+    @author Laurent Itti
+
+    @videomapping YUYV 320 264 15.0 YUYV 320 240 15.0 JeVois FaceDetector
+    @email itti\@usc.edu
+    @address University of Southern California, HNB-07A, 3641 Watt Way, Los Angeles, CA 90089-2520, USA
+    @copyright Copyright (C) 2018 by Laurent Itti, iLab and the University of Southern California
+    @mainurl http://jevois.org
+    @supporturl http://jevois.org/doc
+    @otherurl http://iLab.usc.edu
+    @license GPL v3
+    @distribution Unrestricted
+    @restrictions None
+    \ingroup modules */
+class FaceDetector : public jevois::StdModule
+{
+  private:
+    dlib::frontal_face_detector itsDetector;
+    
+  public:
+    //! Constructor
+    FaceDetector(std::string const & instance) : jevois::StdModule(instance)
+    {
+      itsDetector = dlib::get_frontal_face_detector();
+    }
+    
+    //! Virtual destructor for safe inheritance
+    virtual ~FaceDetector() { }
+
+    //! Processing function
+    virtual void process(jevois::InputFrame && inframe, jevois::OutputFrame && outframe) override
+    {
+      static jevois::Timer timer("processing", 30, LOG_DEBUG);
+
+      // Wait for next available camera image:
+      jevois::RawImage const inimg = inframe.get();
+
+      timer.start();
+      
+      // We only support YUYV pixels in this example, any resolution:
+      unsigned int const w = inimg.width, h = inimg.height;
+      inimg.require("input", inimg.width, inimg.height, V4L2_PIX_FMT_YUYV);
+
+      // While we process it, start a thread to wait for out frame and paste the input into it:
+      jevois::RawImage outimg;
+      auto paste_fut = std::async(std::launch::async, [&]() {
+          outimg = outframe.get();
+          outimg.require("output", outimg.width, h + 24, V4L2_PIX_FMT_YUYV);
+
+          // Paste the current input image:
+          jevois::rawimage::paste(inimg, outimg, 0, 0);
+          jevois::rawimage::writeText(outimg, "JeVois dlib Face Detector", 3, 3, jevois::yuyv::White);
+
+          // Blank out the bottom of the frame:
+          jevois::rawimage::drawFilledRect(outimg, 0, h, w, outimg.height - h, jevois::yuyv::Black);
+        });
+
+      // Convert to OpenCV RGB:
+      cv::Mat cvimg = jevois::rawimage::convertToCvRGB(inimg);
+
+      // Reinterpret as dlib image:
+      dlib::array2d<dlib::rgb_pixel> dlibimg;
+      dlib::assign_image(dlibimg, dlib::cv_image<dlib::rgb_pixel>(cvimg));
+
+      // Detect faces:
+      std::vector<dlib::rectangle> dets = itsDetector(dlibimg);
+      
+      // Wait for paste thread to complete and let camera know we are done processing the input image:
+      paste_fut.get(); inframe.done();
+
+      // Draw the rectangles and send serial messages:
+      jevois::rawimage::writeText(outimg, "Detected " + std::to_string(dets.size()) + " faces",
+                                  3, h+6, jevois::yuyv::White);
+
+      for (auto const & r : dets)
+      {
+        jevois::rawimage::drawRect(outimg, r.left(), r.top(), r.width(), r.height(), 2, jevois::yuyv::LightGreen);
+        sendSerialImg2D(w, h, r.left() - r.width() / 2, r.top() - r.height() / 2, r.width(), r.height(), "face");
+      }
+      
+      // Show processing fps:
+      std::string const & fpscpu = timer.stop();
+      jevois::rawimage::writeText(outimg, fpscpu, 3, h - 13, jevois::yuyv::White);
+      
+      // Send the output image with our processing results to the host over USB:
+      outframe.send();
+    }
+};
+
+// Allow the module to be loaded as a shared object (.so) file:
+JEVOIS_REGISTER_MODULE(FaceDetector);
+
+\endcode
+
+Compiling for host
+------------------
+
+Let us make sure Dlib compiles and links correctly and that our algorithm works by first compiling and running on host.
+
+From inside the \b facedetector directory, we simply type:
+
+\code{.py}
+./rebuild-host.sh
+\endcode
+
+and get an output like:
+
+\verbatim
+itti@iLab0:~/facedetector$ ./rebuild-host.sh 
+-- JeVois version 1.9.0
+-- JEVOIS_PLATFORM: OFF
+-- JEVOIS_VENDOR: Tutorial
+-- JeVois microSD card mount point: /media/itti/JEVOIS
+-- JeVois serial-over-USB device: /dev/ttyACM0
+-- Install prefix for executable programs: /usr
+-- Host path to jevois modules root: /jevois
+-- The C compiler identification is GNU 7.3.0
+-- The CXX compiler identification is GNU 7.3.0
+-- Check for working C compiler: /usr/bin/cc
+-- Check for working C compiler: /usr/bin/cc -- works
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Check for working CXX compiler: /usr/bin/c++
+-- Check for working CXX compiler: /usr/bin/c++ -- works
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- JeVois SDK root: /lab/itti/jevois/software/jevois-sdk
+-- Host path to jevois lib and data install root: /jevois
+-- Adding compilation directives for C++ module FaceDetector base src/Modules
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /lab/itti/facedetector/hbuild
+Scanning dependencies of target modinfo_FaceDetector
+[ 25%] Generating ../src/Modules/FaceDetector/modinfo.yaml, ../src/Modules/FaceDetector/modinfo.html
+[ 25%] Built target modinfo_FaceDetector
+Scanning dependencies of target FaceDetector
+[ 50%] Building CXX object CMakeFiles/FaceDetector.dir/src/Modules/FaceDetector/FaceDetector.C.o
+[ 75%] Building CXX object CMakeFiles/FaceDetector.dir/dlib/dlib/all/source.cpp.o
+In file included from /lab/itti/facedetector/dlib/dlib/all/../base64/../algs.h:111:0,
+                 from /lab/itti/facedetector/dlib/dlib/all/../base64/base64_kernel_1.h:6,
+                 from /lab/itti/facedetector/dlib/dlib/all/../base64/base64_kernel_1.cpp:6,
+                 from /lab/itti/facedetector/dlib/dlib/all/source.cpp:11:
+/lab/itti/facedetector/dlib/dlib/all/../global_optimization/global_function_search.cpp: In member function ‘void dlib::global_function_search::set_monte_carlo_upper_bound_sample_num(size_t)’:
+/lab/itti/facedetector/dlib/dlib/all/../global_optimization/global_function_search.cpp:899:24: warning: comparison of unsigned expression >= 0 is always true [-Wtype-limits]
+         DLIB_CASSERT(0 <= num);
+                      ~~^~~~
+/lab/itti/facedetector/dlib/dlib/all/../base64/../assert.h:157:47: note: in definition of macro ‘DLIB_WORKAROUND_VISUAL_STUDIO_BUGS’
+ #define DLIB_WORKAROUND_VISUAL_STUDIO_BUGS(x) x
+                                               ^
+/lab/itti/facedetector/dlib/dlib/all/../base64/../assert.h:160:48: note: in expansion of macro ‘DLIBM_CASSERT’
+ #define DLIBM_CASSERT_1_ARGS(exp)              DLIBM_CASSERT(exp,"")
+                                                ^~~~~~~~~~~~~
+/lab/itti/facedetector/dlib/dlib/all/../base64/../assert.h:157:47: note: in expansion of macro ‘DLIBM_CASSERT_1_ARGS’
+ #define DLIB_WORKAROUND_VISUAL_STUDIO_BUGS(x) x
+                                               ^
+/lab/itti/facedetector/dlib/dlib/all/../global_optimization/global_function_search.cpp:899:9: note: in expansion of macro ‘DLIB_CASSERT’
+         DLIB_CASSERT(0 <= num);
+         ^
+In file included from /lab/itti/facedetector/dlib/dlib/all/../bsp/../sockets/../threads/../member_function_pointer.h:6:0,
+                 from /lab/itti/facedetector/dlib/dlib/all/../bsp/../sockets/../threads/threads_kernel_shared.h:11,
+                 from /lab/itti/facedetector/dlib/dlib/all/../bsp/../sockets/../threads/threads_kernel_2.h:173,
+                 from /lab/itti/facedetector/dlib/dlib/all/../bsp/../sockets/../threads/posix.h:4,
+                 from /lab/itti/facedetector/dlib/dlib/all/../bsp/../sockets/../threads/threads_kernel.h:13,
+                 from /lab/itti/facedetector/dlib/dlib/all/../bsp/../sockets/../threads.h:11,
+                 from /lab/itti/facedetector/dlib/dlib/all/../bsp/../sockets/sockets_kernel_2.h:36,
+                 from /lab/itti/facedetector/dlib/dlib/all/../bsp/../sockets/posix.h:4,
+                 from /lab/itti/facedetector/dlib/dlib/all/../bsp/../sockets.h:14,
+                 from /lab/itti/facedetector/dlib/dlib/all/../bsp/bsp.h:12,
+                 from /lab/itti/facedetector/dlib/dlib/all/../bsp/bsp.cpp:6,
+                 from /lab/itti/facedetector/dlib/dlib/all/source.cpp:33:
+/lab/itti/facedetector/dlib/dlib/all/../bsp/../sockets/../threads/../member_function_pointer/member_function_pointer_kernel_1.h: At global scope:
+/lab/itti/facedetector/dlib/dlib/all/../bsp/../sockets/../threads/../member_function_pointer/member_function_pointer_kernel_1.h:343:18: warning: ‘void dlib::member_function_pointer<PARAM1, PARAM2, void, void>::mp_impl_const<T>::call(PARAM1, PARAM2) const [with T = dlib::impl::helper_parallel_for<dlib::impl::helper_parallel_for_funct<dlib::cpu::resize_bilinear(dlib::tensor&, long int, long int, const dlib::tensor&, long int, long int)::<lambda(long int)> > >; PARAM1 = long int; PARAM2 = long int]’ declared ‘static’ but never defined [-Wunused-function]
+             void call (PARAM1 p1, PARAM2 p2) const  { (static_cast<const T*>(this->o)->*callback)(p1,p2); }
+                  ^~~~
+In file included from /lab/itti/facedetector/dlib/dlib/all/../cuda/../matrix.h:11:0,
+                 from /lab/itti/facedetector/dlib/dlib/all/../cuda/tensor.h:8,
+                 from /lab/itti/facedetector/dlib/dlib/all/../cuda/cpu_dlib.h:9,
+                 from /lab/itti/facedetector/dlib/dlib/all/../cuda/cpu_dlib.cpp:8,
+                 from /lab/itti/facedetector/dlib/dlib/all/source.cpp:82:
+/lab/itti/facedetector/dlib/dlib/all/../cuda/../matrix/matrix_la.h: In function ‘long int dlib::svd4(dlib::svd_u_mode, bool, const dlib::matrix_exp<EXP>&, dlib::matrix<typename EXP::type, uM, uN, MM1, L1>&, dlib::matrix<typename EXP::type, qN, qX, MM2, L1>&, dlib::matrix<typename EXP::type, vM, vN, MM3, L1>&) [with EXP = dlib::matrix_op<dlib::op_trans<dlib::matrix_op<dlib::op_trans<dlib::matrix<double, 1, 2> > > > >; long int qN = 1; long int qX = 1; long int uM = 1; long int uN = 1; long int vM = 2; long int vN = 1; MM1 = dlib::memory_manager_stateless_kernel_1<char>; MM2 = dlib::memory_manager_stateless_kernel_1<char>; MM3 = dlib::memory_manager_stateless_kernel_1<char>; L1 = dlib::row_major_layout]’:
+/lab/itti/facedetector/dlib/dlib/all/../cuda/../matrix/matrix_la.h:225:32: warning: iteration 1 invokes undefined behavior [-Waggressive-loop-optimizations]
+             y = abs(q(i)) + abs(e(i));
+                             ~~~^~~~~~
+/lab/itti/facedetector/dlib/dlib/all/../cuda/../matrix/matrix_la.h:163:20: note: within this loop
+         for (i=0; i<n; i++)
+                   ~^~
+/lab/itti/facedetector/dlib/dlib/all/../cuda/../matrix/matrix_la.h: In member function ‘void dlib::kalman_filter<states, measurements>::update(const dlib::matrix<double, measurements, 1>&) [with long int states = 2; long int measurements = 1]’:
+/lab/itti/facedetector/dlib/dlib/all/../cuda/../matrix/matrix_la.h:412:37: warning: ‘*((void*)& v +-8)’ may be used uninitialized in this function [-Wmaybe-uninitialized]
+                         v(j,i) = -x * s + z * c;
+                                  ~~~^~~
+/lab/itti/facedetector/dlib/dlib/all/../cuda/../matrix/matrix_la.h:1421:72: note: ‘*((void*)& v +-8)’ was declared here
+         matrix<typename EXP::type, EXP::NC, EXP::NC,MM1, layout_type > v;
+                                                                        ^
+[100%] Linking CXX shared library FaceDetector.so
+[100%] Built target FaceDetector
+[ 25%] Generating ../src/Modules/FaceDetector/modinfo.yaml, ../src/Modules/FaceDetector/modinfo.html
+[ 25%] Built target modinfo_FaceDetector
+[100%] Built target FaceDetector
+Install the project...
+-- Install configuration: ""
+-- Installing: /jevois/modules/Tutorial/FaceDetector
+-- Installing: /jevois/modules/Tutorial/FaceDetector/icon.png
+-- Installing: /jevois/modules/Tutorial/FaceDetector/postinstall
+-- Installing: /jevois/modules/Tutorial/FaceDetector/screenshot1.png
+-- Installing: /jevois/modules/Tutorial/FaceDetector/modinfo.html
+-- Installing: /jevois/modules/Tutorial/FaceDetector/FaceDetector.C
+-- Installing: /jevois/modules/Tutorial/FaceDetector/FaceDetector.so
+-- Up-to-date: /jevois/share
+-- Installing: /jevois/share/README.txt
+\endverbatim
+
+So we had a few warnings within Dlib, but everything compiled fine. We are ready to test on host.
+
+Testing on host
+---------------
+
+- Before we can test on host, we need to add a video mapping for our module, with the resolutions our module
+expects. For that, we type:
+
+\code{.py}
+sudo jevois-add-videomapping YUYV 320 264 15.0 YUYV 320 240 15.0 Tutorial FaceDetector
+\endcode
+
+which adds an entry at the end of <b>/jevois/config/videomappings.cfg</b> on your host computer.
+
+We also edit <b>src/Modules/FaceDetector/postinstall</b> with that video mapping. The \b postinstall script will be used
+by the JeVois camera when we upload our module to it later.
+
+- Now plug in a regular webcam to your host computer (not a JeVois camera)
+
+- and start
+
+\code{.py}
+jevois-daemon
+\endcode
+
+- We need to find out which video mapping number was assigned to our module, for that we type:
+\verbatim
+listmappings
+\endverbatim
+
+  and we get a long list that includes \b FaceDetector in it. On our particular install, 
+\verbatim
+   ...
+   38 - OUT: YUYV 320x286 @ 30fps CAM: YUYV 320x240 @ 30fps MOD: JeVois:DemoQRcode C++
+   39 - OUT: YUYV 320x266 @ 30fps CAM: YUYV 320x240 @ 30fps MOD: JeVois:ArUcoBlob C++
+   40 - OUT: YUYV 320x264 @ 15fps CAM: YUYV 320x240 @ 15fps MOD: Tutorial:FaceDetector C++
+   ...
+\endverbatim
+
+- We now quit jevois-daemon by sending it command \b quit
+
+- And we start it again, this time requesting videomapping number 40 that we found above:
+\code{.py}
+jevois-daemon --videomapping=40
+\endcode
+
+- Here it is!
+
+\image html dlib1.png
+
+Running on platform
+--------------------
+
+Let's now cross-compile and run our module on the JeVois camera.
+
+- We are going to use the \b jvpkg method as it is the easiest for single modules. In this method, we cross-compile the
+  module and pack it into a .jvpkg archive (which is just a zip file), then copy that package to
+  <b>JEVOIS:/packages/</b> on the microSD of the JeVois camera. JeVois will unpack and install the package next time it
+  starts up.
+
+- Check that <b>src/Modules/FaceDetector/postinstall</b> contains the video mapping our module needs, it should look
+  like this:
+\verbatim
+#!/bin/sh
+# This script is executed once after the module is installed by JeVois if it was added to the jevois/packages/ directory
+# of the microSD card as a .jvpkg file. The script is deleted from the microSD card after execution.
+#
+# The caller script will set the current directory to the location of this script before launching the script.
+
+# Add our video mappings to the main mappings file:
+jevois-add-videomapping YUYV 320 264 15.0 YUYV 320 240 15.0 Tutorial FaceDetector
+
+# Example of a simple message:
+echo "FaceDetector is now installed"
+\endverbatim
+
+- To compile into a \b jvpkg package, we just run `rebuild-platform.sh` with no extra option. Output should look
+  roughly like this:
+\verbatim
+itti@iLab0:~/facedetector$ ./rebuild-platform.sh 
+-- JeVois version 1.9.0
+-- JEVOIS_PLATFORM: ON
+-- JEVOIS_VENDOR: Tutorial
+-- JeVois microSD card mount point: /media/itti/JEVOIS
+-- JeVois serial-over-USB device: /dev/ttyACM0
+-- JEVOIS_MODULES_TO_STAGING: OFF
+-- JEVOIS_MODULES_TO_MICROSD: OFF
+-- JEVOIS_MODULES_TO_LIVE: OFF
+-- Install prefix for executable programs: /var/lib/jevois-build/usr
+-- Host path to jevois modules root: /var/lib/jevois-microsd
+-- The C compiler identification is GNU 7.2.0
+-- The CXX compiler identification is GNU 7.2.0
+-- Check for working C compiler: /lab/itti/jevois/software/jevois-sdk/out/sun8iw5p1/linux/common/buildroot/host/usr/bin/arm-buildroot-linux-gnueabihf-gcc
+-- Check for working C compiler: /lab/itti/jevois/software/jevois-sdk/out/sun8iw5p1/linux/common/buildroot/host/usr/bin/arm-buildroot-linux-gnueabihf-gcc -- works
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Check for working CXX compiler: /lab/itti/jevois/software/jevois-sdk/out/sun8iw5p1/linux/common/buildroot/host/usr/bin/arm-buildroot-linux-gnueabihf-g++
+-- Check for working CXX compiler: /lab/itti/jevois/software/jevois-sdk/out/sun8iw5p1/linux/common/buildroot/host/usr/bin/arm-buildroot-linux-gnueabihf-g++ -- works
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- JeVois SDK root: /lab/itti/jevois/software/jevois-sdk
+-- Host path to jevois lib and data install root: /lab/itti/facedetector/jvpkg
+-- Adding compilation directives for C++ module FaceDetector base src/Modules
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /lab/itti/facedetector/pbuild
+Scanning dependencies of target modinfo_FaceDetector
+[ 25%] Generating ../src/Modules/FaceDetector/modinfo.yaml, ../src/Modules/FaceDetector/modinfo.html
+[ 25%] Built target modinfo_FaceDetector
+Scanning dependencies of target FaceDetector
+[ 50%] Building CXX object CMakeFiles/FaceDetector.dir/src/Modules/FaceDetector/FaceDetector.C.o
+[ 75%] Building CXX object CMakeFiles/FaceDetector.dir/dlib/dlib/all/source.cpp.o
+In file included from /lab/itti/facedetector/dlib/dlib/all/../base64/../algs.h:111:0,
+                 from /lab/itti/facedetector/dlib/dlib/all/../base64/base64_kernel_1.h:6,
+                 from /lab/itti/facedetector/dlib/dlib/all/../base64/base64_kernel_1.cpp:6,
+                 from /lab/itti/facedetector/dlib/dlib/all/source.cpp:11:
+/lab/itti/facedetector/dlib/dlib/all/../global_optimization/global_function_search.cpp: In member function ‘void dlib::global_function_search::set_monte_carlo_upper_bound_sample_num(size_t)’:
+/lab/itti/facedetector/dlib/dlib/all/../global_optimization/global_function_search.cpp:899:24: warning: comparison of unsigned expression >= 0 is always true [-Wtype-limits]
+         DLIB_CASSERT(0 <= num);
+                      ~~^~~~
+/lab/itti/facedetector/dlib/dlib/all/../base64/../assert.h:157:47: note: in definition of macro ‘DLIB_WORKAROUND_VISUAL_STUDIO_BUGS’
+ #define DLIB_WORKAROUND_VISUAL_STUDIO_BUGS(x) x
+                                               ^
+/lab/itti/facedetector/dlib/dlib/all/../base64/../assert.h:160:48: note: in expansion of macro ‘DLIBM_CASSERT’
+ #define DLIBM_CASSERT_1_ARGS(exp)              DLIBM_CASSERT(exp,"")
+                                                ^~~~~~~~~~~~~
+/lab/itti/facedetector/dlib/dlib/all/../base64/../assert.h:157:47: note: in expansion of macro ‘DLIBM_CASSERT_1_ARGS’
+ #define DLIB_WORKAROUND_VISUAL_STUDIO_BUGS(x) x
+                                               ^
+/lab/itti/facedetector/dlib/dlib/all/../global_optimization/global_function_search.cpp:899:9: note: in expansion of macro ‘DLIB_CASSERT’
+         DLIB_CASSERT(0 <= num);
+         ^
+In file included from /lab/itti/facedetector/dlib/dlib/all/../bsp/../sockets/../threads/../member_function_pointer.h:6:0,
+                 from /lab/itti/facedetector/dlib/dlib/all/../bsp/../sockets/../threads/threads_kernel_shared.h:11,
+                 from /lab/itti/facedetector/dlib/dlib/all/../bsp/../sockets/../threads/threads_kernel_2.h:173,
+                 from /lab/itti/facedetector/dlib/dlib/all/../bsp/../sockets/../threads/posix.h:4,
+                 from /lab/itti/facedetector/dlib/dlib/all/../bsp/../sockets/../threads/threads_kernel.h:13,
+                 from /lab/itti/facedetector/dlib/dlib/all/../bsp/../sockets/../threads.h:11,
+                 from /lab/itti/facedetector/dlib/dlib/all/../bsp/../sockets/sockets_kernel_2.h:36,
+                 from /lab/itti/facedetector/dlib/dlib/all/../bsp/../sockets/posix.h:4,
+                 from /lab/itti/facedetector/dlib/dlib/all/../bsp/../sockets.h:14,
+                 from /lab/itti/facedetector/dlib/dlib/all/../bsp/bsp.h:12,
+                 from /lab/itti/facedetector/dlib/dlib/all/../bsp/bsp.cpp:6,
+                 from /lab/itti/facedetector/dlib/dlib/all/source.cpp:33:
+/lab/itti/facedetector/dlib/dlib/all/../bsp/../sockets/../threads/../member_function_pointer/member_function_pointer_kernel_1.h: At global scope:
+/lab/itti/facedetector/dlib/dlib/all/../bsp/../sockets/../threads/../member_function_pointer/member_function_pointer_kernel_1.h:343:18: warning: ‘void dlib::member_function_pointer<PARAM1, PARAM2, void, void>::mp_impl_const<T>::call(PARAM1, PARAM2) const [with T = dlib::impl::helper_parallel_for<dlib::impl::helper_parallel_for_funct<dlib::cpu::resize_bilinear(dlib::tensor&, long int, long int, const dlib::tensor&, long int, long int)::<lambda(long int)> > >; PARAM1 = long int; PARAM2 = long int]’ declared ‘static’ but never defined [-Wunused-function]
+             void call (PARAM1 p1, PARAM2 p2) const  { (static_cast<const T*>(this->o)->*callback)(p1,p2); }
+                  ^~~~
+In file included from /lab/itti/facedetector/dlib/dlib/all/../cuda/../matrix.h:11:0,
+                 from /lab/itti/facedetector/dlib/dlib/all/../cuda/tensor.h:8,
+                 from /lab/itti/facedetector/dlib/dlib/all/../cuda/cpu_dlib.h:9,
+                 from /lab/itti/facedetector/dlib/dlib/all/../cuda/cpu_dlib.cpp:8,
+                 from /lab/itti/facedetector/dlib/dlib/all/source.cpp:82:
+/lab/itti/facedetector/dlib/dlib/all/../cuda/../matrix/matrix_la.h: In function ‘long int dlib::svd4(dlib::svd_u_mode, bool, const dlib::matrix_exp<EXP>&, dlib::matrix<typename EXP::type, uM, uN, MM1, L1>&, dlib::matrix<typename EXP::type, qN, qX, MM2, L1>&, dlib::matrix<typename EXP::type, vM, vN, MM3, L1>&) [with EXP = dlib::matrix_op<dlib::op_trans<dlib::matrix_op<dlib::op_trans<dlib::matrix<double, 1, 2> > > > >; long int qN = 1; long int qX = 1; long int uM = 1; long int uN = 1; long int vM = 2; long int vN = 1; MM1 = dlib::memory_manager_stateless_kernel_1<char>; MM2 = dlib::memory_manager_stateless_kernel_1<char>; MM3 = dlib::memory_manager_stateless_kernel_1<char>; L1 = dlib::row_major_layout]’:
+/lab/itti/facedetector/dlib/dlib/all/../cuda/../matrix/matrix_la.h:225:32: warning: iteration 1 invokes undefined behavior [-Waggressive-loop-optimizations]
+             y = abs(q(i)) + abs(e(i));
+                             ~~~^~~~~~
+/lab/itti/facedetector/dlib/dlib/all/../cuda/../matrix/matrix_la.h:163:20: note: within this loop
+         for (i=0; i<n; i++)
+                   ~^~
+/lab/itti/facedetector/dlib/dlib/all/../cuda/../matrix/matrix_la.h: In member function ‘void dlib::kalman_filter<states, measurements>::update(const dlib::matrix<double, measurements, 1>&) [with long int states = 2; long int measurements = 1]’:
+/lab/itti/facedetector/dlib/dlib/all/../cuda/../matrix/matrix_la.h:1421:72: warning: ‘*((void*)& v +-8)’ may be used uninitialized in this function [-Wmaybe-uninitialized]
+         matrix<typename EXP::type, EXP::NC, EXP::NC,MM1, layout_type > v;
+                                                                        ^
+[100%] Linking CXX shared library FaceDetector.so
+[100%] Built target FaceDetector
+[ 25%] Generating ../src/Modules/FaceDetector/modinfo.yaml, ../src/Modules/FaceDetector/modinfo.html
+[ 25%] Built target modinfo_FaceDetector
+[100%] Built target FaceDetector
+Install the project...
+-- Install configuration: ""
+-- Installing: /lab/itti/facedetector/jvpkg/modules/Tutorial/FaceDetector
+-- Installing: /lab/itti/facedetector/jvpkg/modules/Tutorial/FaceDetector/icon.png
+-- Installing: /lab/itti/facedetector/jvpkg/modules/Tutorial/FaceDetector/postinstall
+-- Installing: /lab/itti/facedetector/jvpkg/modules/Tutorial/FaceDetector/screenshot1.png
+-- Installing: /lab/itti/facedetector/jvpkg/modules/Tutorial/FaceDetector/modinfo.html
+-- Installing: /lab/itti/facedetector/jvpkg/modules/Tutorial/FaceDetector/FaceDetector.C
+-- Installing: /lab/itti/facedetector/jvpkg/modules/Tutorial/FaceDetector/FaceDetector.so
+-- Set runtime path of "/lab/itti/facedetector/jvpkg/modules/Tutorial/FaceDetector/FaceDetector.so" to ""
+-- Installing: /lab/itti/facedetector/jvpkg/share
+-- Installing: /lab/itti/facedetector/jvpkg/share/README.txt
+\endverbatim
+
+\note Make sure JeVois software versions on your development machine and on your microSD card exactly match, otherwise
+your new module will fail to load. Here, for example, we see from our run of `rebuild-platform.sh` that we are using \b
+jevois-sdk-dev version 1.9.0. To check the version running on your microSD card, start JeVois Inventor and look at the
+bottom status bar when the camera is detected.
+
+
+- The module has been cross-compiled for the JeVois processor and the resulting files have been copied to
+  <b>~/facedetector/jvpkg/</b>, where they are ready to be packaged into a single JeVois package file that can later be
+  copied to microSD and run on the smart camera.
+
+  To create the package, we run:
+  \code{.py}
+cd pbuild
+make jvpkg
+cd ..
+  \endcode
+  
+  and we obtain a file <b>~/facedetector/Tutorial_facedetector.jvpkg</b>
+
+- Let's copy the file to our microSD. Either insert the microSD card into your desktop, or export it live from your
+  connected JeVois camera as explained in \ref UserUSBSD
+
+  Then copy \b Tutorial_facedetector.jvpkg into <b>JEVOIS:/packages/</b> on the microSD.
+
+- Cleanly eject the card and restart JeVois. Upon restart, the camera will unpack and install our module. It will also
+  add our video mapping for it from the contents of our \b postinstall file.
+
+- Let's fire up JeVois Inventor and find our new module:
+
+\jvimg{dlib2.png, 70%}
+
+- Bingo, our Dlib-powered face detector is running on our JeVois camera!
+
+\jvimg{dlib3.png, 70%}
+
+Going further
+-------------
+
+- Change the icon in <b>src/Modules/FaceDetector/icon.png</b> to a better one. Recommended size is 128x128. If you want
+  to round the corners of your icon, you can use our script at
+  https://github.com/jevois/jevois/blob/master/scripts/round-image-corners.sh
+
+- Dlib contains a lot of high-quality algorithms. Have a look at their examples and port some to JeVois.
+
+- Yet, this algorithm is not the fastest nor most robust face detector available on JeVois (indeed, it seems to be using
+  only one CPU core). Have a look at \jvmod{DetectionDNN} and \jvmod{PyDetectionDNN} for the OpenCV face detection
+  algorithm. Dlib does provide quite powerful detection of facial landmarks and face matching, though.
+
+- This module has been integrated into the standard JeVois distribution; it is available in github repo \b jevoisextra
+  available at https://github.com/jevois/jevoisextra and is available on the standard microSD cards after JeVois version
+  1.9.1
+
+*/
+
