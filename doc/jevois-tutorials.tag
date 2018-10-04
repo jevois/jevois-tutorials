@@ -26,6 +26,11 @@
     <filename>ProgrammerInvComposite_8dox</filename>
   </compound>
   <compound kind="file">
+    <name>ProgrammerInvFlowLK.dox</name>
+    <path>/lab/itti/jevois/software/jevois-tutorials/doc/</path>
+    <filename>ProgrammerInvFlowLK_8dox</filename>
+  </compound>
+  <compound kind="file">
     <name>ProgrammerInvHello.dox</name>
     <path>/lab/itti/jevois/software/jevois-tutorials/doc/</path>
     <filename>ProgrammerInvHello_8dox</filename>
@@ -1162,6 +1167,11 @@
     <name>ProgrammerInvComposite</name>
     <title>Creating composite output video frames</title>
     <filename>ProgrammerInvComposite</filename>
+  </compound>
+  <compound kind="page">
+    <name>ProgrammerInvFlowLK</name>
+    <title>Computing Optical Flow to detect moving objects or moving camera</title>
+    <filename>ProgrammerInvFlowLK</filename>
   </compound>
   <compound kind="page">
     <name>ProgrammerInvHello</name>

@@ -15,6 +15,7 @@ Programming JeVois machine vision modules using Python and JeVois Inventor
 - \subpage ProgrammerInvSerial
 - \subpage ProgrammerInvComposite
 - \subpage ProgrammerInvOCR
+- \subpage ProgrammerInvFlowLK
 
 Programming JeVois machine vision modules using Python
 ======================================================

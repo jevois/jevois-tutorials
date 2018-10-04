@@ -1,0 +1,236 @@
+/*! \page ProgrammerInvFlowLK Computing Optical Flow to detect moving objects or moving camera
+
+This tutorial implements a simple optical flow algorithm based on tracking interest points from one video frame to the
+next. This can be used either to detect moving objects in video when the camera is stationary, or to detect when the
+camera itself is moving.
+
+This tutorial also aims at demonstrating how one can easily port other Python OpenCV tutorials to JeVois.
+
+\image html flowlk0.jpg Example of tracked interest points over a movie sequence. Image from OpenCV documentation (see link below).
+
+Approach
+--------
+
+- We start with https://docs.opencv.org/4.0.0-alpha/d7/d8b/tutorial_py_lucas_kanade.html
+
+- We will port the code developed in that tutorial to JeVois
+
+- We will modify it a little to detect when all tracked points have run out of the field of view, in which
+case we will detect a new set of interest points and track those.
+
+Creating the module
+-------------------
+
+- Select <b>New Python Module...</b> from the pull-down menu of JeVois Inventor (or press `CTRL-N`).
+
+- Fill in the details as shown below:
+  
+  \jvimg{flowlk1.png, 30%}
+  
+- Allow JeVois to restart, select your new module from the <b>Vision Module</b> pull-down menu, and switch to the
+  <b>Code</b> tab of the Inventor.
+
+Analyzing the original code
+---------------------------
+
+We start by reading the tutorial at https://docs.opencv.org/4.0.0-alpha/d7/d8b/tutorial_py_lucas_kanade.html
+
+Here is the first piece of code from that tutorial:
+
+\code{.py}
+import numpy as np
+import cv2 as cv
+cap = cv.VideoCapture('slow.flv')
+# params for ShiTomasi corner detection
+feature_params = dict( maxCorners = 100,
+                       qualityLevel = 0.3,
+                       minDistance = 7,
+                       blockSize = 7 )
+# Parameters for lucas kanade optical flow
+lk_params = dict( winSize  = (15,15),
+                  maxLevel = 2,
+                  criteria = (cv.TERM_CRITERIA_EPS | cv.TERM_CRITERIA_COUNT, 10, 0.03))
+# Create some random colors
+color = np.random.randint(0,255,(100,3))
+# Take first frame and find corners in it
+ret, old_frame = cap.read()
+old_gray = cv.cvtColor(old_frame, cv.COLOR_BGR2GRAY)
+p0 = cv.goodFeaturesToTrack(old_gray, mask = None, **feature_params)
+# Create a mask image for drawing purposes
+mask = np.zeros_like(old_frame)
+while(1):
+    ret,frame = cap.read()
+    frame_gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+    # calculate optical flow
+    p1, st, err = cv.calcOpticalFlowPyrLK(old_gray, frame_gray, p0, None, **lk_params)
+    # Select good points
+    good_new = p1[st==1]
+    good_old = p0[st==1]
+    # draw the tracks
+    for i,(new,old) in enumerate(zip(good_new,good_old)):
+        a,b = new.ravel()
+        c,d = old.ravel()
+        mask = cv.line(mask, (a,b),(c,d), color[i].tolist(), 2)
+        frame = cv.circle(frame,(a,b),5,color[i].tolist(),-1)
+    img = cv.add(frame,mask)
+    cv.imshow('frame',img)
+    k = cv.waitKey(30) & 0xff
+    if k == 27:
+        break
+    # Now update the previous frame and previous points
+    old_gray = frame_gray.copy()
+    p0 = good_new.reshape(-1,1,2)
+cv.destroyAllWindows()
+cap.release()
+\endcode
+
+To port the code to JeVois, we need to address the following:
+
+- Our JeVois module is a Python class, with class member functions, such as `process()` called on every frame. This
+  means that:
+  
+  + the JeVois engine runs the main loop of grabbing images, sending them to processing (our module), and sending the
+    results to the host computer over USB. Hence, we will delete any code related to:
+    - running a main loop, as in `while(1)` in the original code;
+    - grabbing images, as in `cap.read()`; we will replace that by a `get()` on the inframe passed to
+      `process()`;
+    - and display or user interaction, as in `cv.imshow()`, `cv.waitKey()`, etc; instead we will just at the
+      end of `process()` run a `send()` for the final result image.
+    - For more details, see \ref Concepts and \ref ModulePythonTutorial
+    
+  + Instead of global variables (or variables created outside the main loop), we will use class member variables (with
+    name like <b>self.var</b>). We initialize these in the constructor of our module: member function `__init__(self)`.
+
+- Looking at the original code, there are two phases in this algorithm:
+  
+  + Once when the program starts, grab a video frame and detect some interest points using `goodFeaturesToTrack()`,
+    which finds a number of fairly unique-looking points that we hope can be seen again on the next video frame, even
+    though the camera or the objects might have moved a little.
+  
+  + Then, on every subsequent frame, those points are tracked using `calcOpticalFlowPyrLK()`. The resulting set of
+    points (which possibly have moved a bit) replaces the old set of points, so that the new set can be tracked on the
+    next video frame.
+
+  JeVois does not allow one to just grab a frame during initialization. The only time we get to process frames is when
+  the module's `process()` function is called. So we will instead decide on what to do (extract good features to track,
+  or track them) inside `process()`, based on whether a member variable <b>self.old_gray</b> exists or not:
+  
+  + On the first frame (first call to `process()`), it does not exist and we then find the good features to track and
+    also create <b>self.old_gray</b>;
+
+  + On subsequent frames, <b>self.old_gray</b> exists and we use that as a cue to now track the detected points.
+
+- A small detail: in this example the authors imported cv2 as cv (i.e., they use prefix `cv.` for OpenCV functions)
+  while we usually just import cv2 (and use prefix `cv2.`).
+
+- One last small detail is that variable <b>p1</b> would become `NoneType` when all the tracked points have disappeared
+  from the field of view. This gave rise to an exception when trying to subindex \b p1 in the line `good_new =
+  p1[st==1]`; hence, in our module, we add a test `if p1 is None:` in which we just delete <b>self.old_gray</b>, which
+  will trigger finding new good points to track on the next call to `process()`.
+
+Writing the JeVois code
+-----------------------
+
+\code{.py}
+import libjevois as jevois
+import cv2
+import numpy as np
+
+## Optical Flow using Lucas-Kanade
+#
+# Add some description of your module here.
+#
+# @author Laurent Itti
+# 
+# @videomapping YUYV 320 240 23 YUYV 320 240 23 JeVois FlowLK
+# @email itti@usc.edu
+# @address 123 first street, Los Angeles CA 90012, USA
+# @copyright Copyright (C) 2018 by Laurent Itti
+# @mainurl http://jevois.org
+# @supporturl http://jevois.org
+# @otherurl http://jevois.org
+# @license GPL v3
+# @distribution Unrestricted
+# @restrictions None
+# @ingroup modules
+class FlowLK:
+    def __init__(self):
+        # params for ShiTomasi corner detection
+        self.feature_params = dict( maxCorners = 100,
+                       qualityLevel = 0.3,
+                       minDistance = 7,
+                       blockSize = 7 )
+        
+        # Parameters for lucas kanade optical flow
+        self.lk_params = dict( winSize  = (15,15),
+                       maxLevel = 2,
+                       criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 0.03))
+        
+        # Create some random colors
+        self.color = np.random.randint(0,255,(100,3))
+        
+        # Create a timer for frame rate:
+        self.timer = jevois.Timer('FlowLK', 50, jevois.LOG_DEBUG)
+        
+    def process(self, inframe, outframe):
+        # Grab a frame from camera sensor:
+        frame = inframe.getCvBGR()
+        self.timer.start()
+        
+        # If first frame, detect good interest points to track:
+        if not hasattr(self, 'old_gray'):
+            self.old_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            self.p0 = cv2.goodFeaturesToTrack(self.old_gray, mask = None, **self.feature_params)
+            self.mask = np.zeros_like(frame)
+            
+        else: # if not first frame, track the interest points from previous frame to current:
+            frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            
+            # calculate optical flow
+            p1, st, err = cv2.calcOpticalFlowPyrLK(self.old_gray, frame_gray, self.p0, None, **self.lk_params)
+            
+            # Select good points, if any, otherwise restart:
+            if p1 is None:
+                frame = cv2.add(frame, self.mask)
+                del self.old_gray
+            else:
+                good_new = p1[st==1]
+                good_old = self.p0[st==1]
+            
+                # draw the tracks
+                for i,(new, old) in enumerate(zip(good_new, good_old)):
+                    a,b = new.ravel()
+                    c,d = old.ravel()
+                    self.mask = cv2.line(self.mask, (a,b),(c,d), self.color[i].tolist(), 2)
+                    frame = cv2.circle(frame, (a,b), 5, self.color[i].tolist(), -1)
+                frame = cv2.add(frame, self.mask)
+            
+                # Now update the previous frame and previous points
+                self.old_gray = frame_gray.copy()
+                self.p0 = good_new.reshape(-1, 1, 2)
+        
+        # Send results to host computer over USB:
+        fps = self.timer.stop()
+        cv2.putText(frame, fps, (3,frame.shape[0]-7), cv2.FONT_HERSHEY_SIMPLEX,
+                  0.4, (255,255,255), 1, cv2.LINE_AA)
+        outframe.sendCv(frame)
+
+\endcode
+
+And here we go!
+
+\jvimg{flowlk2.png, 70%}
+
+Quite fast actually, 80 to 140 frames/s depending on how many points get tracked.
+
+\jvimg{flowlk3.png, 70%}
+
+
+Going further
+-------------
+
+- Try the dense optical flow computation which is in the second part of the OpenCV tutorial studied here.
+
+- Try to port other OpenCV tutorials to JeVois.
+
+*/
