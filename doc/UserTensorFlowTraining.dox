@@ -209,32 +209,22 @@ We start by optimizing the model for inference, and then we just convert the mod
 file):
 
 \code{.py}
-# Optimize the model for inference:
+# Optimize the model for inference and convert to TensorFlow Lite:
 toco \
-  --input_file=tf_files/retrained_graph.pb \
-  --output_file=tf_files/optimized_graph.pb \
-  --input_format=TENSORFLOW_GRAPHDEF \
-  --output_format=TENSORFLOW_GRAPHDEF \
-  --input_shape=1,${IMAGE_SIZE},${IMAGE_SIZE},3 \
-  --input_array=input \
-  --output_array=final_result
-  
-# Test it:
-python -m scripts.label_image --input_width=${IMAGE_SIZE} --input_height=${IMAGE_SIZE} \
-    --graph=tf_files/optimized_graph.pb \
-    --image=tf_files/flower_photos/daisy/3475870145_685a19116d.jpg
-
-# Convert to TensorFlow Lite:
-toco \
-  --input_file=tf_files/optimized_graph.pb \
-  --input_format=TENSORFLOW_GRAPHDEF \
+  --graph_def_file=tf_files/retrained_graph.pb \
   --output_file=tf_files/jevois_model.tflite \
+  --input_format=TENSORFLOW_GRAPHDEF \
   --output_format=TFLITE \
-  --inference_type=FLOAT \
   --input_shape=1,${IMAGE_SIZE},${IMAGE_SIZE},3 \
   --input_array=input \
-  --output_array=final_result
+  --output_array=final_result \
+  --inference_type=FLOAT \
+  --input_data_type=FLOAT
 \endcode
+
+\note If the above command gives you some error, it may be that you are running a newer version of TensorFlow, and this
+tutorial has not yet been updated. Since we closely follow the TensorFlow for Poets 2: TFLite Android tutorial, refer to
+that original tutorial on the TensorFlow web site for any updated `toco` syntax.
 
 We are now ready to deploy the final model to our JeVois camera. Insert your JeVois microSD into your host computer and
 check that it is detected. Then copy the model and labels files to it:
