@@ -1,0 +1,112 @@
+/*! \page ProgrammerInvOCR Reading text with OpenCV and Tesseract
+
+This tutorial develops a simplistic module that leverages optical character recognition (OCR) as supported by JeVois
+through OpenCV and the Tesseract library, which is available through the OpenCV Text module (including from Python).
+
+Approach
+--------
+
+- We need to understand how to perform character recognition in OpenCV using Tesseract as a backend.
+
+- We will grab an image from the camera sensor, read text in it, and display the decoded text in a small area below the
+  captured image. To achieve that, we will create a composite output display as in \ref ProgrammerInvComposite
+
+Creating the module
+-------------------
+
+- Select <b>New Python Module...</b> from the pull-down menu of JeVois Inventor (or press `CTRL-N`).
+
+- Fill in the details as shown below:
+  
+  \jvimg{tesseract1.png, 40%}
+  
+  So, here we have decided to have a 60-pixel-tall area below the input image, where we will write the decoded text.
+
+- Allow JeVois to restart, select your new module from the <b>Vision Module</b> pull-down menu, and switch to the
+  <b>Code</b> tab of the Inventor.
+
+Writing the code
+----------------
+
+A bit of web search for \a OpenCV and \a Tesseract gets us to
+https://docs.opencv.org/3.4/d7/ddc/classcv_1_1text_1_1OCRTesseract.html which we will use to get our code going.
+
+Basically, we need to create an OCR object (which we should do only once, hence we will do that in the constructor of
+our module), and then we will call `run()` on it with an image and a confidence level as inputs, getting decoded text
+(if any) as a result. We can finally send that text to serial and also write it into our output display.
+
+First, let's get the OCR part done, just sending decoded text to serial port. Then we will worry about making the
+composite display later.
+
+\code{.py}
+import libjevois as jevois
+import cv2
+import numpy as np
+
+class TesseractOCR:
+    def __init__(self):
+        self.ocr = cv2.text.OCRTesseract_create()
+        
+    def process(self, inframe, outframe):
+        img = inframe.getCvBGR()
+        txt = cv2.text_OCRTesseract.run(self.ocr, img, 50)
+        jevois.sendSerial('TXT {}'.format(txt))
+        outframe.sendCv(img)
+\endcode
+
+Enable <b>Module output</b> to \b USB in the \b Console tab of the Inventor and... This is working!
+
+\jvimg{tesseract4.png, 70%}
+
+\note Note that the OpenCV OCR module is intended (as we understand it) to be run on small, pre-segmented boxes that
+each is likely to contain only one word and minimal surrounding garbage. This is usually accomplished by some <em>scene
+text</em> algorithm that is responsible for finding and extracting those boxes. Here, we bypass this step and just send
+the whole image to OCR. Because of this:
+- the algorithm is very slow as we process a whole 320x240 image
+- if multiple words are presented, the output shows them concatenated into one
+- if garbage is present, it may be decoded as text (as shown in the above log: often the garbage markings below the
+word Robotics are decoded into something, with varying success...
+
+Adding the composite display output
+-----------------------------------
+
+We now just add a few lines of code to render the decoded text into a small message area below the video frame, and to
+stack both images up, as in \ref ProgrammerInvComposite
+
+\code{.py}
+import libjevois as jevois
+import cv2
+import numpy as np
+
+class TesseractOCR:
+    def __init__(self):
+        self.ocr = cv2.text.OCRTesseract_create()
+        
+    def process(self, inframe, outframe):
+        img = inframe.getCvBGR()
+        txt = cv2.text_OCRTesseract.run(self.ocr, img, 50)
+        jevois.sendSerial('TXT {}'.format(txt))
+        msgbox = np.zeros((60, img.shape[1], 3), dtype = np.uint8) + 80
+        cv2.putText(msgbox, txt, (3, 40), cv2.FONT_HERSHEY_SIMPLEX,
+          0.8, (255,255,255), 2, cv2.LINE_AA)
+        out = np.vstack((img, msgbox))
+        outframe.sendCv(out)
+\endcode
+
+Here we go!
+
+\jvimg{tesseract2.png, 70%}
+
+\jvimg{tesseract3.png, 70%}
+
+
+Going further
+-------------
+
+As mentioned above, better results will be obtained by implementing a pipeline that first extracts candidate boxes
+around each word, then sends each box to OCR (which can be parallelized over multiple boxes).
+
+See for example https://github.com/opencv/opencv_contrib/blob/master/modules/text/samples/end_to_end_recognition.cpp
+(but it is written in C++, so some work will be needed to translate to python if desired).
+
+*/

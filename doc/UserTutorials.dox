@@ -13,6 +13,7 @@ Beginner-level tutorials
 - \subpage UserArduinoIDE
 - \subpage UserArduinoBlink
 - \subpage UserArduinoYOLO
+- \subpage UserHeadless
 - \subpage UserUSBSD
 - \subpage UserCMD
 - \subpage UserParameters

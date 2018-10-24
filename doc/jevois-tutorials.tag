@@ -983,6 +983,11 @@
     <filename>UserGettingStarted_8dox</filename>
   </compound>
   <compound kind="file">
+    <name>UserHeadless.dox</name>
+    <path>/lab/itti/jevois/software/jevois-tutorials/doc/</path>
+    <filename>UserHeadless_8dox</filename>
+  </compound>
+  <compound kind="file">
     <name>UserInventor.dox</name>
     <path>/lab/itti/jevois/software/jevois-tutorials/doc/</path>
     <filename>UserInventor_8dox</filename>
@@ -1267,6 +1272,11 @@
     <name>UserGettingStarted</name>
     <title>Getting started with using the JeVois smart camera</title>
     <filename>UserGettingStarted</filename>
+  </compound>
+  <compound kind="page">
+    <name>UserHeadless</name>
+    <title>Headless operation (no video to USB) using JeVois Inventor</title>
+    <filename>UserHeadless</filename>
   </compound>
   <compound kind="page">
     <name>UserInventor</name>

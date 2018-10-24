@@ -1,0 +1,135 @@
+/*! \page UserHeadless Headless operation (no video to USB) using JeVois Inventor
+
+\jvversion{1.10.0}
+
+This tutorial shows you how to configure your JeVois smart camera for standalone, headless operation. In this mode,
+JeVois does not require a host computer. It can run machine vision algorithms and will not produce any video to be sent
+over the USB link. It can still send text messages, either to the hardware 4-pin serial port, or to the serial-over-USB
+port.
+
+Theory
+------
+
+JeVois supports two basic modes of operation:
+
+- <b>With video output to USB:</b> when connected to a host computer, JeVois will grab video frames, process frames,
+  generate new frames that show the results of processing, an send those new frames to a laptop or desktop computer
+  connected over USB. Most modules bundled with JeVois support this mode of operation, to show you what the module is
+  doing.
+
+- <b>No video output to USB (headless):</b> when no host computer is connected, JeVois can still grab and process video
+  frames, then sending text messages about what it has detected. Autonomous robots with no human operator would usually
+  want to use this mode of operation.
+
+For more details, see \ref Concepts
+
+Note that not all machine vision modules support both modes of operation. That is up to the programmer of the module. To
+see whether headless operation is supported, refer to each module's documentation page, by clicking on the appropriate
+module in the list in UserDemos. Towards the top of the module's docs, it is indicated whether it supports operation
+(video mappings) with and without video over USB.
+
+When JeVois is connected to a host computer, that host computer controls what JeVois will do, as the host requests video
+at a given resolution and framerate. When no host computer is connected, we need to instruct JeVois what to do. This is
+achieved through the \b initscript.cfg which is a script that is run when JeVois starts up. In that script, we can write
+commands that tell JeVois which headless machine vision processing module to use.
+
+Implementation
+--------------
+
+To enable headless operation, you need at least two commands in \b initscript.cfg:
+
+- a `setmapping2` command to select which machine vision module to run.
+
+- a `streamon` command to start the camera video stream.
+
+Starting with \jvversion{1.10} and JeVois Inventor \b 0.3, you can use JeVois Inventor to achieve this easily.
+
+Let's assume we want an autonomous robot to detect ArUco markers and drive towards them (as in \ref UserRobotCar). We
+will use JeVois module \jvmod{DemoArUco}, which supports operation with and without USB video output.
+
+In JeVois Inventor, under the \b Config tab, we select file <b>JeVois initscript.cfg</b>, which launches an editor for
+the config file <b>JEVOIS:/config/initscript.cfg</b> on the microSD card inside JeVois.
+
+We enter the following lines:
+\verbatim
+setmapping2 YUYV 640 480 30.0 JeVois DemoArUco
+setpar serout USB
+streamon
+\endverbatim
+
+The `setmapping2` selects a camera pixel format (YUYV), resolution (640x480), and framerate (30.0fps), and the machine
+vision module \b DemoArUco from vendor \b JeVois. The specification for `setmapping2` is:
+\verbatim
+setmapping2 <pixelformat> <width> <height> <fps> <Vendor> <Module>
+\endverbatim
+
+See \ref UserCli for more details. You should make sure that the pixel format, resolution, and fps you choose are
+supported by the module. Usually, the list of sample video mappings provided in the module's documentation page is the
+best way to start. For example, for \jvmod{DemoArUco}, we see that it supports:
+
+\verbatim
+Video Mapping:   NONE 0 0 0 YUYV 320 240 30.0 JeVois DemoArUco
+Video Mapping:   YUYV 320 260 30.0 YUYV 320 240 30.0 JeVois DemoArUco
+Video Mapping:   YUYV 640 500 20.0 YUYV 640 480 20.0 JeVois DemoArUco
+\endverbatim
+
+Remember that video mappings start by specifying the output format (when streaming video to USB), then the camera sensor
+format. See \ref VideoMapping for more details. Here, looking at the second half of the 3 above entries, it looks like
+running the camera sensor at 320x240 or 640x480 in YUYV should work fine, and if it can do 20fps with video output,
+we'll try 30fps with no video output (no-video-output usually runs faster since there is no need to construct an output
+image and to send it over USB).
+
+The `streamon` command will actually start the video streaming. Don't forget it! We do not automatically start streaming
+when `setmapping2` is executed to allow the user to set paramaters of the machine vision module after it is loaded and
+before we start running it. Here, for example, we decide to send text messages about the detected markers to
+serial-over-USB (command `setpar serout USB`).
+
+Before we save the file (which will reboot JeVois), it may be a good idea to point JeVois towards and ArUco, select the
+\jvmod{DemoArUco} module from the <b>Vision Module</b> menu, and confirm that the arUco is detected. Once we go
+headless, assuming that we have not moved the camera, that ArUco should still be detected, and we should see that in the
+Console tab of the Inventor.
+
+\jvimg{headless1.png, 50%}
+
+Click <b>Save to JeVois</b> and JeVois will restart.
+
+When it restarts, it will still show the default module, \jvmod{DemoSaliency}:
+
+\jvimg{headless2.png, 50%}
+
+What happened? Well, in fact, our headless \jvmod{DemoArUco} module did load and start in headless mode, but then the
+Inventor detected that JeVois got connected to the host computer, and decided to take over and to run
+\jvmod{DemoSaliency} with video output to USB. So we need to tell the Inventor to not request video from JeVois as soon
+as JeVois is connected. For that, we turn to the \b System tab and click the <b>Go Headless</b> button. This will turn
+off the video capture component of the Inventor. So next time JeVois is detected, the Inventor will not request any
+video from it.
+
+\jvimg{headless3.png, 50%}
+
+After we click <b>Go Headless</b> button, JeVois restarts one more time, runs its \b initscript.cfg upon boot, which
+loads and starts \jvmod{DemoArUco} in headless mode.
+
+\jvimg{headless4.png, 50%}
+
+We confirm that our ArUco marker is being detected by switching to the \b Console view (here we also changed the serial
+style to \b Detail to get the ArUco symbol number, here U48):
+
+\jvimg{headless5.png, 50%}
+
+To switch back to normal operation, you will need to quit and restart the Inventor, once it has gone headless it cannot
+go back to grabbing video (due to what we believe is a bug in Qt, the graphical widget toolkit we use to develop the
+Inventor).
+
+If you are not going to need headless operation anymore, you should also delete the lines we added to \b initscript.cfg
+to avoid wasting time when JeVois boots up.
+
+Going further
+-------------
+
+- If you want to send messages to an Arduino over the 4-pin serial port of JeVois, you should use `setpar serout Hard`
+  instead, in \b initscript.cfg
+
+- Have a look at \ref UserPanTilt and \ref UserRobotCar for more sophisticated examples of headless operation.
+
+*/
+
