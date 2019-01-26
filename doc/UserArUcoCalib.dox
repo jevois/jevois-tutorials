@@ -1,0 +1,127 @@
+/*! \page UserArUcoCalib Calibrating your camera for ArUco and other OpenCV modules
+
+Camera calibration consists of determining essential parameters of the optics and of the sensor. Once a precise
+calibration is achieved, modules such as \jvmod{DemoArUco}, \jvmod{FirstVision}, \jvmod{FirstPython}, and
+\jvmod{PythonObject6D} can recover the exact location and orientation of a marker or object in 3D space.
+
+JeVois includes a set of default calibration files for the standard sensor and optics.
+
+You should consider running a calibration if:
+- you need very precise pose estimation
+- you have installed a different sensor in your JeVois camera
+- you have changed the lens to a different one (eg., 90 degrees field of view)
+- you have adjusted the lens
+
+Note that calibration is dependent on image resolution. So the procedure described here should be repeated for every
+video resolution which you intend to use.
+
+Creating the virtual machine
+----------------------------
+
+Start with a fresh Ubuntu 18.04 virtualbox.
+
+Follow the instructions at http://jevois.org/doc/Virtualbox.html but with Ubuntu 18.04. Beware: you may have problems
+compiling ARtoolkit with later versions of Ubuntu.
+
+Make sure you reboot your host and install the USB device filter. You should get to the point where you can see video in
+`guvcview` when you connect your JeVois camera.
+
+Compiling the calibration programs
+----------------------------------
+
+We will compile the OpenCV calibration code natively in our virtual machine.
+
+We follow the instructions at http://jevois.org/basedoc/ArUco_8H_source.html except that we will just use the default
+OpenCV that comes with Ubuntu as opposed to using the JeVois OpenCV.
+
+\code{.py}
+sudo apt install libopencv-dev build-essential g++
+dpkg --list | grep opencv # check installed opencv version: should be 3.2.0
+
+# Get this version of opencv-contrib:
+git clone https://github.com/opencv/opencv_contrib.git
+cd opencv_contrib
+git checkout 3.2.0
+cd modules/aruco/samples
+
+g++ create_board_charuco.cpp -o create_board_charuco -lopencv_core -lopencv_imgcodecs -lopencv_highgui -lopencv_aruco -lopencv_imgproc -lopencv_videoio
+
+g++ calibrate_camera_charuco.cpp -o calibrate_camera_charuco -lopencv_core -lopencv_imgcodecs -lopencv_highgui -lopencv_aruco -lopencv_imgproc -lopencv_videoio
+
+\endcode
+
+The program we will use should now be ready in `bin/calib_camera`
+
+Preparing your JeVois camera
+----------------------------
+
+The camera calibration will just select the default video mode from the camera.
+
+To make sure the particular resolution is selected, edit \b videomappings.cfg on your JeVois camera to have only one
+mode. For example, using JeVois Inventor, go to the Config tab and select \b videomappings.cfg, then select all (CTRL-A)
+and delete (DEL) and finally just add one Pass Through mode. For example, to calibrate a modified JeVois camera using an
+optional 2MP OV2640 sensor at 1280x720:
+
+
+\verbatim
+YUYV 1280 720 10.0 YUYV 1280 720 10.0 JeVois PassThrough
+\endverbatim
+
+Save to JeVois (CTRL-S) and confirm that you can see video after JeVois restarts.
+
+Do this on another machine running JeVois Inventor (or quit your virtualbox first and run JeVois Inventor).
+
+
+Printing the calibration pattern
+--------------------------------
+
+Now back to our VirtualBox, first create an array of ArUco markers (a so-called ChArUco):
+
+\code{.py}
+./create_board_charuco -d=0 -h=5 -w=8 --ml=200 --sl=350 charuco.png
+\endcode
+
+Then print it (you may have to first use `scp`, `ftp`, or other to send the file from your virtualbox to a computer that
+has a printer -- or just get it from http://jevois.org/data/charuco.png instead), measure the marker size and spacing
+size (in whatever units you want, here we use meters, just make sure you will use that same unit later when you specify
+marker size in \jvmod{DemoArUco} and others).
+
+\jvimg{charuco-measure.png, 30%}
+
+Running the calibration program
+-------------------------------
+
+Finally, derive the camera parameters from it (set the `--ml` and `--sl` parameters to what you measure on your printed
+board; below are what we measured after printing the 5x8 charuco board on US Letter paper with auto scaling/rotate to
+fit paper):
+
+\code{.py}
+./calibrate_camera_charuco -d=0 -h=5 -w=8 --ml=.0172 --sl=.0303 --rs --sc calibration.yaml
+\endcode
+
+\jvimg{calib_ArUco.png, 30%}
+
+\note This program was not able to capture 1600x1200 at 5fps in our tests. Just declare your mapping as 1600x1200 at
+15fps and it will work fine though really it will stream at 5fps due to USB bandwidth limitation.
+
+- You should aim your camera so that all the ArUco markers are detected.
+
+- Press 'c' to capture the current image and add it to the calibration pool.
+
+- To obtain a good calibration for the camera, it is important to obtain images of the calibration board at a variety of
+  angles to the camera lens. Note that this involve holding the calibration board at different angles relative to the
+  camera, including upside-down. Try to get at least 10 very different viewpoints.
+
+- Once all the calibration images have been captured, press ESC and the calibration data associated to the camera device
+  is calculated. The tabulated calibration data is written to standard out of the command-line window and saved to disk.
+
+Copying the files to JeVois
+---------------------------
+
+Copy the calibration file to <b>JEVOIS:/share/camera/</b> on your camera, naming it exactly:
+<b>calibration1280x720.yaml</b> for 1280x720 resolution, or change the name for different resolutions.
+
+Next time you run \jvmod{DemoArUco} with that resolution, it will load the calibration file.
+
+*/
+

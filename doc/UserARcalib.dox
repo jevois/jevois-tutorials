@@ -1,0 +1,133 @@
+/*! \page UserARcalib Calibrating your camera for ARtoolkit
+
+
+Camera calibration consists of determining essential parameters of the optics and of the sensor. Once a precise
+calibration is achieved, modules such as \jvmod{DemoARtoolkit} can recover the exact location and orientation of a
+marker in 3D space.
+
+JeVois includes a set of default calibration files for the standard sensor and optics.
+
+You should consider running a calibration if:
+- you need very precise pose estimation
+- you have installed a different sensor in your JeVois camera
+- you have changed the lens to a different one (eg., 90 degrees field of view)
+- you have adjusted the lens
+
+Note that calibration is dependent on image resolution. So the procedure described here should be repeated for every
+video resolution which you intend to use.
+
+Creating the virtual machine
+----------------------------
+
+Start with a fresh Ubuntu 16.04 virtualbox.
+
+Follow the instructions at http://jevois.org/doc/Virtualbox.html but with Ubuntu 16.04. Beware: you may have problems
+compiling ARtoolkit with later versions of Ubuntu.
+
+Make sure you reboot your host and install the USB device filter. You should get to the point where you can see video in
+`guvcview` when you connect your JeVois camera.
+
+Compiling ARtoolkit5
+--------------------
+
+We will compile ARtoolkit5 natively in our virtual machine.
+
+We follow the instructions at https://github.com/artoolkit/artoolkit5
+
+\code{.py}
+sudo apt install libopencv-dev build-essential g++ xorg libudev-dev freeglut3-dev git
+
+# Get exactly this version of ARtoolkit5. Later versions have broken calibration code:
+git clone https://github.com/artoolkit/artoolkit5.git
+cd artoolkit5
+git checkout cfe0a4f5daf1b2ce76fe9197a01ff85e310f6633
+
+./Configure # Say y to using Video4Linux2 (as default), n to everything else
+
+make -j 96 # replace 96 by your number of CPU cores
+\endcode
+
+The program we will use should now be ready in `bin/calib_camera`
+
+Preparing your JeVois camera
+----------------------------
+
+The camera calibration will just select the default video mode from the camera.
+
+To make sure the particular resolution is selected, edit \b videomappings.cfg on your JeVois camera to have only one
+mode. For example, using JeVois Inventor, go to the Config tab and select \b videomappings.cfg, then select all (CTRL-A)
+and delete (DEL) and finally just add one Pass Through mode. For example, to calibrate a modified JeVois camera using an
+optional 2MP OV2640 sensor at 1280x720:
+
+
+\verbatim
+YUYV 1280 720 10.0 YUYV 1280 720 10.0 JeVois PassThrough
+\endverbatim
+
+Save to JeVois (CTRL-S) and confirm that you can see video after JeVois restarts.
+
+Do this on another machine running JeVois Inventor (or quit your virtualbox first and run JeVois Inventor).
+
+
+Printing the calibration pattern
+--------------------------------
+
+We now turn to these instructions:
+https://github.com/artoolkit/artoolkit-docs/blob/master/2_Configuration/config_camera_calibration.md
+
+We need to print a calibration chessboard. In the USA, we will use <b>artoolkit5/doc/patterns/Calibration\ chessboard\
+\(US\ Letter\).pdf</b> and an A4 version is also available. You can get those from
+http://jevois.org/data/artoolkit5-patterns.zip
+
+Make sure you print it at 100% scale.
+
+Running the calibration program
+-------------------------------
+
+Now back to our VirtualBox, we connect our JeVois camera configured with a single pass-through resolution and start
+`~/artoolkit5/bin/calib_camera`
+
+As instructed in the ARtoolkit calibration docs, tape the pattern down to a flat surface and confirm that each square is
+exactly 30mm x 30mm.
+
+Then just follow the instructions of the ARToolkit calibration docs (duplicated here for convenience):
+
+- Capturing Calibration Images Calibration requires the capturing of a series of images. In the top-left corner of the
+  capture window is displayed the number of images captured so far.
+
+- Point the camera at the chessboard grid, and the inner corners of the squares will be highlighted with 'X' marks and
+  numbered.
+
+\jvimg{calib_ARtoolkit.png, 30%}
+
+
+- When the camera can clearly see all the intermediate corners, the 'X' marks turn RED, and a calibration image can be
+  captured: A good view of the calibration board, ready to capture.
+
+- If some of the corners are obscured by the edges of the camera frame, or poor lighting or reflection, the 'X' will be
+  GREEN, and no calibration image can be captured until the optical conditions are changed. A poor view of the
+  calibration board, NOT ready to capture.
+
+- Once you have an image with all red 'X's, you can press the keyboard spacebar. The spacebar tab captures the video
+  frame augmented with red 'X' characters. The relative positions of the 'X' indicators on the captured frame are
+  calculated, recorded, written to standard out of the command-line window and the capture counter is incremented.
+
+- To obtain a good calibration for the camera, it is important to obtain images of the calibration board at a variety of
+  angles to the camera lens. Note that this involve holding the calibration board at different angles relative to the
+  camera, including upside-down.
+
+- Once all the calibration images have been captured, that is, ten (ten is the default) presses of the spacebar, the
+  calibration data is tabulated and a distortion factor associated to the camera device is calculated. The tabulated
+  calibration data is written to standard out of the command-line window. At this point, the application prompts for a
+  filename to write the calibration data to.
+
+Copying the files to JeVois
+---------------------------
+
+Copy the calibration file to <b>JEVOIS:/share/camera/</b> on your camera, naming it exactly:
+<b>camera_para1280x720.dat</b> for 1280x720 resolution, or change the name for different resolutions.
+
+Next time you run \jvmod{DemoARtoolkit} with that resolution, it will load the calibration file.
+
+*/
+

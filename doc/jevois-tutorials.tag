@@ -56,6 +56,11 @@
     <filename>ProgrammerPythonDice_8dox</filename>
   </compound>
   <compound kind="file">
+    <name>ProgrammerPythonLib.dox</name>
+    <path>/lab/itti/jevois/software/jevois-tutorials/doc/</path>
+    <filename>ProgrammerPythonLib_8dox</filename>
+  </compound>
+  <compound kind="file">
     <name>ProgrammerPythonLive.dox</name>
     <path>/lab/itti/jevois/software/jevois-tutorials/doc/</path>
     <filename>ProgrammerPythonLive_8dox</filename>
@@ -943,6 +948,11 @@
     <filename>User120fps_8dox</filename>
   </compound>
   <compound kind="file">
+    <name>UserARcalib.dox</name>
+    <path>/lab/itti/jevois/software/jevois-tutorials/doc/</path>
+    <filename>UserARcalib_8dox</filename>
+  </compound>
+  <compound kind="file">
     <name>UserArduinoBlink.dox</name>
     <path>/lab/itti/jevois/software/jevois-tutorials/doc/</path>
     <filename>UserArduinoBlink_8dox</filename>
@@ -956,6 +966,11 @@
     <name>UserArduinoYOLO.dox</name>
     <path>/lab/itti/jevois/software/jevois-tutorials/doc/</path>
     <filename>UserArduinoYOLO_8dox</filename>
+  </compound>
+  <compound kind="file">
+    <name>UserArUcoCalib.dox</name>
+    <path>/lab/itti/jevois/software/jevois-tutorials/doc/</path>
+    <filename>UserArUcoCalib_8dox</filename>
   </compound>
   <compound kind="file">
     <name>UserCMD.dox</name>
@@ -1204,6 +1219,11 @@
     <filename>ProgrammerPythonDice</filename>
   </compound>
   <compound kind="page">
+    <name>ProgrammerPythonLib</name>
+    <title>Adding new Python libraries from source</title>
+    <filename>ProgrammerPythonLib</filename>
+  </compound>
+  <compound kind="page">
     <name>ProgrammerPythonLive</name>
     <title>Programming a live JeVois camera using Python</title>
     <filename>ProgrammerPythonLive</filename>
@@ -1234,6 +1254,11 @@
     <filename>User120fps</filename>
   </compound>
   <compound kind="page">
+    <name>UserARcalib</name>
+    <title>Calibrating your camera for ARtoolkit</title>
+    <filename>UserARcalib</filename>
+  </compound>
+  <compound kind="page">
     <name>UserArduinoBlink</name>
     <title>JeVois + Arduino: blink for X</title>
     <filename>UserArduinoBlink</filename>
@@ -1247,6 +1272,11 @@
     <name>UserArduinoYOLO</name>
     <title>JeVois + Arduino: Decoding object detection boxes</title>
     <filename>UserArduinoYOLO</filename>
+  </compound>
+  <compound kind="page">
+    <name>UserArUcoCalib</name>
+    <title>Calibrating your camera for ArUco and other OpenCV modules</title>
+    <filename>UserArUcoCalib</filename>
   </compound>
   <compound kind="page">
     <name>UserCMD</name>
