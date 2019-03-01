@@ -27,6 +27,7 @@ Programming JeVois machine vision modules using Python
 Programming JeVois machine vision modules using C++
 ===================================================
 
+- \subpage ProgrammerVbox
 - \subpage ProgrammerSetup
 - \subpage ProgrammerHello
 - \subpage ProgrammerDice

@@ -86,6 +86,11 @@
     <filename>ProgrammerTutorials_8dox</filename>
   </compound>
   <compound kind="file">
+    <name>ProgrammerVbox.dox</name>
+    <path>/lab/itti/jevois/software/jevois-tutorials/doc/</path>
+    <filename>ProgrammerVbox_8dox</filename>
+  </compound>
+  <compound kind="file">
     <name>ardublink.C</name>
     <path>/lab/itti/jevois/software/jevois-tutorials/doc/snip/</path>
     <filename>ardublink_8C</filename>
@@ -1247,6 +1252,11 @@
     <name>ProgrammerTutorials</name>
     <title>JeVois programmer tutorials</title>
     <filename>ProgrammerTutorials</filename>
+  </compound>
+  <compound kind="page">
+    <name>ProgrammerVbox</name>
+    <title>Using the pre-installed jevois-sdk VirtualBox for development</title>
+    <filename>ProgrammerVbox</filename>
   </compound>
   <compound kind="page">
     <name>User120fps</name>

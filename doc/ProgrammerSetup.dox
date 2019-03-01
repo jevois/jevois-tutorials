@@ -9,11 +9,13 @@ only, then simply get and flash a microSD image from http://jevois.org/start and
 - \ref UserGettingStarted
 - \ref ProgrammerPythonLive
 
-The programming environment is Ubuntu 64-bit, version 18.04 (bionic). Support for 16.04 LTS (xenial) will soon stop as it is becoming increasingly difficult to compile recent code (e.g., OpenCV 4.0.0) on this older Ubuntu release.
+The programming environment is Ubuntu 64-bit, version 18.04 (bionic). Support for 16.04 LTS (xenial) has ended as op
+\jvversion{1.12.0} as it is becoming increasingly difficult to compile recent code (e.g., OpenCV 4.0.1) on this older
+Ubuntu release.
 
 It is generally ok to setup the programming environment in a virtual machine (e.g., VirtualBox). Just beware that you
 may have to resolve issues having to do with granting proper access to either the video camera or the microSD card to
-the virtual machine. See \ref Virtualbox for more info.
+the virtual machine. See \ref Virtualbox and \ref ProgrammerVbox for more info.
 
 \youtube{pgd7pW1XDU8}
 
