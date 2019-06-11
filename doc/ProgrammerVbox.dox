@@ -76,7 +76,7 @@ sudo adduser $USER vboxusers
 
 - Start your virtual machine and let it boot. It will auto-login user \a jevois
 
-If you need it for sudo, password is \a jevois
+- If you need it for sudo, password is \a jevois
 
 - Connect JeVois and start jevois-inventor by double-clicking the icon on the Ubuntu desktop. If JeVois is not detected,
   you may have to enable the filter again by clicking (right-click on some machines) on the little USB plug icon at the
@@ -101,15 +101,19 @@ cd samplemodule
 which will compile and then cross-compile the module. You should get no error, indicating that all jevois tools,
 cross-compilers, libraries, etc are properly installed and ready to go.
 
+\jvimg{sdkvbox9.png, 40%}
+
 Next steps
 ----------
 
-You are now ready to go over \ref Programmer
+You are now ready to go over the \ref Programmer
 
 You can skip \ref Virtualbox
 
 And, in \ref CompilingJeVois we have already fetched the repositories from github into the home directory of user jevois
-of the virtual machine.
+of the virtual machine. You can just do a `git pull` inside each of \b jevois, \b jevoisbase, etc if you want to pull
+the latest version (which may not be stable -- don't do it until you are ready for it, the version that is already in
+there by default is stable).
 
 Then check out the other \ref ProgrammerTutorials
 

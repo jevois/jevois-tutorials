@@ -152,7 +152,7 @@ kinds of C++ and C dependencies into JeVois modules. Typically, we end up using 
   usually we use shell commands to list them, see for example the ARToolkit or TensorFlow sections in the \b
   CMakelists.txt of \b jevoisbase.
 - `target_link_libraries()` to add libraries that your module should be linked against.
-- `add_definitions()` if you need to do set for flags for your dependency.
+- `add_definitions()` if you need to set compiler flags for your dependency.
 
 Writing the module
 ------------------
