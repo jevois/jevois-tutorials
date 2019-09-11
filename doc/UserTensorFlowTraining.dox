@@ -142,7 +142,10 @@ ARCHITECTURE="mobilenet_0.50_${IMAGE_SIZE}"
 tensorboard --logdir tf_files/training_summaries &
 \endcode
 
-Then start training:
+Then start training (here, we use the command under <b>Optional: I'm NOT in a hurry!</b> of the original tutorial):
+
+\note Be sure to check https://codelabs.developers.google.com/codelabs/tensorflow-for-poets/#3 to get the latest version
+of the command below, as the exact syntax used sometimes changes with new versions of TensorFlow.
 
 \code{.py}
 python -m scripts.retrain \
@@ -161,7 +164,8 @@ results will vary slightly).
 Using the trained model with TensorFlow on the host computer
 --------------------------------------------------------------
 
-We proceed as outlined in https://codelabs.developers.google.com/codelabs/tensorflow-for-poets/#4
+We proceed as outlined in https://codelabs.developers.google.com/codelabs/tensorflow-for-poets/#4 and then
+https://codelabs.developers.google.com/codelabs/tensorflow-for-poets/#5
 
 Let's test whether our trained model can now recognize our different types of flowers. We run the trained model on one
 image from our training set. This is expected to work very well since that image has been used for training:
@@ -206,8 +210,24 @@ After our retraining above, two files were created:
   modify that file or change the order of entries in it, etc).
 
 We start by optimizing the model for inference, and then we just convert the model to TensorFlow Lite format (.tflite
-file):
+file). As of July, 2019 (and TensorFlow 1.9), we see at
+https://codelabs.developers.google.com/codelabs/tensorflow-for-poets-2-tflite/index.html#2 that we should use the new \c
+tflite_convert utility, as follows:
 
+\code{.py}
+tflite_convert \
+  --graph_def_file=tf_files/retrained_graph.pb \
+  --output_file=tf_files/jevois_model.tflite \
+  --input_format=TENSORFLOW_GRAPHDEF \
+  --output_format=TFLITE \
+  --input_shape=1,${IMAGE_SIZE},${IMAGE_SIZE},3 \
+  --input_array=input \
+  --output_array=final_result \
+  --inference_type=FLOAT \
+  --input_data_type=FLOAT
+\endcode
+
+\note For reference, before July, 2019, the command to use was:
 \code{.py}
 # Optimize the model for inference and convert to TensorFlow Lite:
 toco \
@@ -287,7 +307,8 @@ Next steps
 - Try it yourself with your own pictures!
 
 - Investigate quantization. The steps outlined above yield a floating-point network, which is slower than a quantized
-  network. The toco utility should be able to produce a quantized network for JeVois, but we have not yet fully figured
-  out how (some issues with normalization and ranges of values).
+  network. The \c toco or newer \c tflite_convert utilities should be able to produce a quantized network for JeVois,
+  but we have not yet fully figured out how (some issues with normalization and ranges of values). A good start may be
+  here: https://www.tensorflow.org/lite/convert/cmdline_examples in the section about quantization.
 
 */

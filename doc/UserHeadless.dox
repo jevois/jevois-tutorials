@@ -74,8 +74,8 @@ Video Mapping:   YUYV 640 500 20.0 YUYV 640 480 20.0 JeVois DemoArUco
 \endverbatim
 
 Remember that video mappings start by specifying the output format (when streaming video to USB), then the camera sensor
-format. See \ref VideoMapping for more details. Here, looking at the second half of the 3 above entries, it looks like
-running the camera sensor at 320x240 or 640x480 in YUYV should work fine, and if it can do 20fps with video output,
+format. See \ref VideoMapping for more details. Here, looking <b>at the second half</b> of the 3 above entries, it looks
+like running the camera sensor at 320x240 or 640x480 in YUYV should work fine, and if it can do 20fps with video output,
 we'll try 30fps with no video output (no-video-output usually runs faster since there is no need to construct an output
 image and to send it over USB).
 
