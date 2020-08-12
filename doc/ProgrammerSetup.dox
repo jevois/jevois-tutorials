@@ -139,6 +139,7 @@ git clone https://github.com/jevois/jevois-sdk.git
 git clone https://github.com/jevois/samplemodule.git
 git clone https://github.com/jevois/samplepythonmodule.git
 git clone https://github.com/jevois/jevois-tutorials.git
+git clone https://github.com/jevois/jevoisextra.git
 \endverbatim
 
 \note If upgrading, cd to each directory instead and run a `git pull` command to bring your copy up to date with the

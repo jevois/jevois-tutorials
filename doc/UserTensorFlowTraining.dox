@@ -10,9 +10,9 @@ developed by the TensorFlow team, adding a few steps to get the trained network 
 Pre-requisites
 ==============
 
-- Make sure you download \jvversion{1.8.0} or later from http://jevois.org/start and flash it to microSD.
+- Make sure you download \jvversion{1.15.0} or later from http://jevois.org/start and flash it to microSD.
 
-- You need a Linux, Windows or Mac host computer (we used Ubuntu 17.10), onto which you will install and run TensorFlow
+- You need a Linux, Windows or Mac host computer (we used Ubuntu 20.04), onto which you will install and run TensorFlow
   for network training.
 
 - You need to be generally familiar software installation procedures, running programs, etc for your host computer.
@@ -54,27 +54,54 @@ Install the latest TensorFlow
 
 Follow the instructions at https://www.tensorflow.org/install/
 
-On Ubuntu 17.10, we did the following for an install with no GPU support (which is shown here as it is much easier than
-a full install with GPU support). We used the VirtualEnv installation method and python3 (see
-https://www.tensorflow.org/install/install_linux for more details):
+We are going to use the pip install method for TensorFlow 1.15. On
+Ubuntu 20.04, we did the following for an install with no GPU support
+(which is shown here as it is much easier than a full install with GPU
+support). We used the VirtualEnv installation method and python3 (see
+https://www.tensorflow.org/install for more details):
+
+First, TensorFlow 1.15 requires python 3.7, but Ubuntu 20.04 ships
+with python 3.8. So we first need to install python 3.7 on our
+machine (see https://stackoverflow.com/questions/61430166/python-3-7-on-ubuntu-20-04):
 
 \code{.py}
-sudo apt install python3-pip python3-dev python-virtualenv
-
-cd
-
-virtualenv --system-site-packages -p python3 tensorflow
-
-source ~/tensorflow/bin/activate
+sudo add-apt-repository ppa:deadsnakes/ppa
+sudo apt-get update
+sudo apt-get install python3.7 python3.7-venv
 \endcode
 
-Once activated, the shell prompt changes to show you the name of your VirtualEnv. We proceed as follows (still from
-https://www.tensorflow.org/install/install_linux):
+Now we can proceed with the TensorFlow installation, just making sure we invoke python3.7:
 
 \code{.py}
-easy_install -U pip
+cd
 
-pip3 install --upgrade tensorflow 
+virtualenv -p python3.7 --system-site-packages ./venv
+
+source ./venv/bin/activate
+
+python3 --version # should return 3.7.8
+
+\endcode
+
+Once activated, the shell prompt changes to show you the name of your VirtualEnv. We proceed as follows (from
+https://www.tensorflow.org/install/pip):
+
+\code{.py}
+pip install --upgrade pip
+
+pip install --upgrade numpy
+
+python3 -c "import numpy; print(numpy.__version__)" # we got 1.19.1 when writing this tutorial
+
+pip install --upgrade tensorflow==1.15
+\endcode
+
+Verify the install:
+
+\code{.py}
+python -c "import tensorflow as tf;print(tf.reduce_sum(tf.random.normal([1000, 1000])))"
+
+# No error and returns: Tensor("Sum:0", shape=(), dtype=float32)
 \endcode
 
 Get the TensorFlow for poets code
@@ -125,7 +152,7 @@ If you want to add more categories, or use different categories, just follow the
 - one directory under <b>tf_files/yourphotos/</b> for each category
 - in each directory, any number of JPEG pictures of objects in that category
 
-Also see https://codelabs.developers.google.com/codelabs/tensorflow-for-poets/#6
+Also see https://codelabs.developers.google.com/codelabs/tensorflow-for-poets/#2
 
 Configuring MobileNet
 ---------------------
@@ -142,7 +169,7 @@ ARCHITECTURE="mobilenet_0.50_${IMAGE_SIZE}"
 tensorboard --logdir tf_files/training_summaries &
 \endcode
 
-Then start training (here, we use the command under <b>Optional: I'm NOT in a hurry!</b> of the original tutorial):
+Then start training:
 
 \note Be sure to check https://codelabs.developers.google.com/codelabs/tensorflow-for-poets/#3 to get the latest version
 of the command below, as the exact syntax used sometimes changes with new versions of TensorFlow.
@@ -150,6 +177,7 @@ of the command below, as the exact syntax used sometimes changes with new versio
 \code{.py}
 python -m scripts.retrain \
   --bottleneck_dir=tf_files/bottlenecks \
+  --how_many_training_steps=500 \
   --model_dir=tf_files/models/ \
   --summaries_dir=tf_files/training_summaries/"${ARCHITECTURE}" \
   --output_graph=tf_files/retrained_graph.pb \
@@ -158,7 +186,7 @@ python -m scripts.retrain \
   --image_dir=tf_files/flower_photos
 \endcode
 
-After 4000 training steps, which here just took a few minutes, we get an accuracy of 84.8% in our particular run (your
+After 500 training steps, which here just took a few minutes, we get an accuracy of 86.5% in our particular run (your
 results will vary slightly).
 
 Using the trained model with TensorFlow on the host computer
@@ -179,17 +207,17 @@ python -m scripts.label_image --input_width=${IMAGE_SIZE} --input_height=${IMAGE
 You should get something like this (actual numbers will vary):
 
 \verbatim
-Evaluation time (1-image): 0.098s
+Evaluation time (1-image): 0.176s
 
-daisy 0.9998286
-dandelion 0.00011135038
-sunflowers 6.0096758e-05
-tulips 3.6351743e-08
-roses 4.3815023e-09
+daisy (score=0.99013)
+dandelion (score=0.00729)
+sunflowers (score=0.00258)
+roses (score=0.00001)
+tulips (score=0.00000)
 \endverbatim
 
-Which means the network thinks that this image of a daisy indeed is a daisy with 99.98% confidence, or it could be a
-dandelion with 0.01% confidence, etc
+Which means the network thinks that this image of a daisy indeed is a daisy with 99.01% confidence, or it could be a
+dandelion with 0.7% confidence, etc
 
 Deploying the trained model to JeVois
 -------------------------------------
@@ -197,9 +225,9 @@ Deploying the trained model to JeVois
 We are done with the basic TensorFlow for poets tutorial. Let us now deploy the model to run on the JeVois smart
 camera. For that, we will convert it to the mobile-optimized TensorFlow Lite format.
 
-We will follow some of the steps of [TensorFlow for Poets 2:
-TFLite](https://codelabs.developers.google.com/codelabs/tensorflow-for-poets-2-tflite/index.html) which we recommend you
-check out. But this time we will skip some steps which are irrelevant to JeVois (installing an Android app, etc).
+We will follow some of the steps of now deprecated [TensorFlow for Poets 2:
+TFLite](https://codelabs.developers.google.com/codelabs/tensorflow-for-poets-2-tflite/index.html).
+But this time we will skip some steps which are irrelevant to JeVois (installing an Android app, etc).
 
 After our retraining above, two files were created:
 
@@ -210,9 +238,7 @@ After our retraining above, two files were created:
   modify that file or change the order of entries in it, etc).
 
 We start by optimizing the model for inference, and then we just convert the model to TensorFlow Lite format (.tflite
-file). As of July, 2019 (and TensorFlow 1.9), we see at
-https://codelabs.developers.google.com/codelabs/tensorflow-for-poets-2-tflite/index.html#2 that we should use the new \c
-tflite_convert utility, as follows:
+file). As of August, 2020 (and TensorFlow 1.15), we we should use the \c tflite_convert utility, as follows:
 
 \code{.py}
 tflite_convert \
@@ -226,25 +252,6 @@ tflite_convert \
   --inference_type=FLOAT \
   --input_data_type=FLOAT
 \endcode
-
-\note For reference, before July, 2019, the command to use was:
-\code{.py}
-# Optimize the model for inference and convert to TensorFlow Lite:
-toco \
-  --graph_def_file=tf_files/retrained_graph.pb \
-  --output_file=tf_files/jevois_model.tflite \
-  --input_format=TENSORFLOW_GRAPHDEF \
-  --output_format=TFLITE \
-  --input_shape=1,${IMAGE_SIZE},${IMAGE_SIZE},3 \
-  --input_array=input \
-  --output_array=final_result \
-  --inference_type=FLOAT \
-  --input_data_type=FLOAT
-\endcode
-
-\note If the above command gives you some error, it may be that you are running a newer version of TensorFlow, and this
-tutorial has not yet been updated. Since we closely follow the TensorFlow for Poets 2: TFLite Android tutorial, refer to
-that original tutorial on the TensorFlow web site for any updated `toco` syntax.
 
 We are now ready to deploy the final model to our JeVois camera. Insert your JeVois microSD into your host computer and
 check that it is detected. Then copy the model and labels files to it:
@@ -275,8 +282,8 @@ foa=128 128
 and comment out any other settings in that file so that the one you just added for flowers is the only uncommented one
 in the whole file.
 
-Insert the microSD into JeVois and connect it to your host computer, then launch \jvmod{TensorFlowEasy} by selecting
-<b>YUYV 320x308</b> resolution in guvcview or any other video capture software:
+Insert the microSD into JeVois and connect it to your host computer, then use JeVois Inventor, or launch
+\jvmod{TensorFlowEasy} by selecting <b>YUYV 320x308</b> resolution in guvcview or any other video capture software:
 
 \code{.py}
 guvcview -f YUYV -x 320x308
@@ -307,7 +314,7 @@ Next steps
 - Try it yourself with your own pictures!
 
 - Investigate quantization. The steps outlined above yield a floating-point network, which is slower than a quantized
-  network. The \c toco or newer \c tflite_convert utilities should be able to produce a quantized network for JeVois,
+  network. The \c tflite_convert utility should be able to produce a quantized network for JeVois,
   but we have not yet fully figured out how (some issues with normalization and ranges of values). A good start may be
   here: https://www.tensorflow.org/lite/convert/cmdline_examples in the section about quantization.
 
