@@ -9,9 +9,12 @@ only, then simply get and flash a microSD image from http://jevois.org/start and
 - \ref UserGettingStarted
 - \ref ProgrammerPythonLive
 
-The programming environment is Ubuntu 64-bit, version 18.04 (bionic). Support for 16.04 LTS (xenial) has ended as op
-\jvversion{1.12.0} as it is becoming increasingly difficult to compile recent code (e.g., OpenCV 4.0.1) on this older
-Ubuntu release.
+The programming environment is Ubuntu 64-bit, version 20.04 (focal) or
+18.04 (bionic). Support for 16.04 LTS (xenial) has ended as of
+\jvversion{1.12.0} as it is becoming increasingly difficult to compile
+recent code (e.g., OpenCV 4.0.1) on this older Ubuntu release.
+
+As of \jvversion{1.15.0} the official JeVois development platform is Ubuntu 20.04 (focal).
 
 It is generally ok to setup the programming environment in a virtual machine (e.g., VirtualBox). Just beware that you
 may have to resolve issues having to do with granting proper access to either the video camera or the microSD card to
@@ -21,7 +24,7 @@ the virtual machine. See \ref Virtualbox and \ref ProgrammerVbox for more info.
 
 The video above gets you through the steps of:
 
-- installing Ubuntu 18.04 (bionic) on VirtualBox
+- installing Ubuntu 18.04 (bionic) on VirtualBox; steps are similar for newer Ubuntu 20.04.
 - installing the jevois ubuntu (.deb) packages
 - installing jevois-inventor and trying it out
 - getting the latest jevois source code from github
@@ -35,8 +38,8 @@ Not all the steps shown in the video above may be required, depending on your go
 
 A quick overview of the JeVois software development packages (see \ref ProgrammerSource for more details):
 
-- \b jevois-opencv: OpenCV 4.0.0 compiled for host computer with settings that match those used by the JeVois platform
-  hardware. We install this package into /usr/share/jevois-opencv-4.0.0 so that it will not interfere with any other
+- \b jevois-opencv: OpenCV 4.4.0 compiled for host computer with settings that match those used by the JeVois platform
+  hardware. We install this package into /usr/share/jevois-opencv-4.4.0 so that it will not interfere with any other
   OpenCV install you might have on your host system and that might be required by some other software.
 
 - \b jevois-host: JeVois core software compiled for execution on a host computer
@@ -87,12 +90,6 @@ sudo rm -rf /jevois /var/lib/jevois-build /var/lib/jevois-microsd
   \endverbatim
 
 - Then re-install as detailed below.
-  
-  \note If upgrading from version 1.0, you need to delete the files that were installed in different locations:
-  - remove all OpenCV files in /usr/local/include/opencv*, /usr/local/lib/libopencv*, /usr/local/share/opencv
-  - remove JeVois files /usr/bin/jevois*
-  - remove JeVois libraries /usr/lib/libjevois*
-  - remove /jevois
 
 - To get out of Debian dependency hell:
 
