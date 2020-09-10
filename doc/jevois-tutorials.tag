@@ -3,97 +3,97 @@
   <compound kind="file">
     <name>Mainpage.dox</name>
     <path>/lab/itti/jevois/software/jevois-tutorials/doc/</path>
-    <filename>Mainpage_8dox</filename>
+    <filename>Mainpage_8dox.html</filename>
   </compound>
   <compound kind="file">
     <name>ProgrammerDice.dox</name>
     <path>/lab/itti/jevois/software/jevois-tutorials/doc/</path>
-    <filename>ProgrammerDice_8dox</filename>
+    <filename>ProgrammerDice_8dox.html</filename>
   </compound>
   <compound kind="file">
     <name>ProgrammerDlib.dox</name>
     <path>/lab/itti/jevois/software/jevois-tutorials/doc/</path>
-    <filename>ProgrammerDlib_8dox</filename>
+    <filename>ProgrammerDlib_8dox.html</filename>
   </compound>
   <compound kind="file">
     <name>ProgrammerHello.dox</name>
     <path>/lab/itti/jevois/software/jevois-tutorials/doc/</path>
-    <filename>ProgrammerHello_8dox</filename>
+    <filename>ProgrammerHello_8dox.html</filename>
   </compound>
   <compound kind="file">
     <name>ProgrammerInvComposite.dox</name>
     <path>/lab/itti/jevois/software/jevois-tutorials/doc/</path>
-    <filename>ProgrammerInvComposite_8dox</filename>
+    <filename>ProgrammerInvComposite_8dox.html</filename>
   </compound>
   <compound kind="file">
     <name>ProgrammerInvFlowLK.dox</name>
     <path>/lab/itti/jevois/software/jevois-tutorials/doc/</path>
-    <filename>ProgrammerInvFlowLK_8dox</filename>
+    <filename>ProgrammerInvFlowLK_8dox.html</filename>
   </compound>
   <compound kind="file">
     <name>ProgrammerInvHello.dox</name>
     <path>/lab/itti/jevois/software/jevois-tutorials/doc/</path>
-    <filename>ProgrammerInvHello_8dox</filename>
+    <filename>ProgrammerInvHello_8dox.html</filename>
   </compound>
   <compound kind="file">
     <name>ProgrammerInvOCR.dox</name>
     <path>/lab/itti/jevois/software/jevois-tutorials/doc/</path>
-    <filename>ProgrammerInvOCR_8dox</filename>
+    <filename>ProgrammerInvOCR_8dox.html</filename>
   </compound>
   <compound kind="file">
     <name>ProgrammerInvSerial.dox</name>
     <path>/lab/itti/jevois/software/jevois-tutorials/doc/</path>
-    <filename>ProgrammerInvSerial_8dox</filename>
+    <filename>ProgrammerInvSerial_8dox.html</filename>
   </compound>
   <compound kind="file">
     <name>ProgrammerInvTimer.dox</name>
     <path>/lab/itti/jevois/software/jevois-tutorials/doc/</path>
-    <filename>ProgrammerInvTimer_8dox</filename>
+    <filename>ProgrammerInvTimer_8dox.html</filename>
   </compound>
   <compound kind="file">
     <name>ProgrammerPythonDice.dox</name>
     <path>/lab/itti/jevois/software/jevois-tutorials/doc/</path>
-    <filename>ProgrammerPythonDice_8dox</filename>
+    <filename>ProgrammerPythonDice_8dox.html</filename>
   </compound>
   <compound kind="file">
     <name>ProgrammerPythonLib.dox</name>
     <path>/lab/itti/jevois/software/jevois-tutorials/doc/</path>
-    <filename>ProgrammerPythonLib_8dox</filename>
+    <filename>ProgrammerPythonLib_8dox.html</filename>
   </compound>
   <compound kind="file">
     <name>ProgrammerPythonLive.dox</name>
     <path>/lab/itti/jevois/software/jevois-tutorials/doc/</path>
-    <filename>ProgrammerPythonLive_8dox</filename>
+    <filename>ProgrammerPythonLive_8dox.html</filename>
   </compound>
   <compound kind="file">
     <name>ProgrammerPythonSaveImages.dox</name>
     <path>/lab/itti/jevois/software/jevois-tutorials/doc/</path>
-    <filename>ProgrammerPythonSaveImages_8dox</filename>
+    <filename>ProgrammerPythonSaveImages_8dox.html</filename>
   </compound>
   <compound kind="file">
     <name>ProgrammerSetup.dox</name>
     <path>/lab/itti/jevois/software/jevois-tutorials/doc/</path>
-    <filename>ProgrammerSetup_8dox</filename>
+    <filename>ProgrammerSetup_8dox.html</filename>
   </compound>
   <compound kind="file">
     <name>ProgrammerSurprise.dox</name>
     <path>/lab/itti/jevois/software/jevois-tutorials/doc/</path>
-    <filename>ProgrammerSurprise_8dox</filename>
+    <filename>ProgrammerSurprise_8dox.html</filename>
   </compound>
   <compound kind="file">
     <name>ProgrammerTutorials.dox</name>
     <path>/lab/itti/jevois/software/jevois-tutorials/doc/</path>
-    <filename>ProgrammerTutorials_8dox</filename>
+    <filename>ProgrammerTutorials_8dox.html</filename>
   </compound>
   <compound kind="file">
     <name>ProgrammerVbox.dox</name>
     <path>/lab/itti/jevois/software/jevois-tutorials/doc/</path>
-    <filename>ProgrammerVbox_8dox</filename>
+    <filename>ProgrammerVbox_8dox.html</filename>
   </compound>
   <compound kind="file">
     <name>ardublink.C</name>
     <path>/lab/itti/jevois/software/jevois-tutorials/doc/snip/</path>
-    <filename>ardublink_8C</filename>
+    <filename>ardublink_8C.html</filename>
     <member kind="define">
       <type>#define</type>
       <name>LEDPIN</name>
@@ -147,7 +147,7 @@
   <compound kind="file">
     <name>ardublinkez.C</name>
     <path>/lab/itti/jevois/software/jevois-tutorials/doc/snip/</path>
-    <filename>ardublinkez_8C</filename>
+    <filename>ardublinkez_8C.html</filename>
     <member kind="define">
       <type>#define</type>
       <name>LEDPIN</name>
@@ -201,7 +201,7 @@
   <compound kind="file">
     <name>ArduinoPanTiltTutorial.C</name>
     <path>/lab/itti/jevois/software/jevois-tutorials/doc/snip/</path>
-    <filename>ArduinoPanTiltTutorial_8C</filename>
+    <filename>ArduinoPanTiltTutorial_8C.html</filename>
     <member kind="define">
       <type>#define</type>
       <name>LEDPIN</name>
@@ -325,7 +325,7 @@
   <compound kind="file">
     <name>arduyolo.C</name>
     <path>/lab/itti/jevois/software/jevois-tutorials/doc/snip/</path>
-    <filename>arduyolo_8C</filename>
+    <filename>arduyolo_8C.html</filename>
     <member kind="define">
       <type>#define</type>
       <name>LEDPIN</name>
@@ -386,7 +386,7 @@
   <compound kind="file">
     <name>HelloJeVois.C</name>
     <path>/lab/itti/jevois/software/jevois-tutorials/doc/snip/</path>
-    <filename>HelloJeVois_8C</filename>
+    <filename>HelloJeVois_8C.html</filename>
     <class kind="class">HelloJeVois</class>
     <member kind="function">
       <type></type>
@@ -399,7 +399,7 @@
   <compound kind="file">
     <name>JeVoisRobotCar1.C</name>
     <path>/lab/itti/jevois/software/jevois-tutorials/doc/snip/</path>
-    <filename>JeVoisRobotCar1_8C</filename>
+    <filename>JeVoisRobotCar1_8C.html</filename>
     <class kind="class">ServoPD</class>
     <member kind="define">
       <type>#define</type>
@@ -643,7 +643,7 @@
   <compound kind="file">
     <name>JeVoisRobotCar2.C</name>
     <path>/lab/itti/jevois/software/jevois-tutorials/doc/snip/</path>
-    <filename>JeVoisRobotCar2_8C</filename>
+    <filename>JeVoisRobotCar2_8C.html</filename>
     <class kind="class">ServoPD</class>
     <member kind="define">
       <type>#define</type>
@@ -950,107 +950,107 @@
   <compound kind="file">
     <name>User120fps.dox</name>
     <path>/lab/itti/jevois/software/jevois-tutorials/doc/</path>
-    <filename>User120fps_8dox</filename>
+    <filename>User120fps_8dox.html</filename>
   </compound>
   <compound kind="file">
     <name>UserARcalib.dox</name>
     <path>/lab/itti/jevois/software/jevois-tutorials/doc/</path>
-    <filename>UserARcalib_8dox</filename>
+    <filename>UserARcalib_8dox.html</filename>
   </compound>
   <compound kind="file">
     <name>UserArduinoBlink.dox</name>
     <path>/lab/itti/jevois/software/jevois-tutorials/doc/</path>
-    <filename>UserArduinoBlink_8dox</filename>
+    <filename>UserArduinoBlink_8dox.html</filename>
   </compound>
   <compound kind="file">
     <name>UserArduinoIDE.dox</name>
     <path>/lab/itti/jevois/software/jevois-tutorials/doc/</path>
-    <filename>UserArduinoIDE_8dox</filename>
+    <filename>UserArduinoIDE_8dox.html</filename>
   </compound>
   <compound kind="file">
     <name>UserArduinoYOLO.dox</name>
     <path>/lab/itti/jevois/software/jevois-tutorials/doc/</path>
-    <filename>UserArduinoYOLO_8dox</filename>
+    <filename>UserArduinoYOLO_8dox.html</filename>
   </compound>
   <compound kind="file">
     <name>UserArUcoCalib.dox</name>
     <path>/lab/itti/jevois/software/jevois-tutorials/doc/</path>
-    <filename>UserArUcoCalib_8dox</filename>
+    <filename>UserArUcoCalib_8dox.html</filename>
   </compound>
   <compound kind="file">
     <name>UserCMD.dox</name>
     <path>/lab/itti/jevois/software/jevois-tutorials/doc/</path>
-    <filename>UserCMD_8dox</filename>
+    <filename>UserCMD_8dox.html</filename>
   </compound>
   <compound kind="file">
     <name>UserColorFiltering.dox</name>
     <path>/lab/itti/jevois/software/jevois-tutorials/doc/</path>
-    <filename>UserColorFiltering_8dox</filename>
+    <filename>UserColorFiltering_8dox.html</filename>
   </compound>
   <compound kind="file">
     <name>UserColorTracking.dox</name>
     <path>/lab/itti/jevois/software/jevois-tutorials/doc/</path>
-    <filename>UserColorTracking_8dox</filename>
+    <filename>UserColorTracking_8dox.html</filename>
   </compound>
   <compound kind="file">
     <name>UserFirstVision.dox</name>
     <path>/lab/itti/jevois/software/jevois-tutorials/doc/</path>
-    <filename>UserFirstVision_8dox</filename>
+    <filename>UserFirstVision_8dox.html</filename>
   </compound>
   <compound kind="file">
     <name>UserGettingStarted.dox</name>
     <path>/lab/itti/jevois/software/jevois-tutorials/doc/</path>
-    <filename>UserGettingStarted_8dox</filename>
+    <filename>UserGettingStarted_8dox.html</filename>
   </compound>
   <compound kind="file">
     <name>UserHeadless.dox</name>
     <path>/lab/itti/jevois/software/jevois-tutorials/doc/</path>
-    <filename>UserHeadless_8dox</filename>
+    <filename>UserHeadless_8dox.html</filename>
   </compound>
   <compound kind="file">
     <name>UserInventor.dox</name>
     <path>/lab/itti/jevois/software/jevois-tutorials/doc/</path>
-    <filename>UserInventor_8dox</filename>
+    <filename>UserInventor_8dox.html</filename>
   </compound>
   <compound kind="file">
     <name>UserObjectDetect.dox</name>
     <path>/lab/itti/jevois/software/jevois-tutorials/doc/</path>
-    <filename>UserObjectDetect_8dox</filename>
+    <filename>UserObjectDetect_8dox.html</filename>
   </compound>
   <compound kind="file">
     <name>UserPanTilt.dox</name>
     <path>/lab/itti/jevois/software/jevois-tutorials/doc/</path>
-    <filename>UserPanTilt_8dox</filename>
+    <filename>UserPanTilt_8dox.html</filename>
   </compound>
   <compound kind="file">
     <name>UserParameters.dox</name>
     <path>/lab/itti/jevois/software/jevois-tutorials/doc/</path>
-    <filename>UserParameters_8dox</filename>
+    <filename>UserParameters_8dox.html</filename>
   </compound>
   <compound kind="file">
     <name>UserParseSerial.dox</name>
     <path>/lab/itti/jevois/software/jevois-tutorials/doc/</path>
-    <filename>UserParseSerial_8dox</filename>
+    <filename>UserParseSerial_8dox.html</filename>
   </compound>
   <compound kind="file">
     <name>UserRobotCar.dox</name>
     <path>/lab/itti/jevois/software/jevois-tutorials/doc/</path>
-    <filename>UserRobotCar_8dox</filename>
+    <filename>UserRobotCar_8dox.html</filename>
   </compound>
   <compound kind="file">
     <name>UserTensorFlowTraining.dox</name>
     <path>/lab/itti/jevois/software/jevois-tutorials/doc/</path>
-    <filename>UserTensorFlowTraining_8dox</filename>
+    <filename>UserTensorFlowTraining_8dox.html</filename>
   </compound>
   <compound kind="file">
     <name>UserTutorials.dox</name>
     <path>/lab/itti/jevois/software/jevois-tutorials/doc/</path>
-    <filename>UserTutorials_8dox</filename>
+    <filename>UserTutorials_8dox.html</filename>
   </compound>
   <compound kind="file">
     <name>UserUSBSD.dox</name>
     <path>/lab/itti/jevois/software/jevois-tutorials/doc/</path>
-    <filename>UserUSBSD_8dox</filename>
+    <filename>UserUSBSD_8dox.html</filename>
   </compound>
   <compound kind="class">
     <name>HelloJeVois</name>
@@ -1367,7 +1367,7 @@
     <name>index</name>
     <title>JeVois Smart Embedded Machine Vision Toolkit - Tutorials</title>
     <filename>index</filename>
-    <docanchor file="index" title="Welcome to the tutorials for the JeVois Smart Embedded Machine Vision Toolkit.">welcometut</docanchor>
-    <docanchor file="index" title="Table of contents">contentstut</docanchor>
+    <docanchor file="index.html" title="Welcome to the tutorials for the JeVois Smart Embedded Machine Vision Toolkit.">welcometut</docanchor>
+    <docanchor file="index.html" title="Table of contents">contentstut</docanchor>
   </compound>
 </tagfile>
