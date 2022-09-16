@@ -2,7 +2,7 @@
 
 This tutorial will show you how to train TensorFlow deep neural networks using your own collection of images and object
 categories, and how to run the trained network on the processor inside the JeVois smart camera. It closely follows the
-steps of the tutorial [TensorFlow for poets](https://codelabs.developers.google.com/codelabs/tensorflow-for-poets/)
+steps of the tutorial [TensorFlow for poets](https://kiosk-dot-codelabs-site.appspot.com/codelabs/tensorflow-for-poets/)
 developed by the TensorFlow team, adding a few steps to get the trained network working on JeVois.
 
 \image html UserTF-roses.png Our network trained on 5 different kinds of flowers correctly recognizes roses.
@@ -122,8 +122,8 @@ Download training images (or create your own collection)
 We need to have a collection of images that we will use for training. The images should be organized under a number of
 directories, where each directory is the name of a given object category.
 
-Let us just use the sample images from https://codelabs.developers.google.com/codelabs/tensorflow-for-poets/#2 to set
-the ideas, but you can of course use your own images instead:
+Let us just use the sample images from https://kiosk-dot-codelabs-site.appspot.com/codelabs/tensorflow-for-poets/#2 to
+set the ideas, but you can of course use your own images instead:
 
 \code{.py}
 curl http://download.tensorflow.org/example_images/flower_photos.tgz | tar xz -C tf_files
@@ -152,12 +152,12 @@ If you want to add more categories, or use different categories, just follow the
 - one directory under <b>tf_files/yourphotos/</b> for each category
 - in each directory, any number of JPEG pictures of objects in that category
 
-Also see https://codelabs.developers.google.com/codelabs/tensorflow-for-poets/#2
+Also see https://kiosk-dot-codelabs-site.appspot.com/codelabs/tensorflow-for-poets/#2
 
 Configuring MobileNet
 ---------------------
 
-We proceed as outlined in https://codelabs.developers.google.com/codelabs/tensorflow-for-poets/#3 and we will use a
+We proceed as outlined in https://kiosk-dot-codelabs-site.appspot.com/codelabs/tensorflow-for-poets/#3 and we will use a
 MobileNet with compression factor 0.5 and input size 128x128, as this should run at about 30 frames/s in the JeVois
 \jvmod{TensorFlowEasy} module:
 
@@ -171,8 +171,8 @@ tensorboard --logdir tf_files/training_summaries &
 
 Then start training:
 
-\note Be sure to check https://codelabs.developers.google.com/codelabs/tensorflow-for-poets/#3 to get the latest version
-of the command below, as the exact syntax used sometimes changes with new versions of TensorFlow.
+\note Be sure to check https://kiosk-dot-codelabs-site.appspot.com/codelabs/tensorflow-for-poets/#3 to get the latest
+version of the command below, as the exact syntax used sometimes changes with new versions of TensorFlow.
 
 \code{.py}
 python -m scripts.retrain \
@@ -192,8 +192,8 @@ results will vary slightly).
 Using the trained model with TensorFlow on the host computer
 --------------------------------------------------------------
 
-We proceed as outlined in https://codelabs.developers.google.com/codelabs/tensorflow-for-poets/#4 and then
-https://codelabs.developers.google.com/codelabs/tensorflow-for-poets/#5
+We proceed as outlined in https://kiosk-dot-codelabs-site.appspot.com/codelabs/tensorflow-for-poets/#4 and then
+https://kiosk-dot-codelabs-site.appspot.com/codelabs/tensorflow-for-poets/#5
 
 Let's test whether our trained model can now recognize our different types of flowers. We run the trained model on one
 image from our training set. This is expected to work very well since that image has been used for training:
@@ -226,7 +226,7 @@ We are done with the basic TensorFlow for poets tutorial. Let us now deploy the 
 camera. For that, we will convert it to the mobile-optimized TensorFlow Lite format.
 
 We will follow some of the steps of now deprecated [TensorFlow for Poets 2:
-TFLite](https://codelabs.developers.google.com/codelabs/tensorflow-for-poets-2-tflite/index.html).
+TFLite](https://clmirror.storage.googleapis.com/codelabs/tensorflow-for-poets-2-tflite/index.html).
 But this time we will skip some steps which are irrelevant to JeVois (installing an Android app, etc).
 
 After our retraining above, two files were created:
@@ -314,8 +314,9 @@ Next steps
 - Try it yourself with your own pictures!
 
 - Investigate quantization. The steps outlined above yield a floating-point network, which is slower than a quantized
-  network. The \c tflite_convert utility should be able to produce a quantized network for JeVois,
-  but we have not yet fully figured out how (some issues with normalization and ranges of values). A good start may be
-  here: https://www.tensorflow.org/lite/convert/cmdline_examples in the section about quantization.
+  network. The \c tflite_convert utility should be able to produce a quantized network for JeVois, but we have not yet
+  fully figured out how (some issues with normalization and ranges of values). A good start may be here:
+  https://github.com/tensorflow/tensorflow/blob/master/tensorflow/lite/g3doc/r1/convert/cmdline_examples.md in the
+  section about quantization.
 
 */
