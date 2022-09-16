@@ -7,7 +7,7 @@ JeVois smart camera (e.g., an Arduino, or scripts runing on a host computer).
 Beginner-level tutorials
 ------------------------
 
-- \subpage UserInventor
+- JeVois-A33: \subpage UserInventor
 
 - \subpage UserGettingStarted
 - \subpage UserArduinoIDE
@@ -23,6 +23,8 @@ Beginner-level tutorials
 - \subpage UserObjectDetect
 - \subpage UserParseSerial
 - \subpage UserFirstVision
+
+- \subpage UserProDNN
 
 Advanced tutorials
 -------------------

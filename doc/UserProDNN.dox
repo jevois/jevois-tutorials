@@ -1,0 +1,90 @@
+/*! \page UserProDNN Converting Deep Neural Networks for JeVois-Pro
+
+
+Model conversion
+================
+
+The main docs of JeVois provides instructions and examples on how to convert models for the various accelerators
+available for \jvpro:
+
+- \ref UserDNNoverview
+- \ref UserDNNopencv
+- \ref UserDNNnpu
+- \ref UserDNNspu
+- \ref UserDNNtpu
+- \ref UserDNNvpu
+
+Writing custom preproc/network/postproc in Python
+=================================================
+
+The JeVois framework already has post-processors for Classification, YOLO, SSD, YuNet, etc but you may need your own
+custom pre-processor if you are importing a different kind of network. The easiest is to implement it in Python, since
+usually a network creator will also provide Python code to do the post-processing.
+
+Have a look at the following examples:
+
+- Sample pre-processor: [PyPreBlob.py](https://github.com/jevois/jevoisbase/blob/master/share-jevoispro/pydnn/pre/PyPreBlob.py)
+
+- Sample network inference using OpenCV: [PyNetOpenCV.py](https://github.com/jevois/jevoisbase/blob/master/share-jevoispro/pydnn/net/PyNetOpenCV.py)
+
+- Sample classification post-processor: [PyPostClassify.py](https://github.com/jevois/jevoisbase/blob/master/share-jevoispro/pydnn/post/PyPostClassify.py)
+
+- How to load those when specifying a model zoo entry: Look at the "Python version of SqueezeNet 1.1" in
+  [opencv.yml](https://github.com/jevois/jevoisbase/blob/master/share-jevoispro/dnn/opencv.yml)
+  + To use a python preproc: set \b preproc to Python and then \b pypre to your python code
+  + To use a python network: set \b nettype to Python and then \b pynet to your python code
+  + To use a python postproc: set \b postproc to Python and then \b pypost to your python code
+
+\note Async processing (where the network runs in a separate thread) is not possible if network type is Python and
+preproc or postproc are Python too, as the Python interpreter is not re-entrant. Usually, the C++ pre-processor and
+network should work for most models, and you would typically only want a custom Python post-processor. The network can
+then run in a parallel thread without issues since it is running from C++.
+
+More details about custom post-processing
+-----------------------------------------
+
+The general post-processor definition in JeVois is in the [PostProcessor C++ virtual base
+class](https://github.com/jevois/jevois/blob/master/include/jevois/DNN/PostProcessor.H). You basically need to implement
+the functions marked pure virtual (`= 0`) in there:
+
+- `freeze(bool doit)`: called by the JeVois core to freeze or unfreeze JeVois parameters of your module that users
+  should not be allowed to change at runtime. In the implementation, you would typically simply call `freeze(doit)` on
+  those parameters that should be frozen at runtime, and skip those that users can play with at runtime.
+
+- `process(std::vector<cv::Mat> const & outs, PreProcessor * preproc)`: Called by the JeVois core with a list of arrays
+  that contain the outputs received from your network, usually dequantized to float32. Here you should parse these and
+  store decoded results for later use in `report()`. The given \b preproc may be used to help with scaling coordinates
+  from blob that was passed as input to the network back to the original image that was captured by the camera.
+
+- `report(jevois::StdModule * mod, jevois::RawImage * outimg, jevois::OptGUIhelper * helper, bool overlay, bool idle)`:
+  report the parsed results obtained during the last call to process(), for example by drawing boxes or writing some
+  text messages. If you get a non-null \b helper, the you should draw outputs using OpenGL-enabled functions provided to
+  you by the helper. If you get a non-null outimg, users are using your module in \a Legacy mode with streaming video
+  over USB, and you need to draw outputs into that image, using jevois::RawImage drawing functions. For JeVois-Pro, you
+  can skip that legacy mode as most people want to the the new GUI/OpenGL mode.
+
+`process()` and `report()` are separate because they may be called at different rates: report() must be called on every
+frame for the GUI and displays to be drawn. But process() will only be called each time your network has finished
+processing an input. If your network only runs inference at 5 fps, then process() will be called at 5 fps bur report()
+at 30 fps.
+
+\note You should be ready for report() to be called even before process() has been called. This is often the case if a
+network is slow to load or initialize, we do not want to block the display and GUI, so we will still call report() at 30
+fps while we wait for the network. Thus, you should initialize the things that you will report to sensible defaults in
+your constructor.
+
+Now you should be able to understand what is going on in
+[PyPostClassify.py](https://github.com/jevois/jevoisbase/blob/master/share-jevoispro/pydnn/post/PyPostClassify.py)
+
+In some post-processors you may want to draw boxes, circles, overlays, etc. Look at [class GUIhelperPython in
+PythonModule.H](https://github.com/jevois/jevois/blob/master/include/jevois/Core/PythonModule.H) to get the signatures
+of available functions GUIhelper::i2d(), GUIhelper::drawLine(), GUIhelper::drawRect(), GUIhelper::drawPoly(),
+GUIhelper::drawCircle(), GUIhelper::itext(), GUIhelper::d2i(), etc.
+
+Note that these functions inherit some global parameters from the GUI. For example, when you draw filled rectangles or
+circles, the transparency of the fill or the thickness of the outline are not under your control, but are under user
+control through parameters \p fillalpha, \p linethick, etc of the GUI (to see these, switch to the \b Parameters tab of
+the GUI, enable <b>Show System Parameters</b> at top right, and look under <b>Graphical interface options</b>).
+
+*/
+

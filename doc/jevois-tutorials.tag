@@ -1033,6 +1033,11 @@
     <filename>UserParseSerial_8dox.html</filename>
   </compound>
   <compound kind="file">
+    <name>UserProDNN.dox</name>
+    <path>/lab/itti/jevois/software/jevois-tutorials/doc/</path>
+    <filename>UserProDNN_8dox.html</filename>
+  </compound>
+  <compound kind="file">
     <name>UserRobotCar.dox</name>
     <path>/lab/itti/jevois/software/jevois-tutorials/doc/</path>
     <filename>UserRobotCar_8dox.html</filename>
@@ -1342,6 +1347,11 @@
     <name>UserParseSerial</name>
     <title>Parsing serial messages from JeVois using Python</title>
     <filename>UserParseSerial</filename>
+  </compound>
+  <compound kind="page">
+    <name>UserProDNN</name>
+    <title>Converting Deep Neural Networks for JeVois-Pro</title>
+    <filename>UserProDNN</filename>
   </compound>
   <compound kind="page">
     <name>UserRobotCar</name>
