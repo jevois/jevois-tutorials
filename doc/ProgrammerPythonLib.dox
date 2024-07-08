@@ -228,15 +228,12 @@ It worked ok (just a couple warnings), and we end up with \b /usr/lib/libjvdmtx.
 Now for platform:
 
 \verbatim
-itti@iLab0:~/jevoisextra/libjvdmtx$ ./rebuild-platform.sh --staging
+itti@iLab0:~/jevoisextra/libjvdmtx$ ./rebuild-platform.sh
 -- JeVois version 1.11.0
 -- JEVOIS_PLATFORM: ON
 -- JEVOIS_VENDOR: JeVois
 -- JeVois microSD card mount point: /media/itti/JEVOIS
 -- JeVois serial-over-USB device: /dev/ttyACM0
--- JEVOIS_MODULES_TO_STAGING: ON
--- JEVOIS_MODULES_TO_MICROSD: OFF
--- JEVOIS_MODULES_TO_LIVE: OFF
 -- Install prefix for executable programs: /var/lib/jevois-build/usr
 -- Host path to jevois modules root: /var/lib/jevois-microsd
 -- The C compiler identification is GNU 7.2.0

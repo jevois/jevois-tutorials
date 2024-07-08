@@ -95,7 +95,7 @@ sudo adduser $USER vboxusers
 \verbatim
 cd samplemodule
 ./rebuild-host.sh
-./rebuild-platform.sh --staging
+./rebuild-platform.sh
 \endverbatim
 
 which will compile and then cross-compile the module. You should get no error, indicating that all jevois tools,

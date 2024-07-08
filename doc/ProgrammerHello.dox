@@ -412,25 +412,15 @@ just do a partial re-compilation for platform:
 
 \verbatim
 cd ~/hellojevois/pbuild
-make && make install
+make && sudo make install && make jvpkg
 \endverbatim
 
 \note If you get an error like <b>cc1plus: fatal error: jevois/Config/Config.H: No such file or directory</b>, you just
 need to run \c rebuild-platform.sh in your \b jevois directory first.
 
-JeVois provides three basic ways of installing new modules to microSD:
-
-- Install the files directly to a microSD card that already contains a working JeVois system (e.g., was flashed using a
-  JeVois disk image from http://jevois.org/start)
-
-- Pack all the module's files into a .jvpkg package and drop that package into <b>JEVOIS:/packages/</b> on your
-  microSD. Next time it starts up, JeVois will unpack, install, and then delete the package.
-
-- Install all the files into the staging area for the JeVois operating system and files, which is under the
-  jevois-sdk. Then flash a brand new microSD image with the latest JeVois core, jevoisbase modules, and your module(s)
-  pre-installed and ready to run.
-
-We look at these methods below.
+This will compile and then pack all the module's files into a .jvpkg package. You can drop that package into
+<b>JEVOIS:/packages/</b> on your microSD. Next time it starts up, JeVois will unpack, install, and then delete the
+package.
 
 Defining a video mapping for our module
 ---------------------------------------
@@ -459,62 +449,6 @@ our module. If such script exists, it will be run just after the package is unpa
 directory set to the directory of the module. By default, \c postinstall contains simple commands that just append the
 \c videomappings.cfg of the new module to the main \c videomappings.cfg of JeVois, but you can edit this script if you
 need additional custom configurations to be run as your package is installed.
-
-Installing to live JeVois camera
---------------------------------
-
-With \jvversion{1.3} and later, you do not need to manually take out or even manually export the microSD inside JeVois
-anymore. A new build option `--live` can do it automatically. Just connect JeVois and allow it to start, then type:
-
-\verbatim
-./rebuild-platform.sh --live
-\endverbatim
-
-which will:
-
-- cross-compile the module for platform
-- issue a `jevois-usbsd start` to instruct JeVois to export its microSD as a virtual flash drive
-- install the cross-compiled module to the microSD inside JeVois
-- issue a `jevois-usbsd stop` to eject the virtual flash drive and restart JeVois.
-
-\note Once you select a destination in `rebuild-platform.sh` (none, staging, microsd, or live), that will remain for
-subsequent `make install` commands, until you change it by re-running `rebuild-platform.sh` with another destination.
-
-Installing to JeVois microSD card
----------------------------------
-
-Insert a properly installed JeVois microSD (follow the steps at [JeVois Start](http://jevois.org/start) to make one from
-a disk image) into your computer, either physically inserted into your host computer using a microSD-to-USB adapter, or
-exported live by JeVois using the \c usbsd command in the JeVois command-line interface; see \ref UserCli).
-
-The microSD card must be be available under <b>/media/<em>username</em>/JEVOIS/</b> where <em>username</em> is your
-Linux user name.
-
-Once the microSD is available to the host, run:
-
-\verbatim
-cd ~/hellojevois
-./rebuild-platform.sh --microsd
-\endverbatim
-
-Modules, config files, etc will be installed to the live microSD card at <b>/media/<em>username</em>/JEVOIS/</b> where
-<em>username</em> is your Linux user name.
-
-\note Once you select a destination in `rebuild-platform.sh` (none, staging, microsd, or live), that will remain for
-subsequent `make install` commands, until you change it by re-running `rebuild-platform.sh` with another destination.
-
-Here is a simple command to export the microSD of a live JeVois camera without having to start a terminal program, etc
-(make sure JeVois is not streaming video):
-
-\verbatim
-sudo sh -c 'echo usbsd > /dev/ttyACM0'
-\endverbatim
-
-or, with \jvversion{1.2} or later: `jevois-usbsd start`
-
-If you have a \b postinstall script in your module that adds new video mappings, those will get appended to the main \b
-videomappings.cfg next time JeVois reboots.
-
 
 Installing to JeVois hardware using a .jvpkg package
 ----------------------------------------------------
@@ -546,7 +480,7 @@ instead just export it as a virtual USB flash drive while JeVois is connected to
 
 - Export the microSD as a virtual USB flash drive by issuing the command \c usbsd to the JeVois command-line interface
   (see \ref UserCli). Make sure JeVois is not streaming video. Then either connect to it using a terminal and send the
-  \c usbsd command, or, for short, you can just type on your host: `sudo sh -c 'echo usbsd > /dev/ttyACM0'`.
+  \c usbsd command, or, for short, you can just type on your host: `echo usbsd | sudo tee /dev/ttyACM0`.
   
 - The JEVOIS partition of the microSD inside JeVois appears as a new USB flash drive on your host. It should also get
   mounted as /media/<em>username</em>/JEVOIS/
@@ -603,7 +537,7 @@ To include your new module into the staging area, run this:
 
 \verbatim
 cd ~/hellojevois
-./rebuild-platform.sh --staging
+./rebuild-platform.sh
 \endverbatim
 
 which will copy all the files to the staging area.
@@ -618,13 +552,6 @@ sudo jevois-flash-card -y /dev/sdX
 \endverbatim
 
 (replace \b sdX above by the device for your microSD).
-
-\warning Once you compile with the `--staging` option, the files will be copied to the staging area and will never
-be deleted. So use with caution so that you do not get confused later on because an old version of a module was
-installed to staging while you are trying to install a new one as a package, etc. To figure out where the files are in
-staging, run `find /var/lib/jevois-microsd -name HelloJevois.so` and you can then delete these files manually
-from staging (and the whole \b modules/Tutorial directory).
-
 
 
 */

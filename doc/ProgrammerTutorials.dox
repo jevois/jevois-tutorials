@@ -38,6 +38,7 @@ Programming JeVois machine vision modules using Python
   example Mediapipe applications
 - \jvpro \jvmod{PyLicensePlate} - detect license plates using YuNet on NPU via Tim-VX
 - \jvmod{PythonParallel} - parallel threads in python
+- \jvpro \jvmod{PyLLM} - run large language models in JeVois-Pro
 
 Programming JeVois machine vision modules using C++
 ===================================================

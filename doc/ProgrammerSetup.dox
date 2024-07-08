@@ -16,6 +16,8 @@ recent code (e.g., OpenCV 4.0.1) on this older Ubuntu release.
 
 As of \jvversion{1.15.0} the official JeVois development platform is Ubuntu 20.04 (focal).
 
+As of \jvversion{1.21.0} the official JeVois development platform is Ubuntu 24.04 (noble).
+
 It is generally ok to setup the programming environment in a virtual machine (e.g., VirtualBox). Just beware that you
 may have to resolve issues having to do with granting proper access to either the video camera or the microSD card to
 the virtual machine. See \ref Virtualbox and \ref ProgrammerVbox for more info.
@@ -24,7 +26,7 @@ the virtual machine. See \ref Virtualbox and \ref ProgrammerVbox for more info.
 
 The video above gets you through the steps of:
 
-- installing Ubuntu 18.04 (bionic) on VirtualBox; steps are similar for newer Ubuntu 20.04.
+- installing Ubuntu 18.04 (bionic) on VirtualBox; steps are similar for newer Ubuntu 20.04 or 24.04.
 - installing the jevois ubuntu (.deb) packages
 - installing jevois-inventor and trying it out
 - getting the latest jevois source code from github
@@ -38,8 +40,8 @@ Not all the steps shown in the video above may be required, depending on your go
 
 A quick overview of the JeVois software development packages (see \ref ProgrammerSource for more details):
 
-- \b jevois-opencv: OpenCV 4.4.0 compiled for host computer with settings that match those used by the JeVois platform
-  hardware. We install this package into /usr/share/jevois-opencv-4.4.0 so that it will not interfere with any other
+- \b jevois-opencv: OpenCV compiled for host computer with settings that match those used by the JeVois platform
+  hardware. We install this package into /usr/share/jevois-opencv-4.x.0 so that it will not interfere with any other
   OpenCV install you might have on your host system and that might be required by some other software.
 
 - \b jevois-host: JeVois core software compiled for execution on a host computer
@@ -71,8 +73,7 @@ Keeping that in mind:
 
 - <b>If you want to hack the Linux kernel that runs on JeVois or add software to its operating system:</b>
   + This only recommended for advanced programmers! Kernel hacking knowledge and buildroot workflow knowledge required.
-  + Download and installation instructions are in the [INSTALL file of the jevois
-    repository](https://github.com/jevois/jevois/blob/master/INSTALL).
+  + Use `rebuild-os.sh` in the jevois-sdk repo, which can run in a docker container.
 
 
 Upgrading the Debian packages
