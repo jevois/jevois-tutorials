@@ -7,8 +7,12 @@ by modifying the core JeVois framework.
 Make sure you check out the basic [programmer tutorials in the base JeVois doc](/doc/ModuleTutorial.html) for some
 conceptual understanding and overview of capabilities.
 
-Programming JeVois machine vision modules using Python and JeVois Inventor
-==========================================================================
+Many example machine vision modules are provided with the standard JeVois software distribution. Below we list pointers
+to a few of them. You can run them and then check out their source code to learn how the desired functionality was
+achieved.
+
+Programming JeVois machine vision modules using Python and JeVois Inventor or JeVois-Pro GUI
+============================================================================================
 
 - \subpage ProgrammerInvHello
 - \subpage ProgrammerInvTimer
@@ -23,6 +27,17 @@ Programming JeVois machine vision modules using Python
 - \subpage ProgrammerPythonLive
 - \subpage ProgrammerPythonSaveImages
 - \subpage ProgrammerPythonDice
+- \jvmod{PythonTest}, \jvmod{PythonOpenCV}, \jvmod{PythonSandbox} - minimal test modules
+- \jvpro \jvmod{AprilTag} - detect markers using the apriltag library for python
+- \jvmod{FirstPython}, \jvmod{PythonObject6D} - detect objects of interest to FIRST Robotics Competitions
+- \jvmod{PyClassificationDNN} - run object classification deep nets in OpenCV
+- \jvmod{PyDetectionDNN} - run object detection deep nets in OpenCV
+- \jvpro \jvmod{PyCoralClassify}, \jvmod{PyCoralDetect}, \jvmod{PyCoralSegment} - minimal Coral EdgeTPU examples
+- \jvmod{PyEmotion} - facial emotion recognition using a deep network
+- \jvpro \jvmod{PyFaceMesh}, \jvmod{PyHandDetector}, \jvmod{PyObjectron}, \jvmod{PyPoseDetector}, \jvmod{PySelfie} -
+  example Mediapipe applications
+- \jvpro \jvmod{PyLicensePlate} - detect license plates using YuNet on NPU via Tim-VX
+- \jvmod{PythonParallel} - parallel threads in python
 
 Programming JeVois machine vision modules using C++
 ===================================================
@@ -33,8 +48,30 @@ Programming JeVois machine vision modules using C++
 - \subpage ProgrammerDice
 - \subpage ProgrammerDlib
 - \subpage ProgrammerSurprise
+- \jvmod{ArUcoBlob} - detect ArUco or AprilTag markers and color blobs in parallel threads
+- \jvmod{CalibrateCamera} - calibrate you camera for 3D pose estimation
+- \jvmod{ColorFiltering} - apply various color filters to live video
+- \jvmod{CustomDNN} - customize the JeVois DNN framework
+- \jvmod{DNN} - framework to run deep neural networks on CPU or Coral TPU, Intel Myriad-X, JeVois-Pro NPU, Hailo-8
+- \jvmod{DemoARtoolkit} - detect markers using the ARtoolkit 5 library
+- \jvmod{DemoArUco} - detect ArUco markers using OpenCV
+- \jvmod{DemoBackgroundSubtract} - detect moving objects using background subtraction
+- \jva33 \jvmod{DemoCPUGPU} - run machine vision tasks on CPU and GPU in parallel
+- \jva33 \jvmod{DemoDMP} - how to use the digital motion processor in the optional ICM-20948 9-axis inertial sensor
+- \jvmod{DemoIMU} - how to get raw inertial data from ICM-20948
+- \jvmod{DemoNeon} - how to use streaming NEON processor instructions
+- \jvmod{DemoQRcode} - detect and decode barcodes and QR codes
+- \jvmod{DenseSIFT} - compute SIFT keypoints on a grid
+- \jvmod{EdgeDetection} and \jvmod{EdgeDetectionX4} - simple image filtering
+- \jvmod{FirstVision} - detect objects of interest to FIRST Robotics Competitions
+- \jvmod{MarkersCombo} - detect ArUco, ARtoolkit, and QR-code markers in parallel threads
+- \jvmod{MultiDNN} - run several deep networks in parallel with tiled displays
+- \jvmod{MultiDNN2} - run several deep networks in parallel with all outputs on one display
+- \jvmod{ObjectDetect} - simple object detection using keypoint matching
+- \jvmod{ObjectTracker} - track color objects
+- \jvmod{OpticalFlow} - very fast optical flow (motion detection)
+- \jvmod{RoadNavigation} - detect road boundaries and direction of vanishing point
+- \jvmod{SaliencyGist} - compute a saliency map and gist of the scene
+- \jvmod{TensorFlowEasy}, \jvmod{TensorFlowSaliency}, \jvmod{TensorFlowSingle} - invoke TensorFlow models directly
 
 */
-    
-
-

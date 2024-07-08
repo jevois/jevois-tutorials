@@ -1013,6 +1013,11 @@
     <filename>UserInventor_8dox.html</filename>
   </compound>
   <compound kind="file">
+    <name>UserNPU.dox</name>
+    <path>/lab/itti/jevois/software/jevois-tutorials/doc/</path>
+    <filename>UserNPU_8dox.html</filename>
+  </compound>
+  <compound kind="file">
     <name>UserObjectDetect.dox</name>
     <path>/lab/itti/jevois/software/jevois-tutorials/doc/</path>
     <filename>UserObjectDetect_8dox.html</filename>
@@ -1327,6 +1332,11 @@
     <name>UserInventor</name>
     <title>Getting started with JeVois Inventor</title>
     <filename>UserInventor</filename>
+  </compound>
+  <compound kind="page">
+    <name>UserNPU</name>
+    <title>Converting a neural network for JeVois-Pro NPU and writing the post-processor</title>
+    <filename>UserNPU</filename>
   </compound>
   <compound kind="page">
     <name>UserObjectDetect</name>

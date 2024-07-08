@@ -74,7 +74,7 @@ sudo adduser $USER vboxusers
 
 \jvimg{sdkvbox6.png, 25%}
 
-- Start your virtual machine and let it boot. It will auto-login user \a jevois
+- Start your virtual machine and let it boot. It will auto-login user \a jevois (or user \a jv on the 1.20.0 release).
 
 - If you need it for sudo, password is \a jevois
 
