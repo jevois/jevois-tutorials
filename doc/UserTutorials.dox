@@ -7,7 +7,7 @@ JeVois smart camera (e.g., an Arduino, or scripts runing on a host computer).
 Beginner-level tutorials
 ------------------------
 
-- JeVois-A33: \subpage UserInventor
+- \jva33 \subpage UserInventor
 
 - \subpage UserGettingStarted
 - \subpage UserArduinoIDE

@@ -88,18 +88,24 @@ sudo adduser $USER vboxusers
 
 \jvimg{sdkvbox8.png, 40%}
 
-- Now for development, we already pulled jevois, jevoisbase, jevoisextra, samplemodule, and samplepythonmodule from
-  github, and installed all jevois deb packages. So you are ready to compile code.
+- We already installed all the necessary packages. So you are ready to compile code.
 
 - For example, start a terminal (CTRL-ALT-T), and type
 \verbatim
-cd samplemodule
-./rebuild-host.sh
-./rebuild-platform.sh
+jevois-create-module MyVendor MyModule # or jevoispro-create-module
+cd mymodule
+./rebuild-host.sh       # or ./rebuild-pro-host.sh
+./rebuild-platform.sh   # or ./rebuild-pro-platform-pdeb.sh
 \endverbatim
 
 which will compile and then cross-compile the module. You should get no error, indicating that all jevois tools,
 cross-compilers, libraries, etc are properly installed and ready to go.
+
+\jva33: `./rebuild-platform.sh` will create a .jvpkg package that you should copy to JEVOIS:/packages/ on your
+microSD. Next time the camera reboots, it will install the package.
+
+\jvpro: `./rebuild-pro-platform-pdeb.sh` will create a .deb package that you can copy to microSD and then install
+using `dpkg -i /path/to/package.deb`
 
 \jvimg{sdkvbox9.png, 40%}
 

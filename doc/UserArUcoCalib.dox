@@ -15,6 +15,9 @@ You should consider running a calibration if:
 Note that calibration is dependent on image resolution. So the procedure described here should be repeated for every
 video resolution which you intend to use.
 
+\note Starting with \jvversion{1.12.0}, you can calibrate your camera using the new module \jvmod{CalibrateCamera},
+thereby eliminating the need for the more tedious steps below.
+
 Creating the virtual machine
 ----------------------------
 
