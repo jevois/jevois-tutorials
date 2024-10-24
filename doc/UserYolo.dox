@@ -35,7 +35,7 @@ You will get **runs/detect/predict/bus.jpg** with a bunch of detections that con
 
 Roboflow is a great resource to build and annotate custom datasets, or to download custom datasets contributed by
 others. It can also train models in the cloud, but from what we have tried, you cannot export the retrained model to
-ONNX, which is whay we need. Instead they want you to use their custom (paid) inference. See
+ONNX, which is what we need. Instead they want you to use their custom (paid) inference. See
 https://discuss.roboflow.com/t/export-model-into-onnx/1002
 
 To create a new annotated dataset, create an account on https://roboflow.com which will allow you to upload images and
@@ -159,9 +159,11 @@ We run the script and get **dataset-rockpaperscissors.npy**
 7.1. For NPU, use the JeVois YOLO conversion script
 ---------------------------------------------------
 
-The script needs to run from inside **aml_npu_sdk/acuity-toolkit/python/**, so we will add a symlink in
+The script needs to run from inside **aml_npu_sdk/acuity-toolkit/python/**
 
 \code{.py}
+cd /path/to/aml_npu_sdk/acuity-toolkit/python
+
 wget https://github.com/jevois/jevois/blob/master/scripts/jevoispro-npu-convert.sh
 chmod a+x jevoispro-npu-convert.sh
 
@@ -172,7 +174,7 @@ mv /path/to/yolov8n-1024x576-rockpaperscissors.onnx .
 
 We get 3 results in **outputs/yolov8n-1024x576-rockpaperscissors/**
 
-\code{.unformatted}
+\code{.py}
 libnn_yolov8n-1024x576-rockpaperscissors.so # runtime library for JeVois-Pro that will load the model
 yolov8n-1024x576-rockpaperscissors.nb       # model weights
 yolov8n-1024x576-rockpaperscissors.yml      # JeVois model zoo file
@@ -192,35 +194,40 @@ yolov8m-cls: (not needed)
 yolov8m-obb: /model.22/cv2.0/cv2.0.2/Conv /model.22/cv3.0/cv3.0.2/Conv /model.22/cv4.0/cv4.0.2/Conv /model.22/cv2.1/cv2.1.2/Conv /model.22/cv3.1/cv3.1.2/Conv /model.22/cv4.1/cv4.1.2/Conv /model.22/cv2.2/cv2.2.2/Conv /model.22/cv3.2/cv3.2.2/Conv /model.22/cv4.2/cv4.2.2/Conv
 yolov8m-pose: /model.22/cv2.0/cv2.0.2/Conv /model.22/cv3.0/cv3.0.2/Conv /model.22/cv4.0/cv4.0.2/Conv /model.22/cv2.1/cv2.1.2/Conv /model.22/cv3.1/cv3.1.2/Conv /model.22/cv4.1/cv4.1.2/Conv /model.22/cv2.2/cv2.2.2/Conv /model.22/cv3.2/cv3.2.2/Conv /model.22/cv4.2/cv4.2.2/Conv
 yolov8m-seg: /model.22/cv2.0/cv2.0.2/Conv /model.22/cv3.0/cv3.0.2/Conv /model.22/cv4.0/cv4.0.2/Conv /model.22/cv2.1/cv2.1.2/Conv /model.22/cv3.1/cv3.1.2/Conv /model.22/cv4.1/cv4.1.2/Conv /model.22/cv2.2/cv2.2.2/Conv /model.22/cv3.2/cv3.2.2/Conv /model.22/cv4.2/cv4.2.2/Conv output1
-yolov8n-det: /model.22/cv2.0/cv2.0.2/Conv /model.22/cv3.0/cv3.0.2/Conv /model.22/cv2.1/cv2.1.2/Conv /model.22/cv3.1/cv3.1.2/Conv /model.22/cv2.2/cv2.2.2/Conv /model.22/cv3.2/cv3.2.2/Conv
+
 yolov8n-det: /model.22/cv2.0/cv2.0.2/Conv /model.22/cv3.0/cv3.0.2/Conv /model.22/cv2.1/cv2.1.2/Conv /model.22/cv3.1/cv3.1.2/Conv /model.22/cv2.2/cv2.2.2/Conv /model.22/cv3.2/cv3.2.2/Conv
 yolov8n-cls: (not needed)
 yolov8n-obb: /model.22/cv2.0/cv2.0.2/Conv /model.22/cv3.0/cv3.0.2/Conv /model.22/cv4.0/cv4.0.2/Conv /model.22/cv2.1/cv2.1.2/Conv /model.22/cv3.1/cv3.1.2/Conv /model.22/cv4.1/cv4.1.2/Conv /model.22/cv2.2/cv2.2.2/Conv /model.22/cv3.2/cv3.2.2/Conv /model.22/cv4.2/cv4.2.2/Conv
 yolov8n-pose: /model.22/cv2.0/cv2.0.2/Conv /model.22/cv3.0/cv3.0.2/Conv /model.22/cv4.0/cv4.0.2/Conv /model.22/cv2.1/cv2.1.2/Conv /model.22/cv3.1/cv3.1.2/Conv /model.22/cv4.1/cv4.1.2/Conv /model.22/cv2.2/cv2.2.2/Conv /model.22/cv3.2/cv3.2.2/Conv /model.22/cv4.2/cv4.2.2/Conv
 yolov8n-seg: /model.22/cv2.0/cv2.0.2/Conv /model.22/cv3.0/cv3.0.2/Conv /model.22/cv4.0/cv4.0.2/Conv /model.22/cv2.1/cv2.1.2/Conv /model.22/cv3.1/cv3.1.2/Conv /model.22/cv4.1/cv4.1.2/Conv /model.22/cv2.2/cv2.2.2/Conv /model.22/cv3.2/cv3.2.2/Conv /model.22/cv4.2/cv4.2.2/Conv output1
+
 yolov8s-det: /model.22/cv2.0/cv2.0.2/Conv /model.22/cv3.0/cv3.0.2/Conv /model.22/cv2.1/cv2.1.2/Conv /model.22/cv3.1/cv3.1.2/Conv /model.22/cv2.2/cv2.2.2/Conv /model.22/cv3.2/cv3.2.2/Conv
 yolov8s-cls: (not needed)
 yolov8s-obb: /model.22/cv2.0/cv2.0.2/Conv /model.22/cv3.0/cv3.0.2/Conv /model.22/cv4.0/cv4.0.2/Conv /model.22/cv2.1/cv2.1.2/Conv /model.22/cv3.1/cv3.1.2/Conv /model.22/cv4.1/cv4.1.2/Conv /model.22/cv2.2/cv2.2.2/Conv /model.22/cv3.2/cv3.2.2/Conv /model.22/cv4.2/cv4.2.2/Conv
 yolov8s-pose: /model.22/cv2.0/cv2.0.2/Conv /model.22/cv3.0/cv3.0.2/Conv /model.22/cv4.0/cv4.0.2/Conv /model.22/cv2.1/cv2.1.2/Conv /model.22/cv3.1/cv3.1.2/Conv /model.22/cv4.1/cv4.1.2/Conv /model.22/cv2.2/cv2.2.2/Conv /model.22/cv3.2/cv3.2.2/Conv /model.22/cv4.2/cv4.2.2/Conv
 yolov8s-seg: /model.22/cv2.0/cv2.0.2/Conv /model.22/cv3.0/cv3.0.2/Conv /model.22/cv4.0/cv4.0.2/Conv /model.22/cv2.1/cv2.1.2/Conv /model.22/cv3.1/cv3.1.2/Conv /model.22/cv4.1/cv4.1.2/Conv /model.22/cv2.2/cv2.2.2/Conv /model.22/cv3.2/cv3.2.2/Conv /model.22/cv4.2/cv4.2.2/Conv output1
+
 yolov9m-det: /model.22/cv2.0/cv2.0.2/Conv /model.22/cv3.0/cv3.0.2/Conv /model.22/cv2.1/cv2.1.2/Conv /model.22/cv3.1/cv3.1.2/Conv /model.22/cv2.2/cv2.2.2/Conv /model.22/cv3.2/cv3.2.2/Conv
 yolov9n-det: /model.22/cv2.0/cv2.0.2/Conv /model.22/cv3.0/cv3.0.2/Conv /model.22/cv2.1/cv2.1.2/Conv /model.22/cv3.1/cv3.1.2/Conv /model.22/cv2.2/cv2.2.2/Conv /model.22/cv3.2/cv3.2.2/Conv
 yolov9s-det: /model.22/cv2.0/cv2.0.2/Conv /model.22/cv3.0/cv3.0.2/Conv /model.22/cv2.1/cv2.1.2/Conv /model.22/cv3.1/cv3.1.2/Conv /model.22/cv2.2/cv2.2.2/Conv /model.22/cv3.2/cv3.2.2/Conv
-yolov9s-det: /model.22/cv2.0/cv2.0.2/Conv /model.22/cv3.0/cv3.0.2/Conv /model.22/cv2.1/cv2.1.2/Conv /model.22/cv3.1/cv3.1.2/Conv /model.22/cv2.2/cv2.2.2/Conv /model.22/cv3.2/cv3.2.2/Conv
 yolov9t-det: /model.22/cv2.0/cv2.0.2/Conv /model.22/cv3.0/cv3.0.2/Conv /model.22/cv2.1/cv2.1.2/Conv /model.22/cv3.1/cv3.1.2/Conv /model.22/cv2.2/cv2.2.2/Conv /model.22/cv3.2/cv3.2.2/Conv
+
 yolov10m-det: /model.23/one2one_cv2.0/one2one_cv2.0.2/Conv /model.23/one2one_cv3.0/one2one_cv3.0.2/Conv /model.23/one2one_cv2.1/one2one_cv2.1.2/Conv /model.23/one2one_cv3.1/one2one_cv3.1.2/Conv /model.23/one2one_cv2.2/one2one_cv2.2.2/Conv /model.23/one2one_cv3.2/one2one_cv3.2.2/Conv
 yolov10n-det: /model.23/one2one_cv2.0/one2one_cv2.0.2/Conv /model.23/one2one_cv3.0/one2one_cv3.0.2/Conv /model.23/one2one_cv2.1/one2one_cv2.1.2/Conv /model.23/one2one_cv3.1/one2one_cv3.1.2/Conv /model.23/one2one_cv2.2/one2one_cv2.2.2/Conv /model.23/one2one_cv3.2/one2one_cv3.2.2/Conv
 yolov10s-det: /model.23/one2one_cv2.0/one2one_cv2.0.2/Conv /model.23/one2one_cv3.0/one2one_cv3.0.2/Conv /model.23/one2one_cv2.1/one2one_cv2.1.2/Conv /model.23/one2one_cv3.1/one2one_cv3.1.2/Conv /model.23/one2one_cv2.2/one2one_cv2.2.2/Conv /model.23/one2one_cv3.2/one2one_cv3.2.2/Conv
+
 yolo11m-det: /model.23/cv2.0/cv2.0.2/Conv /model.23/cv3.0/cv3.0.2/Conv /model.23/cv2.1/cv2.1.2/Conv /model.23/cv3.1/cv3.1.2/Conv /model.23/cv2.2/cv2.2.2/Conv /model.23/cv3.2/cv3.2.2/Conv
 yolo11m-cls: (not needed)
 yolo11m-obb: /model.23/cv2.0/cv2.0.2/Conv /model.23/cv3.0/cv3.0.2/Conv /model.23/cv4.0/cv4.0.2/Conv /model.23/cv2.1/cv2.1.2/Conv /model.23/cv3.1/cv3.1.2/Conv /model.23/cv4.1/cv4.1.2/Conv /model.23/cv2.2/cv2.2.2/Conv /model.23/cv3.2/cv3.2.2/Conv /model.23/cv4.2/cv4.2.2/Conv
 yolo11m-pose: /model.23/cv2.0/cv2.0.2/Conv /model.23/cv3.0/cv3.0.2/Conv /model.23/cv4.0/cv4.0.2/Conv /model.23/cv2.1/cv2.1.2/Conv /model.23/cv3.1/cv3.1.2/Conv /model.23/cv4.1/cv4.1.2/Conv /model.23/cv2.2/cv2.2.2/Conv /model.23/cv3.2/cv3.2.2/Conv /model.23/cv4.2/cv4.2.2/Conv
 yolo11m-seg: /model.23/cv2.0/cv2.0.2/Conv /model.23/cv3.0/cv3.0.2/Conv /model.23/cv4.0/cv4.0.2/Conv /model.23/cv2.1/cv2.1.2/Conv /model.23/cv3.1/cv3.1.2/Conv /model.23/cv4.1/cv4.1.2/Conv /model.23/cv2.2/cv2.2.2/Conv /model.23/cv3.2/cv3.2.2/Conv /model.23/cv4.2/cv4.2.2/Conv output1
+
 yolo11n-det: /model.23/cv2.0/cv2.0.2/Conv /model.23/cv3.0/cv3.0.2/Conv /model.23/cv2.1/cv2.1.2/Conv /model.23/cv3.1/cv3.1.2/Conv /model.23/cv2.2/cv2.2.2/Conv /model.23/cv3.2/cv3.2.2/Conv
 yolo11n-cls: (not needed)
 yolo11n-obb: /model.23/cv2.0/cv2.0.2/Conv /model.23/cv3.0/cv3.0.2/Conv /model.23/cv4.0/cv4.0.2/Conv /model.23/cv2.1/cv2.1.2/Conv /model.23/cv3.1/cv3.1.2/Conv /model.23/cv4.1/cv4.1.2/Conv /model.23/cv2.2/cv2.2.2/Conv /model.23/cv3.2/cv3.2.2/Conv /model.23/cv4.2/cv4.2.2/Conv
 yolo11n-pose: /model.23/cv2.0/cv2.0.2/Conv /model.23/cv3.0/cv3.0.2/Conv /model.23/cv4.0/cv4.0.2/Conv /model.23/cv2.1/cv2.1.2/Conv /model.23/cv3.1/cv3.1.2/Conv /model.23/cv4.1/cv4.1.2/Conv /model.23/cv2.2/cv2.2.2/Conv /model.23/cv3.2/cv3.2.2/Conv /model.23/cv4.2/cv4.2.2/Conv
 yolo11n-seg: /model.23/cv2.0/cv2.0.2/Conv /model.23/cv3.0/cv3.0.2/Conv /model.23/cv4.0/cv4.0.2/Conv /model.23/cv2.1/cv2.1.2/Conv /model.23/cv3.1/cv3.1.2/Conv /model.23/cv4.1/cv4.1.2/Conv /model.23/cv2.2/cv2.2.2/Conv /model.23/cv3.2/cv3.2.2/Conv /model.23/cv4.2/cv4.2.2/Conv output1
+
 yolo11s-det: /model.23/cv2.0/cv2.0.2/Conv /model.23/cv3.0/cv3.0.2/Conv /model.23/cv2.1/cv2.1.2/Conv /model.23/cv3.1/cv3.1.2/Conv /model.23/cv2.2/cv2.2.2/Conv /model.23/cv3.2/cv3.2.2/Conv
 yolo11s-cls: (not needed)
 yolo11s-obb: /model.23/cv2.0/cv2.0.2/Conv /model.23/cv3.0/cv3.0.2/Conv /model.23/cv4.0/cv4.0.2/Conv /model.23/cv2.1/cv2.1.2/Conv /model.23/cv3.1/cv3.1.2/Conv /model.23/cv4.1/cv4.1.2/Conv /model.23/cv2.2/cv2.2.2/Conv /model.23/cv3.2/cv3.2.2/Conv /model.23/cv4.2/cv4.2.2/Conv
@@ -250,7 +257,7 @@ Get it out of the container via `shared_with_docker`:
 
 \code{.py}
 # In the container:
-cp yolov8n-1024x576-rockpaperscissors.hef ../shared_with_docker/
+cp yolov8n-1024x576-rockpaperscissors.hef /local/shared_with_docker/
 
 # Outside the container:
 mv shared_with_docker/yolov8n-1024x576-rockpaperscissors.hef .
