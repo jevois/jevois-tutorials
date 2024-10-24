@@ -1,0 +1,329 @@
+/*! \page UserYolo Custom YOLOv8 / YOLOv9 / YOLOv10 / YOLO11 for JeVois-Pro NPU and Hailo-8
+
+
+This tutorial will help you convert retrained YOLO networks for \jvpro, focusing on the built-in NPU and on the optional
+Hailo-8 neural accelerator.
+
+1. Read the basic docs
+======================
+
+To understand the conversion and quantization process, read:
+- \ref UserDNNoverview
+- \ref UserDNNconv
+- \ref UserDNNnpu
+- \ref UserDNNspu
+
+Also check out \ref JeVoisProBenchmarks to get an idea of which model size you want and the expected speed at which it
+will run.
+
+\youtube{JvtHmPux0C0}
+
+2. Get a baseline pretrained model
+==================================
+
+The easiest is to get a pretrained model from Ultralytics. Here we will use yolov8n:
+
+\code{.py}
+pip install ultralytics
+yolo predict model=yolov8n.pt source='https://ultralytics.com/images/bus.jpg'
+\endcode
+
+You will get **runs/detect/predict/bus.jpg** with a bunch of detections that confirm that the model is working.
+
+3. Get a dataset for training and quantization
+==============================================
+
+Roboflow is a great resource to build and annotate custom datasets, or to download custom datasets contributed by
+others. It can also train models in the cloud, but from what we have tried, you cannot export the retrained model to
+ONNX, which is whay we need. Instead they want you to use their custom (paid) inference. See
+https://discuss.roboflow.com/t/export-model-into-onnx/1002
+
+To create a new annotated dataset, create an account on https://roboflow.com which will allow you to upload images and
+annotate them.
+
+Here, we just download one of the existing datasets in RoboFlow Universe: the Rock-Paper-Scissors dataset at
+https://universe.roboflow.com/roboflow-58fyf/rock-paper-scissors-sxsw/dataset/14
+
+Download as YOLOv8 in zip format and unzip it:
+
+\code{.py}
+mkdir rockpaperscissors
+cd rockpaperscissors
+unzip ~/Downloads/Rock\ Paper\ Scissors\ SXSW.v14i.yolov8.zip 
+\endcode
+
+The images are in **train/images/**, **valid/images/** and **test/images/** and the labels (ground-truth bounding boxes
+and object identities) in **train/labels/**, **valid/labels/** and **test/labels/**
+
+We also get **data.yaml** which we will use to retrain our model.
+
+4. Retrain (fine-tune) your model
+=================================
+
+We retrain the model by following the training instructions at https://docs.ultralytics.com/modes/train/ (note: we will
+use a different image resolution below for export, but training can only use square images):
+
+\code{.py}
+pip install ultralytics
+yolo detect train data=data.yaml model=yolov8n.pt epochs=100 imgsz=640
+\endcode
+
+\note If you have multiple GPUs on your machine, you can use all of them by adding a `device` argument. For example,
+`device=0,1` for 2 GPUs.
+
+If it fails to find the dataset, move your dataset to where it wants it and try again. We also had to edit **data.yaml**
+to change the paths for train, val, and test for this to work. Just follow the errors until you get it right. We ended
+up with moving our rockpaperscissors/ folder to the location that ultralytics wanted and then editing **data.yaml** as
+follows:
+
+\code{.unformatted}
+train: rockpaperscissors/train/images
+val: rockpaperscissors/valid/images
+test: rockpaperscissors/test/images
+\endcode
+
+Your final model will be **runs/detect/trainXX/weights/best.pt** (replace XX by a number that depends on how many other
+training runs you have made; look at the file dates to make sure you are using the correct one).
+
+5. Export trained model to ONNX
+===============================
+
+For the export, we use resolution 1024x576 which works well with JeVois-Pro (no distorsion given the camera's 16:9
+aspect ratio):
+
+\code{.py}
+yolo export model=runs/detect/trainXX/weights/best.pt format=onnx imgsz=576,1024 opset=12 optimize simplify
+mv runs/detect/trainXX/weights/best.onnx yolov8n-1024x576-rockpaperscissors.onnx
+\endcode
+
+6. Get a sample dataset for quantization
+========================================
+
+We need a representative sample dataset to quantize the model, so that we can estimate the range of values experienced
+at each layer of the network during inference. These ranges of values will be used to set the quantization
+parameters. Hence, it is essential that the sample dataset contains images with the desired targets, and also images
+with other things that the camera will be exposed to but that we do not want to falsely detect.
+
+Here we will use images from our validation dataset.
+
+6.1. For NPU, make a list of images
+-----------------------------------
+
+For quantization on NPU, we just need to give it a list of image file names. We obtain it from the validation dataset
+(as in \ref UserDNNnpu):
+
+\code{.py}
+ls /absolute/path/to/rockpaperscissors/valid/images/*.jpg | shuf -n 1000 > dataset-rockpaperscissors.txt
+\endcode
+
+\note We store the full absolute file paths into the text file as we will run the NPU conversion from a different
+directory, inside the NPU SDK.
+
+6.2. For Hailo-8, make a numpy archive
+--------------------------------------
+
+Like in \ref UserDNNspu, we write a little python script <b>numpy_dataset.py</b> to create the sample dataset as a big
+numpy array. Change dir, width, height, and numimages below to fit your needs:
+
+\code{.py}
+import numpy as np
+import os
+from PIL import Image
+
+dir = 'valid/images'
+width = 1024
+height = 576
+numimages = 1000
+
+dataset = np.ndarray((numimages, height, width, 3), np.float32)
+idx = 0
+
+for path in os.listdir(dir):
+    fname = os.path.join(dir, path)
+    if os.path.isfile(fname):
+        image = Image.open(fname).resize((width, height));
+        arr = np.array(image).astype(np.float32)
+        arr = (arr - 0.0) / 255.0 # pre-processing. Here: mean=[0 0 0], scale=1/255 but varies by model
+        dataset[idx, :] = arr
+        idx += 1
+        
+with open('dataset-rockpaperscissors.npy', 'wb') as f:
+    np.save(f, dataset)
+\endcode
+
+We run the script and get **dataset-rockpaperscissors.npy**
+
+7. Convert and quantize the model
+=================================
+
+7.1. For NPU, use the JeVois YOLO conversion script
+---------------------------------------------------
+
+The script needs to run from inside **aml_npu_sdk/acuity-toolkit/python/**, so we will add a symlink in
+
+\code{.py}
+wget https://github.com/jevois/jevois/blob/master/scripts/jevoispro-npu-convert.sh
+chmod a+x jevoispro-npu-convert.sh
+
+mv /path/to/yolov8n-1024x576-rockpaperscissors.onnx .
+
+./jevoispro-npu-convert.sh yolov8n-1024x576-rockpaperscissors.onnx /path/to/dataset-rockpaperscissors.txt 1
+\endcode
+
+We get 3 results in **outputs/yolov8n-1024x576-rockpaperscissors/**
+
+\code{.unformatted}
+libnn_yolov8n-1024x576-rockpaperscissors.so # runtime library for JeVois-Pro that will load the model
+yolov8n-1024x576-rockpaperscissors.nb       # model weights
+yolov8n-1024x576-rockpaperscissors.yml      # JeVois model zoo file
+\endcode
+
+Copy all 3 files to your microSD into **JEVOISPRO:/share/dnn/custom/**
+
+7.2. For Hailo-8, convert in the Hailo docker
+---------------------------------------------
+
+We do not yet have a script for Hailo. Here are the outputs you should use, for each type of YOLO model that we could
+directly get from Ultralytics (since detection is the default task, `-det` may not be present in your model name):
+
+\code{.unformatted}
+yolov8m-det: /model.22/cv2.0/cv2.0.2/Conv /model.22/cv3.0/cv3.0.2/Conv /model.22/cv2.1/cv2.1.2/Conv /model.22/cv3.1/cv3.1.2/Conv /model.22/cv2.2/cv2.2.2/Conv /model.22/cv3.2/cv3.2.2/Conv
+yolov8m-cls: (not needed)
+yolov8m-obb: /model.22/cv2.0/cv2.0.2/Conv /model.22/cv3.0/cv3.0.2/Conv /model.22/cv4.0/cv4.0.2/Conv /model.22/cv2.1/cv2.1.2/Conv /model.22/cv3.1/cv3.1.2/Conv /model.22/cv4.1/cv4.1.2/Conv /model.22/cv2.2/cv2.2.2/Conv /model.22/cv3.2/cv3.2.2/Conv /model.22/cv4.2/cv4.2.2/Conv
+yolov8m-pose: /model.22/cv2.0/cv2.0.2/Conv /model.22/cv3.0/cv3.0.2/Conv /model.22/cv4.0/cv4.0.2/Conv /model.22/cv2.1/cv2.1.2/Conv /model.22/cv3.1/cv3.1.2/Conv /model.22/cv4.1/cv4.1.2/Conv /model.22/cv2.2/cv2.2.2/Conv /model.22/cv3.2/cv3.2.2/Conv /model.22/cv4.2/cv4.2.2/Conv
+yolov8m-seg: /model.22/cv2.0/cv2.0.2/Conv /model.22/cv3.0/cv3.0.2/Conv /model.22/cv4.0/cv4.0.2/Conv /model.22/cv2.1/cv2.1.2/Conv /model.22/cv3.1/cv3.1.2/Conv /model.22/cv4.1/cv4.1.2/Conv /model.22/cv2.2/cv2.2.2/Conv /model.22/cv3.2/cv3.2.2/Conv /model.22/cv4.2/cv4.2.2/Conv output1
+yolov8n-det: /model.22/cv2.0/cv2.0.2/Conv /model.22/cv3.0/cv3.0.2/Conv /model.22/cv2.1/cv2.1.2/Conv /model.22/cv3.1/cv3.1.2/Conv /model.22/cv2.2/cv2.2.2/Conv /model.22/cv3.2/cv3.2.2/Conv
+yolov8n-det: /model.22/cv2.0/cv2.0.2/Conv /model.22/cv3.0/cv3.0.2/Conv /model.22/cv2.1/cv2.1.2/Conv /model.22/cv3.1/cv3.1.2/Conv /model.22/cv2.2/cv2.2.2/Conv /model.22/cv3.2/cv3.2.2/Conv
+yolov8n-cls: (not needed)
+yolov8n-obb: /model.22/cv2.0/cv2.0.2/Conv /model.22/cv3.0/cv3.0.2/Conv /model.22/cv4.0/cv4.0.2/Conv /model.22/cv2.1/cv2.1.2/Conv /model.22/cv3.1/cv3.1.2/Conv /model.22/cv4.1/cv4.1.2/Conv /model.22/cv2.2/cv2.2.2/Conv /model.22/cv3.2/cv3.2.2/Conv /model.22/cv4.2/cv4.2.2/Conv
+yolov8n-pose: /model.22/cv2.0/cv2.0.2/Conv /model.22/cv3.0/cv3.0.2/Conv /model.22/cv4.0/cv4.0.2/Conv /model.22/cv2.1/cv2.1.2/Conv /model.22/cv3.1/cv3.1.2/Conv /model.22/cv4.1/cv4.1.2/Conv /model.22/cv2.2/cv2.2.2/Conv /model.22/cv3.2/cv3.2.2/Conv /model.22/cv4.2/cv4.2.2/Conv
+yolov8n-seg: /model.22/cv2.0/cv2.0.2/Conv /model.22/cv3.0/cv3.0.2/Conv /model.22/cv4.0/cv4.0.2/Conv /model.22/cv2.1/cv2.1.2/Conv /model.22/cv3.1/cv3.1.2/Conv /model.22/cv4.1/cv4.1.2/Conv /model.22/cv2.2/cv2.2.2/Conv /model.22/cv3.2/cv3.2.2/Conv /model.22/cv4.2/cv4.2.2/Conv output1
+yolov8s-det: /model.22/cv2.0/cv2.0.2/Conv /model.22/cv3.0/cv3.0.2/Conv /model.22/cv2.1/cv2.1.2/Conv /model.22/cv3.1/cv3.1.2/Conv /model.22/cv2.2/cv2.2.2/Conv /model.22/cv3.2/cv3.2.2/Conv
+yolov8s-cls: (not needed)
+yolov8s-obb: /model.22/cv2.0/cv2.0.2/Conv /model.22/cv3.0/cv3.0.2/Conv /model.22/cv4.0/cv4.0.2/Conv /model.22/cv2.1/cv2.1.2/Conv /model.22/cv3.1/cv3.1.2/Conv /model.22/cv4.1/cv4.1.2/Conv /model.22/cv2.2/cv2.2.2/Conv /model.22/cv3.2/cv3.2.2/Conv /model.22/cv4.2/cv4.2.2/Conv
+yolov8s-pose: /model.22/cv2.0/cv2.0.2/Conv /model.22/cv3.0/cv3.0.2/Conv /model.22/cv4.0/cv4.0.2/Conv /model.22/cv2.1/cv2.1.2/Conv /model.22/cv3.1/cv3.1.2/Conv /model.22/cv4.1/cv4.1.2/Conv /model.22/cv2.2/cv2.2.2/Conv /model.22/cv3.2/cv3.2.2/Conv /model.22/cv4.2/cv4.2.2/Conv
+yolov8s-seg: /model.22/cv2.0/cv2.0.2/Conv /model.22/cv3.0/cv3.0.2/Conv /model.22/cv4.0/cv4.0.2/Conv /model.22/cv2.1/cv2.1.2/Conv /model.22/cv3.1/cv3.1.2/Conv /model.22/cv4.1/cv4.1.2/Conv /model.22/cv2.2/cv2.2.2/Conv /model.22/cv3.2/cv3.2.2/Conv /model.22/cv4.2/cv4.2.2/Conv output1
+yolov9m-det: /model.22/cv2.0/cv2.0.2/Conv /model.22/cv3.0/cv3.0.2/Conv /model.22/cv2.1/cv2.1.2/Conv /model.22/cv3.1/cv3.1.2/Conv /model.22/cv2.2/cv2.2.2/Conv /model.22/cv3.2/cv3.2.2/Conv
+yolov9n-det: /model.22/cv2.0/cv2.0.2/Conv /model.22/cv3.0/cv3.0.2/Conv /model.22/cv2.1/cv2.1.2/Conv /model.22/cv3.1/cv3.1.2/Conv /model.22/cv2.2/cv2.2.2/Conv /model.22/cv3.2/cv3.2.2/Conv
+yolov9s-det: /model.22/cv2.0/cv2.0.2/Conv /model.22/cv3.0/cv3.0.2/Conv /model.22/cv2.1/cv2.1.2/Conv /model.22/cv3.1/cv3.1.2/Conv /model.22/cv2.2/cv2.2.2/Conv /model.22/cv3.2/cv3.2.2/Conv
+yolov9s-det: /model.22/cv2.0/cv2.0.2/Conv /model.22/cv3.0/cv3.0.2/Conv /model.22/cv2.1/cv2.1.2/Conv /model.22/cv3.1/cv3.1.2/Conv /model.22/cv2.2/cv2.2.2/Conv /model.22/cv3.2/cv3.2.2/Conv
+yolov9t-det: /model.22/cv2.0/cv2.0.2/Conv /model.22/cv3.0/cv3.0.2/Conv /model.22/cv2.1/cv2.1.2/Conv /model.22/cv3.1/cv3.1.2/Conv /model.22/cv2.2/cv2.2.2/Conv /model.22/cv3.2/cv3.2.2/Conv
+yolov10m-det: /model.23/one2one_cv2.0/one2one_cv2.0.2/Conv /model.23/one2one_cv3.0/one2one_cv3.0.2/Conv /model.23/one2one_cv2.1/one2one_cv2.1.2/Conv /model.23/one2one_cv3.1/one2one_cv3.1.2/Conv /model.23/one2one_cv2.2/one2one_cv2.2.2/Conv /model.23/one2one_cv3.2/one2one_cv3.2.2/Conv
+yolov10n-det: /model.23/one2one_cv2.0/one2one_cv2.0.2/Conv /model.23/one2one_cv3.0/one2one_cv3.0.2/Conv /model.23/one2one_cv2.1/one2one_cv2.1.2/Conv /model.23/one2one_cv3.1/one2one_cv3.1.2/Conv /model.23/one2one_cv2.2/one2one_cv2.2.2/Conv /model.23/one2one_cv3.2/one2one_cv3.2.2/Conv
+yolov10s-det: /model.23/one2one_cv2.0/one2one_cv2.0.2/Conv /model.23/one2one_cv3.0/one2one_cv3.0.2/Conv /model.23/one2one_cv2.1/one2one_cv2.1.2/Conv /model.23/one2one_cv3.1/one2one_cv3.1.2/Conv /model.23/one2one_cv2.2/one2one_cv2.2.2/Conv /model.23/one2one_cv3.2/one2one_cv3.2.2/Conv
+yolo11m-det: /model.23/cv2.0/cv2.0.2/Conv /model.23/cv3.0/cv3.0.2/Conv /model.23/cv2.1/cv2.1.2/Conv /model.23/cv3.1/cv3.1.2/Conv /model.23/cv2.2/cv2.2.2/Conv /model.23/cv3.2/cv3.2.2/Conv
+yolo11m-cls: (not needed)
+yolo11m-obb: /model.23/cv2.0/cv2.0.2/Conv /model.23/cv3.0/cv3.0.2/Conv /model.23/cv4.0/cv4.0.2/Conv /model.23/cv2.1/cv2.1.2/Conv /model.23/cv3.1/cv3.1.2/Conv /model.23/cv4.1/cv4.1.2/Conv /model.23/cv2.2/cv2.2.2/Conv /model.23/cv3.2/cv3.2.2/Conv /model.23/cv4.2/cv4.2.2/Conv
+yolo11m-pose: /model.23/cv2.0/cv2.0.2/Conv /model.23/cv3.0/cv3.0.2/Conv /model.23/cv4.0/cv4.0.2/Conv /model.23/cv2.1/cv2.1.2/Conv /model.23/cv3.1/cv3.1.2/Conv /model.23/cv4.1/cv4.1.2/Conv /model.23/cv2.2/cv2.2.2/Conv /model.23/cv3.2/cv3.2.2/Conv /model.23/cv4.2/cv4.2.2/Conv
+yolo11m-seg: /model.23/cv2.0/cv2.0.2/Conv /model.23/cv3.0/cv3.0.2/Conv /model.23/cv4.0/cv4.0.2/Conv /model.23/cv2.1/cv2.1.2/Conv /model.23/cv3.1/cv3.1.2/Conv /model.23/cv4.1/cv4.1.2/Conv /model.23/cv2.2/cv2.2.2/Conv /model.23/cv3.2/cv3.2.2/Conv /model.23/cv4.2/cv4.2.2/Conv output1
+yolo11n-det: /model.23/cv2.0/cv2.0.2/Conv /model.23/cv3.0/cv3.0.2/Conv /model.23/cv2.1/cv2.1.2/Conv /model.23/cv3.1/cv3.1.2/Conv /model.23/cv2.2/cv2.2.2/Conv /model.23/cv3.2/cv3.2.2/Conv
+yolo11n-cls: (not needed)
+yolo11n-obb: /model.23/cv2.0/cv2.0.2/Conv /model.23/cv3.0/cv3.0.2/Conv /model.23/cv4.0/cv4.0.2/Conv /model.23/cv2.1/cv2.1.2/Conv /model.23/cv3.1/cv3.1.2/Conv /model.23/cv4.1/cv4.1.2/Conv /model.23/cv2.2/cv2.2.2/Conv /model.23/cv3.2/cv3.2.2/Conv /model.23/cv4.2/cv4.2.2/Conv
+yolo11n-pose: /model.23/cv2.0/cv2.0.2/Conv /model.23/cv3.0/cv3.0.2/Conv /model.23/cv4.0/cv4.0.2/Conv /model.23/cv2.1/cv2.1.2/Conv /model.23/cv3.1/cv3.1.2/Conv /model.23/cv4.1/cv4.1.2/Conv /model.23/cv2.2/cv2.2.2/Conv /model.23/cv3.2/cv3.2.2/Conv /model.23/cv4.2/cv4.2.2/Conv
+yolo11n-seg: /model.23/cv2.0/cv2.0.2/Conv /model.23/cv3.0/cv3.0.2/Conv /model.23/cv4.0/cv4.0.2/Conv /model.23/cv2.1/cv2.1.2/Conv /model.23/cv3.1/cv3.1.2/Conv /model.23/cv4.1/cv4.1.2/Conv /model.23/cv2.2/cv2.2.2/Conv /model.23/cv3.2/cv3.2.2/Conv /model.23/cv4.2/cv4.2.2/Conv output1
+yolo11s-det: /model.23/cv2.0/cv2.0.2/Conv /model.23/cv3.0/cv3.0.2/Conv /model.23/cv2.1/cv2.1.2/Conv /model.23/cv3.1/cv3.1.2/Conv /model.23/cv2.2/cv2.2.2/Conv /model.23/cv3.2/cv3.2.2/Conv
+yolo11s-cls: (not needed)
+yolo11s-obb: /model.23/cv2.0/cv2.0.2/Conv /model.23/cv3.0/cv3.0.2/Conv /model.23/cv4.0/cv4.0.2/Conv /model.23/cv2.1/cv2.1.2/Conv /model.23/cv3.1/cv3.1.2/Conv /model.23/cv4.1/cv4.1.2/Conv /model.23/cv2.2/cv2.2.2/Conv /model.23/cv3.2/cv3.2.2/Conv /model.23/cv4.2/cv4.2.2/Conv
+yolo11s-pose: /model.23/cv2.0/cv2.0.2/Conv /model.23/cv3.0/cv3.0.2/Conv /model.23/cv4.0/cv4.0.2/Conv /model.23/cv2.1/cv2.1.2/Conv /model.23/cv3.1/cv3.1.2/Conv /model.23/cv4.1/cv4.1.2/Conv /model.23/cv2.2/cv2.2.2/Conv /model.23/cv3.2/cv3.2.2/Conv /model.23/cv4.2/cv4.2.2/Conv
+yolo11s-seg: /model.23/cv2.0/cv2.0.2/Conv /model.23/cv3.0/cv3.0.2/Conv /model.23/cv4.0/cv4.0.2/Conv /model.23/cv2.1/cv2.1.2/Conv /model.23/cv3.1/cv3.1.2/Conv /model.23/cv4.1/cv4.1.2/Conv /model.23/cv2.2/cv2.2.2/Conv /model.23/cv3.2/cv3.2.2/Conv /model.23/cv4.2/cv4.2.2/Conv output1
+\endcode
+
+We get into the Hailo container and copy **yolov8n-1024x576-rockpaperscissors.onnx** and **dataset-rockpaperscissors.npy** via the `shared_with_docker/` folder, as explained in \ref UserDNNspu, then:
+
+\code{.py}
+# Say no when asked to add nms:
+hailo parser onnx yolov8n-1024x576-rockpaperscissors.onnx --end-node-names /model.22/cv2.0/cv2.0.2/Conv /model.22/cv3.0/cv3.0.2/Conv /model.22/cv2.1/cv2.1.2/Conv /model.22/cv3.1/cv3.1.2/Conv /model.22/cv2.2/cv2.2.2/Conv /model.22/cv3.2/cv3.2.2/Conv 
+
+hailo optimize yolov8n-1024x576-rockpaperscissors.har --calib-set-path dataset-rockpaperscissors.npy 
+
+hailo compiler yolov8n-1024x576-rockpaperscissors_optimized.har
+\endcode
+
+\note If you get an error **onnx.onnx_cpp2py_export.checker.ValidationError: Your model ir_version 10 is higher than the
+checker's (9).** that means that you need to use an older version of ONNX during the export in step 5. We recommend
+installing `pip install ultralytics` in the hailo container to avoid this problem, then copy the model's .pt file to the
+container and run the export to ONNX in the hailo container.
+
+We eventually obtain **yolov8n-1024x576-rockpaperscissors.hef**
+
+Get it out of the container via `shared_with_docker`:
+
+\code{.py}
+# In the container:
+cp yolov8n-1024x576-rockpaperscissors.hef ../shared_with_docker/
+
+# Outside the container:
+mv shared_with_docker/yolov8n-1024x576-rockpaperscissors.hef .
+\endcode
+
+To run this model on JeVois-Pro, we need a small YAML file that will instruct the camera on how to run this
+model. Create **yolov8n-1024x576-rockpaperscissors-spu.yml** with these contents:
+
+\code{.unformatted}
+%YAML 1.0
+---
+
+yolov8n-1024x576-rockpaperscissors-spu:
+  preproc: Blob
+  mean: "0 0 0"
+  scale: 0.003921568393707275
+  nettype: SPU
+  model: "dnn/custom/yolov8n-1024x576-rockpaperscissors.hef"
+  comment: "Converted using Hailo SDK"
+  postproc: Detect
+  detecttype: YOLOv8t
+  classes: "dnn/labels/rockpaperscissors.txt"
+\endcode
+
+Copy both **yolov8n-1024x576-rockpaperscissors.hef** and **yolov8n-1024x576-rockpaperscissors-spu.yml** to microSD into
+directory **JEVOISPRO:/share/dnn/custom/**
+
+We will create the **rockpaperscissors.txt** mentioned above in the next step.
+
+8. Create a text file with your custom class names
+==================================================
+
+In the **data.yaml** of our dataset, we see:
+
+\code{.unformatted}
+names: ['Paper', 'Rock', 'Scissors']
+\endcode
+
+So we create a corresponding text file for JeVois-Pro to know about these names, **rockpaperscissors.txt**
+
+\code{.unformatted}
+Paper
+Rock
+Scissors
+\endcode
+
+Copy this file to microSD in **JEVOISPRO:/share/dnn/labels/**
+
+Then, if you converted for NPU, adjust the `classes` entry in
+file **JEVOISPRO:/share/dnn/custom/yolov8n-1024x576-rockpaperscissors.yml** as follows (for Hailo SPU, we already put the
+correct classes in step 7.2):
+
+\code{.unformatted}
+  classes: "dnn/labels/rockpaperscissors.txt"
+\endcode
+
+9. Try it
+=========
+
+- Start your \jvpro camera
+
+- Select the \jvmod{DNN} machine vision module
+
+- If you converted for NPU, set the \p pipe parameter to **NPU:Detect:yolov8n-1024x576-rockpaperscissors** (click on image to enlarge)
+  
+  \jvimg{rps-npu.png, 40%}
+
+- If you converted for Hailo-8 SPU, set the \p pipe parameter to **SPU:Detect:yolov8n-1024x576-rockpaperscissors-spu** (click on image to enlarge)
+  
+  \jvimg{rps-spu.png, 40%}
+
+Yes, that 26-TOPS Hailo-8 SPU is faster than the built-in 5-TOPS NPU.
+
+*/
+
+

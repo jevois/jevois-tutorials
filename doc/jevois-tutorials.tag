@@ -1013,11 +1013,6 @@
     <filename>UserInventor_8dox.html</filename>
   </compound>
   <compound kind="file">
-    <name>UserNPU.dox</name>
-    <path>doc/</path>
-    <filename>UserNPU_8dox.html</filename>
-  </compound>
-  <compound kind="file">
     <name>UserObjectDetect.dox</name>
     <path>doc/</path>
     <filename>UserObjectDetect_8dox.html</filename>
@@ -1061,6 +1056,11 @@
     <name>UserUSBSD.dox</name>
     <path>doc/</path>
     <filename>UserUSBSD_8dox.html</filename>
+  </compound>
+  <compound kind="file">
+    <name>UserYolo.dox</name>
+    <path>doc/</path>
+    <filename>UserYolo_8dox.html</filename>
   </compound>
   <compound kind="class">
     <name>HelloJeVois</name>
@@ -1349,11 +1349,6 @@
     <filename>UserInventor.html</filename>
   </compound>
   <compound kind="page">
-    <name>UserNPU</name>
-    <title>Converting a neural network for JeVois-Pro NPU and writing the post-processor</title>
-    <filename>UserNPU.html</filename>
-  </compound>
-  <compound kind="page">
     <name>UserObjectDetect</name>
     <title>Live training of the Object Detection module</title>
     <filename>UserObjectDetect.html</filename>
@@ -1408,6 +1403,7 @@
     <subpage>UserParseSerial.html</subpage>
     <subpage>UserFirstVision.html</subpage>
     <subpage>UserProDNN.html</subpage>
+    <subpage>UserYolo.html</subpage>
     <subpage>UserPanTilt.html</subpage>
     <subpage>UserRobotCar.html</subpage>
     <subpage>UserTensorFlowTraining.html</subpage>
@@ -1418,6 +1414,11 @@
     <name>UserUSBSD</name>
     <title>Live access to contents of the microSD inside JeVois</title>
     <filename>UserUSBSD.html</filename>
+  </compound>
+  <compound kind="page">
+    <name>UserYolo</name>
+    <title>Custom YOLOv8 / YOLOv9 / YOLOv10 / YOLO11 for JeVois-Pro NPU and Hailo-8</title>
+    <filename>UserYolo.html</filename>
   </compound>
   <compound kind="page">
     <name>index</name>
